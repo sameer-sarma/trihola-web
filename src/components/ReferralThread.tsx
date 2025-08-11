@@ -203,7 +203,7 @@ return (
                 recipientName={offer.recipientName}
                 eventSubType={offer.eventSubType || "CLAIM"}
                 content={event.content}
-                metadata={event.metadata}
+                metadata={event.metadata as OfferEventMetadata}
                 currentUserId={currentUserId}
                 isBusinessOnReferral={referral?.businessId === currentUserId}
                 onApproveClaim={(claimId) =>
@@ -216,7 +216,6 @@ return (
             return (
               <SystemActivity
                 key={event.id}
-                eventType={event.eventType}
                 metadata={metadata as ContactEventMetadata | SystemAlertMetadata}
                 timestamp={event.createdAt}
               />
