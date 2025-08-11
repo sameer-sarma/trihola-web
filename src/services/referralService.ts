@@ -2,8 +2,6 @@ import axios from "axios";
 import { ReferralDTO, ReferralThreadEventDTO } from "../types/referral";
 import { supabase } from "../supabaseClient";
 
-const BASE_URL = "http://127.0.0.1:8080";
-
 const authHeader = (token: string) => ({
   headers: {
     Authorization: `Bearer ${token}`,
@@ -12,7 +10,7 @@ const authHeader = (token: string) => ({
 
 // ✅ Fetch all referrals
 export const fetchMyReferrals = async (token: string): Promise<ReferralDTO[]> => {
-  const response = await axios.get(`${BASE_URL}/referrals/me`, authHeader(token));
+  const response = await axios.get(`${__API_BASE__}/referrals/me`, authHeader(token));
   return response.data;
 };
 
@@ -29,7 +27,7 @@ export const createReferral = async (
   token: string,
   data: CreateReferralPayload
 ): Promise<ReferralDTO> => {
-  const response = await axios.post(`${BASE_URL}/referral/create`, data, authHeader(token));
+  const response = await axios.post(`${__API_BASE__}/referral/create`, data, authHeader(token));
   return response.data;
 };
 
@@ -40,7 +38,7 @@ const respondToReferral = async (
   action: "accept" | "reject" | "cancel"
 ): Promise<void> => {
   await axios.post(
-    `${BASE_URL}/referrals/respond`,
+    `${__API_BASE__}/referrals/respond`,
     { referralId, action },
     authHeader(token)
   );
@@ -66,7 +64,7 @@ export const getReferralById = async (
   token: string,
   referralId: string
 ): Promise<ReferralDTO> => {
-  const response = await axios.get(`${BASE_URL}/referral/${referralId}`, authHeader(token));
+  const response = await axios.get(`${__API_BASE__}/referral/${referralId}`, authHeader(token));
   return response.data;
 };
 
@@ -75,13 +73,13 @@ export const fetchReferralBySlug = async (
   token: string,
   slug: string
 ): Promise<ReferralDTO> => {
-  const response = await axios.get(`${BASE_URL}/referral/${slug}`, authHeader(token));
+  const response = await axios.get(`${__API_BASE__}/referral/${slug}`, authHeader(token));
   return response.data;
 };
 
 export const fetchReferralThread = async (slug: string): Promise<ReferralThreadEventDTO[]> => {
   const token = (await supabase.auth.getSession()).data.session?.access_token;
-  const response = await fetch(`${BASE_URL}/referrals/${slug}/thread`, {
+  const response = await fetch(`${__API_BASE__}/referrals/${slug}/thread`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json"
@@ -97,7 +95,7 @@ export const fetchReferralThread = async (slug: string): Promise<ReferralThreadE
 
 export const postThreadMessage = async (slug: string, message: string): Promise<void> => {
   const token = (await supabase.auth.getSession()).data.session?.access_token;
-  const response = await fetch(`${BASE_URL}/referrals/${slug}/thread`, {
+  const response = await fetch(`${__API_BASE__}/referrals/${slug}/thread`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

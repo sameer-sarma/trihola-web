@@ -13,8 +13,6 @@ interface ContactResponse {
   businessName?: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080";
-
 const ContactsPage: React.FC = () => {
   const [contacts, setContacts] = useState<ContactResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +35,7 @@ const ContactsPage: React.FC = () => {
       }
 
       try {
-        const response = await axios.get(`${API_BASE}/contacts`, {
+        const response = await axios.get(`${__API_BASE__}/contacts`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

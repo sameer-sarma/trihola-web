@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { fetchReferralThread, postThreadMessage, fetchReferralBySlug } from "../services/referralService";
 import {
@@ -32,33 +32,35 @@ const ReferralThread: React.FC = () => {
   const [modalClaimId, setModalClaimId] = useState<string | null>(null);
   const [modalRedemptionValue, setModalRedemptionValue] = useState<string | null>(null);
 
-  const refreshThread = async () => {
-    if (!slug) return;
-    try {
-      const updatedEvents = await fetchReferralThread(slug);
-      setEvents(updatedEvents);
+const refreshThread = useCallback(async () => {
+  if (!slug) return;
+  setLoading(true);
+  try {
+    const updatedEvents = await fetchReferralThread(slug);
+    setEvents(updatedEvents);
 
-      const {
-        data: { session }
-      } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-      const accessToken = session?.access_token;
-      if (!accessToken) {
-        setError("Token not found.");
-        return;
-      }
-
-      setToken(accessToken);
-
-      const referralData = await fetchReferralBySlug(accessToken, slug);
-      setReferral(referralData);
-    } catch (err) {
-      console.error("Failed to refresh thread:", err);
-      setError("Failed to load thread");
-    } finally {
-      setLoading(false);
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      setError("Token not found.");
+      return;
     }
-  };
+
+    setToken(accessToken);
+
+    const referralData = await fetchReferralBySlug(accessToken, slug);
+    setReferral(referralData);
+  } catch (err) {
+    console.error("Failed to refresh thread:", err);
+    setError("Failed to load thread");
+  } finally {
+    setLoading(false);
+  }
+}, [slug]);
+
 
   useEffect(() => {
     const loadUserId = async () => {
@@ -73,12 +75,12 @@ const ReferralThread: React.FC = () => {
 
   useEffect(() => {
     refreshThread();
-  }, [slug]);
+  }, [refreshThread]);
 
     useEffect(() => {
     if (!slug || !token) return;
 
-    const ws = new WebSocket(`ws://localhost:8080/referrals/${slug}/thread/ws?token=${token}`);
+const ws = new WebSocket(`${__WS_BASE__}/referrals/${slug}/thread/ws?token=${token}`);
 
     ws.onmessage = (event) => {
       try {

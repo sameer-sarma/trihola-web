@@ -9,8 +9,6 @@ import { OfferDetailsDTO } from "../types/offer";
 import { QRCodeSVG } from "qrcode.react";
 import "../css/OfferDetails.css";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080";
-
 const OfferDetails: React.FC = () => {
   const { assignedOfferId } = useParams();
   const [offer, setOffer] = useState<OfferDetailsDTO | null>(null);
@@ -33,7 +31,7 @@ const OfferDetails: React.FC = () => {
       }
 
       try {
-        const response = await axios.get(`${API_BASE}/offers/${assignedOfferId}`, {
+        const response = await axios.get(`${__API_BASE__}/offers/${assignedOfferId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -101,7 +99,7 @@ redemptionValue = assignedOffer?.discountAmount != null
 
   try {
     const response = await axios.post(
-      `${API_BASE}/offers/${assignedOffer.assignedOfferId}/claim`,
+      `${__API_BASE__}/offers/${assignedOffer.assignedOfferId}/claim`,
       payload,
       {
         headers: {

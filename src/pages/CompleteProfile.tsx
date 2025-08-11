@@ -27,7 +27,7 @@ const CompleteProfile: React.FC<Props> = ({ session }) => {
 
     try {
       await axios.post(
-        "http://127.0.0.1:8080/complete-profile",
+        `${__API_BASE__}complete-profile`,
         {
           email,
           password,

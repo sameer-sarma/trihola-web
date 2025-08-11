@@ -2,7 +2,7 @@ import axios from "axios"
 
 export const sendOtp = async (phone: string) => {
   try {
-    const response = await axios.post("http://127.0.0.1:8080/send-otp", { phone })
+    const response = await axios.post(`${__API_BASE__}/send-otp`, { phone })
     return {
       success: response.status === 200,
       message: "OTP sent successfully.",
@@ -18,7 +18,7 @@ export const sendOtp = async (phone: string) => {
 
 export const verifyOtp = async (phone: string, otp: string) => {
   try {
-    const response = await axios.post("http://127.0.0.1:8080/verify-otp", {
+    const response = await axios.post(`${__API_BASE__}/verify-otp`, {
       phone,
       otp,
     })

@@ -26,7 +26,7 @@ export default function VerifyPhone({ onComplete }: { onComplete?: () => void })
         }
 
         // Check profile to see if phone is already verified
-        const profileRes = await axios.get("http://127.0.0.1:8080/profile", {
+        const profileRes = await axios.get(`${__API_BASE__}/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -40,7 +40,7 @@ export default function VerifyPhone({ onComplete }: { onComplete?: () => void })
         }
 
         // Send OTP
-        await axios.post("http://127.0.0.1:8080/auth/send-otp", null, {
+        await axios.post(`${__API_BASE__}/auth/send-otp`, null, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -67,7 +67,7 @@ const handleVerify = async () => {
 
   try {
     const res = await axios.post(
-      "http://127.0.0.1:8080/auth/verify-otp",
+      `${__API_BASE__}/auth/verify-otp`,
       { otp },
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -76,7 +76,7 @@ const handleVerify = async () => {
 
     if (res.status === 200) {
       // ✅ Re-check profile to ensure phoneVerified is now true
-      const profileRes = await axios.get("http://127.0.0.1:8080/profile", {
+      const profileRes = await axios.get(`${__API_BASE__}/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

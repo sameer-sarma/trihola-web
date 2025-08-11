@@ -19,7 +19,7 @@ const handleSendOtp = async (e: React.FormEvent) => {
   setMessage(null);
 
   try {
-    const response = await axios.post("http://127.0.0.1:8080/login/send-otp", { phone });
+    const response = await axios.post(`${__API_BASE__}/login/send-otp`, { phone });
 
     if (response.status === 200) {
       setStep("verify");
@@ -52,7 +52,7 @@ const handleVerifyOtp = async (e: React.FormEvent) => {
   setMessage(null);
 
   try {
-    const response = await axios.post("http://127.0.0.1:8080/login/verify-otp", {
+    const response = await axios.post(`${__API_BASE__}/login/verify-otp`, {
       phone,
       otp,
     });

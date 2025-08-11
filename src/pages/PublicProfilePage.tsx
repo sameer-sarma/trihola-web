@@ -4,8 +4,6 @@ import { supabase } from "../supabaseClient";
 import { getProfileBySlug } from "../services/profileService";
 import ProfileView from "../components/ProfileView";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080";
-
 interface PublicProfile {
   userId: string;
   slug: string;
@@ -86,7 +84,7 @@ return (
         console.warn("❗ Cannot add contact — slug is missing");
         return;
       }
-      await fetch(`${API_BASE}/contacts/add/byUserSlug`, {
+      await fetch(`${__API_BASE__}/contacts/add/byUserSlug`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

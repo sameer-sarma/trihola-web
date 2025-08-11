@@ -4,8 +4,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "../css/EditProfile.css";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080";
-
 const AddContactForm: React.FC = () => {
   const [form, setForm] = useState({
     firstName: "",
@@ -42,7 +40,7 @@ const AddContactForm: React.FC = () => {
         return;
       }
 
-      const res = await axios.post(`${API_BASE}/contacts/add/byContactRequestForm`, form, {
+      const res = await axios.post(`${__API_BASE__}/contacts/add/byContactRequestForm`, form, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

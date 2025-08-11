@@ -13,7 +13,7 @@ export default function Register() {
 
   const handleRegister = async () => {
     try {
-      const res = await axios.post("http://localhost:8080/register", { email, password, phone })
+      const res = await axios.post(`${__API_BASE__}/register`, { email, password, phone })
 
       switch (res.data.status) {
         case "await_email_verification":

@@ -76,7 +76,7 @@ const App: React.FC = () => {
     const fetchProfile = async () => {
       if (!session?.user?.id) return;
       try {
-        const { data } = await axios.get("http://127.0.0.1:8080/profile", {
+        const { data } = await axios.get(`${__API_BASE__}/profile`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         setProfile(data);
@@ -102,7 +102,7 @@ const App: React.FC = () => {
 
     const { registeredAsBusiness: _, slug: __, ...payload } = profile;
 
-    await axios.post("http://127.0.0.1:8080/profile", payload, {
+    await axios.post(`${__API_BASE__}/profile`, payload, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
   };

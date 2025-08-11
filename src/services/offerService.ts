@@ -1,10 +1,8 @@
 import axios from "axios";
 import { OfferTemplateDTO, OfferDetailsDTO, OfferClaimDTO } from "../types/offer";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080";
-
 export const getOfferTemplates = async (token: string): Promise<OfferTemplateDTO[]> => {
-  const response = await axios.get(`${API_BASE}/offer-templates`, {
+  const response = await axios.get(`${__API_BASE__}/offer-templates`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -19,7 +17,7 @@ export const assignOfferToReferral = async (
   offerTemplateId: string
 ): Promise<void> => {
   await axios.post(
-    `${API_BASE}/referrals/assign-offer`,
+    `${__API_BASE__}/referrals/assign-offer`,
     {
       offerAssignedToLevel: "REFERRAL",
       levelId: referralId,
@@ -38,7 +36,7 @@ export const fetchOfferDetails = async (
   token: string,
   assignedOfferId: string
 ): Promise<OfferDetailsDTO> => {
-  const response = await axios.get(`${API_BASE}/offers/${assignedOfferId}`, {
+  const response = await axios.get(`${__API_BASE__}/offers/${assignedOfferId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -48,7 +46,7 @@ export const fetchOfferDetails = async (
 };
 
 export async function fetchClaimDetails(token: string, claimId: string): Promise<OfferClaimDTO> {
-  const res = await fetch(`${API_BASE}/claims/${claimId}`, {
+  const res = await fetch(`${__API_BASE__}/claims/${claimId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -63,7 +61,7 @@ export const approveClaim = async (
   redemptionValue: string,
   note?: string
 ): Promise<void> => {
-  const response = await fetch(`${API_BASE}/claims/${claimId}/approve`, {
+  const response = await fetch(`${__API_BASE__}/claims/${claimId}/approve`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

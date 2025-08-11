@@ -42,7 +42,7 @@ const EmailLogin: React.FC = () => {
 } else if (data.session) {
   try {
     const token = data.session.access_token;
-    const res = await fetch("http://127.0.0.1:8080/profile", {
+    const res = await fetch(`${__API_BASE__}/profile`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

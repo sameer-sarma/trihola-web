@@ -13,8 +13,6 @@ interface ContactResponse {
   businessName?: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080";
-
 const CreateReferralForm: React.FC = () => {
   const [contacts, setContacts] = useState<ContactResponse[]>([]);
   const [prospectUserId, setProspectUserId] = useState("");
@@ -32,7 +30,7 @@ const CreateReferralForm: React.FC = () => {
       if (!token) return setError("You must be logged in.");
 
       try {
-        const res = await axios.get(`${API_BASE}/contacts`, {
+        const res = await axios.get(`${__API_BASE__}/contacts`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setContacts(res.data);

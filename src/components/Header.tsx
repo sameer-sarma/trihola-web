@@ -4,9 +4,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import axios from "axios";
 import "../css/Header.css";
+import { Session } from '@supabase/supabase-js';
 
 const Header = () => {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session| null>(null);
   const [isBusiness, setIsBusiness] = useState(false);
   const navigate = useNavigate();
 
@@ -32,7 +33,7 @@ const Header = () => {
     const fetchProfile = async () => {
       if (!session?.access_token) return;
       try {
-        const response = await axios.get("http://127.0.0.1:8080/profile", {
+        const response = await axios.get(`${__API_BASE__}/profile`, {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
