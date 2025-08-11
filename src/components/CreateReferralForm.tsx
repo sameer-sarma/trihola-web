@@ -61,7 +61,7 @@ const CreateReferralForm: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        `${API_BASE}/referral/create`,
+        `${__API_BASE__}/referral/create`,
         { prospectUserId, businessUserId, note },
         { headers: { Authorization: `Bearer ${token}` } }
       );
