@@ -1,0 +1,204 @@
+.referral-card {
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.referral-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.referral-line {
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.referral-note {
+  background-color: #f9fafb;
+  color: #1f2937;
+  font-size: 0.875rem;
+  padding: 12px;
+  border: 1px solid #f3f4f6;
+  border-radius: 6px;
+  white-space: pre-wrap;
+}
+
+.status-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.response-status {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.response-status span {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+button.accept-btn {
+  padding: 6px 12px;
+  background-color: #22c55e;
+  color: white;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.accept-btn:hover {
+  background-color: #16a34a;
+}
+
+button.reject-btn {
+  padding: 6px 12px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.reject-btn:hover {
+  background-color: #dc2626;
+}
+
+button.cancel-btn {
+  padding: 6px 12px;
+  background-color: #6b7280;
+  color: white;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.cancel-btn:hover {
+  background-color: #4b5563;
+}
+
+button.assign-btn {
+  padding: 8px 16px;
+  background-color: #2563eb; /* blue-600 */
+  color: white;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button.assign-btn:hover {
+  background-color: #1d4ed8; /* darker blue on hover */
+}
+
+button.assign-btn:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+}
+
+.participant-row {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.participant-block {
+  text-align: center;
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.participant-block:hover {
+  background-color: #f9fafb;
+  cursor: default;
+}
+
+.profile-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.participant-name {
+  display: block;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.participant-role {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.participant-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-accepted {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.status-pending {
+  background-color: #fef9c3;
+  color: #92400e;
+}
+
+.status-rejected {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.offer-icon {
+  width: 16px;
+  height: 16px;
+  color: #28a745;
+  margin-top: 4px;
+}
+
+.referral-info {
+  margin-bottom: 12px;
+}
+
+.participant-offer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.offer-title {
+  font-size: 0.75rem;
+  color: #374151;
+  margin-top: 2px;
+  text-align: center;
+  max-width: 120px;
+  word-wrap: break-word;
+}
+

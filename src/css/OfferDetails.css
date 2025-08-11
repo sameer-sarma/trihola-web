@@ -1,0 +1,162 @@
+.offer-details-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.center-text {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.error-box {
+  max-width: 400px;
+  margin: 2.5rem auto;
+  text-align: center;
+  padding: 1rem;
+  border: 1px solid #fca5a5;
+  background-color: #fef2f2;
+  border-radius: 0.5rem;
+}
+
+.error-message {
+  color: #dc2626;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background-color: #1d4ed8;
+}
+
+.claim-button-container {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.claim-button {
+  padding: 0.5rem 1rem;
+  background-color: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.claim-button:hover {
+  background-color: #15803d;
+}
+
+.qr-container {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.qr-card {
+  background: linear-gradient(to top right, #ecfccb, #e0f2fe);
+  border: 1px solid #bbf7d0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+}
+
+.qr-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 1rem;
+}
+
+.qr-code {
+  margin-bottom: 1rem;
+}
+
+.qr-description {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+}
+
+.fullscreen-link {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background-color: #2563eb;
+  border-radius: 0.375rem;
+  text-decoration: none;
+}
+
+.fullscreen-link:hover {
+  background-color: #1d4ed8;
+}
+
+/* OfferCard styles */
+.offer-card {
+  background: linear-gradient(to bottom right, #fef9c3, #fbcfe8);
+  border: 1px solid #fcd34d;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.offer-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.offer-icon {
+  color: #db2777;
+  width: 24px;
+  height: 24px;
+}
+
+.offer-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.offer-description {
+  font-style: italic;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+
+.offer-details-list {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  color: #1f2937;
+}
+
+.offer-details-list li {
+  margin-bottom: 0.5rem;
+}
+
+.offer-meta {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 1rem;
+}

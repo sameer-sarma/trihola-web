@@ -1,0 +1,150 @@
+.profile-container {
+  max-width: 600px;
+  margin: 2em auto;
+  padding: 2em;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.profile-container h3 {
+  margin-bottom: 1em;
+  text-align: center;
+}
+
+.profile-image-container {
+  margin-bottom: 1em;
+  display: flex;
+  justify-content: center;
+}
+
+.profile-image-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #1e3a8a; /* optional border for better visibility */
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.2em;
+  gap: 1em; /* spacing between label and input */
+}
+
+/* Label appears to the left */
+.form-group label {
+  flex: 0 0 180px; /* fixed width label */
+  font-weight: 600;
+  color: #1e3a8a;
+  margin-bottom: 0; /* remove vertical spacing */
+}
+
+/* Input takes remaining space */
+.form-group input,
+.form-group textarea,
+.form-group select {
+  flex: 1;
+  padding: 0.6em;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  color: #000;
+}
+
+.primary-btn,
+.secondary-btn,
+.danger-btn {
+  padding: 0.6em 1.2em;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-block;
+  margin-top: 1em;
+}
+
+.primary-btn {
+  background-color: #2563eb;
+  color: white;
+}
+
+.primary-btn:hover {
+  background-color: #1e40af;
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  background-color: #f3f4f6;
+  color: #111827;
+  border: 1px solid #d1d5db;
+}
+
+.secondary-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.danger-btn {
+  background-color: #e11d48;
+  color: white;
+}
+
+.danger-btn:hover {
+  background-color: #be123c;
+}
+
+/* Special styling for checkbox groups */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+}
+
+.checkbox-group label {
+  margin-bottom: 0;
+}
+
+.custom-select {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.select-option {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 0.6em;
+  cursor: pointer;
+}
+
+.select-option:hover {
+  background-color: #f0f4ff;
+}
+
+.select-option.selected {
+  background-color: #dbeafe;
+}
+
+.thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+

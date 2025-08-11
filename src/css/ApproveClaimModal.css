@@ -1,0 +1,36 @@
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  width: 300px;
+}
+
+.modal-card label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.modal-card input,
+.modal-card textarea {
+  width: 100%;
+  margin-top: 4px;
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
