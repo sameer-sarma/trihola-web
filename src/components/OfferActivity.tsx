@@ -4,6 +4,11 @@ import { useEffect, useState, useMemo } from "react";
 import { fetchClaimDetails } from "../services/offerService";
 import { supabase } from "../supabaseClient";
 
+interface OfferActivityMetadata {
+  offerId?: string;
+  claimId?: string;
+}
+
 interface OfferActivityProps {
   timestamp: string;
   actorName: string;
@@ -11,7 +16,7 @@ interface OfferActivityProps {
   recipientName: string;
   eventSubType: string;
   content: string;
-  metadata?: any;
+  metadata?: OfferActivityMetadata;
   currentUserId?: string;
   isBusinessOnReferral?: boolean;
   onApproveClaim?: (claimId: string) => void;
@@ -25,7 +30,6 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
   eventSubType,
   content,
   metadata,
-  currentUserId,
   isBusinessOnReferral,
   onApproveClaim,
 }) => {
@@ -77,7 +81,9 @@ const canApprove = useMemo(() => {
   return result;
 }, [claimStatus, isBusinessOnReferral, metadata?.claimId]);
 
-  return (
+const claimId = metadata?.claimId;
+
+return (
   <div
     className="event-card"
     style={{
@@ -93,23 +99,23 @@ const canApprove = useMemo(() => {
     </p>
 
     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      {canApprove && (
-          <button
-            className="approve-claim-button"
-            onClick={() => onApproveClaim?.(metadata.claimId)}
-            style={{
-              padding: "4px 8px",
-              fontSize: "0.8rem",
-              backgroundColor: "#10b981",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            ✅ Approve Claim
-          </button>
-        )}
+      {canApprove && claimId && (
+        <button
+          className="approve-claim-button"
+          onClick={() => onApproveClaim?.(claimId)}
+          style={{
+            padding: "4px 8px",
+            fontSize: "0.8rem",
+            backgroundColor: "#10b981",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          ✅ Approve Claim
+        </button>
+      )}
 
       <small style={{ whiteSpace: "nowrap", color: "#6b7280", fontSize: "0.75rem" }}>
         {new Date(timestamp).toLocaleString()}

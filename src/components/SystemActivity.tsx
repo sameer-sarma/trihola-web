@@ -1,11 +1,6 @@
 import React from "react";
 
 import {
-  ReferralThreadEventDTO,
-  ReferralThreadEventType,
-  MessageMetadata,
-  OfferEventMetadata,
-  ReferralEventMetadata,
   ContactEventMetadata,
   SystemAlertMetadata
  } from "../types/referral";
@@ -13,11 +8,10 @@ import "../css/ReferralThread.css";
 
 
 export const SystemActivity: React.FC<{
-  eventType: string;
   metadata: ContactEventMetadata | SystemAlertMetadata;
   timestamp: string;
-}> = ({ eventType, metadata, timestamp }) => {
-  let content = metadata?.message || JSON.stringify(metadata);
+}> = ({ metadata, timestamp }) => {
+  const content = metadata?.message || JSON.stringify(metadata);
 
   return (
     <div

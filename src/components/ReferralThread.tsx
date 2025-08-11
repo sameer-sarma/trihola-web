@@ -6,7 +6,6 @@ import {
   ReferralThreadEventDTO,
   MessageMetadata,
   OfferEventMetadata,
-  ReferralEventMetadata,
   ContactEventMetadata,
   SystemAlertMetadata
 } from "../types/referral";

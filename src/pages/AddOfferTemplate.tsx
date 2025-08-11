@@ -3,10 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { upsertOfferTemplate } from "../services/offerTemplateService";
 import "../css/EditProfile.css";
 import {
-  OfferTypeEnum,
-  ValidityType,
   OfferTemplateRequest,
-  ValidityTrigger,
 } from "../types/offerTemplateTypes";
 
 interface Props {

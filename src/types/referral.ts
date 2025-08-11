@@ -84,6 +84,7 @@ export interface ContactEventMetadata {
   actorName: string;
   contactName: string;
   contactUserId: string;
+  message: string;
 }
 
 export interface SystemAlertMetadata {
