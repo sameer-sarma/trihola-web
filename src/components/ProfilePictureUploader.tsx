@@ -9,7 +9,9 @@ interface Props {
 
 export default function ProfilePictureUploader({ userId, onUploadComplete }: Props) {
   const [uploading, setUploading] = useState(false);
-
+  
+  const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET!;
+  
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -18,7 +20,7 @@ export default function ProfilePictureUploader({ userId, onUploadComplete }: Pro
     const filePath = `user_${userId}/avatar.jpg`;
 
     const { error } = await supabase.storage
-      .from("profile-pictures")
+      .from(BUCKET)
       .upload(filePath, file, { upsert: true });
 
     if (error) {
