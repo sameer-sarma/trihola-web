@@ -29,7 +29,7 @@ export default function ProfilePictureUploader({ userId, onUploadComplete }: Pro
       return;
     }
 
-    const { data } = supabase.storage.from("profile-pictures").getPublicUrl(filePath);
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
     const publicUrl = data?.publicUrl;
 
     if (publicUrl) {
