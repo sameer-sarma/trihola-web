@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Register from "./pages/Register";
 import EmailLogin from "./pages/EmailLogin";
@@ -46,16 +46,20 @@ interface UserProfile {
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile>({
-  phone: "",
-  slug: "",
-  firstName: "",
-  lastName: "",
-  address: "",
-  profileImageUrl: "",
-  bio: "",
-  phoneVerified: false,
-});
-  const [phoneVerified, setPhoneVerified] = useState(false);
+    phone: "",
+    slug: "",
+    firstName: "",
+    lastName: "",
+    address: "",
+    profileImageUrl: "",
+    bio: "",
+    phoneVerified: false,
+  });
+
+  // 🔁 Tri-state so we don't mount VerifyPhone until profile is known
+  const [phoneVerified, setPhoneVerified] = useState<boolean | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const lastFetchedUserId = useRef<string | null>(null);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -74,20 +78,34 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!session?.user?.id) return;
+      const userId = session?.user?.id;
+      if (!userId) return;
+
+      // Avoid duplicate fetches in React StrictMode/dev or when session object changes shape
+      if (lastFetchedUserId.current === userId && phoneVerified !== null) return;
+      lastFetchedUserId.current = userId;
+
+      const ctrl = new AbortController();
+      setLoadingProfile(true);
       try {
         const { data } = await axios.get(`${__API_BASE__}/profile`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
+          signal: ctrl.signal,
         });
         setProfile(data);
         setPhoneVerified(data.phoneVerified);
       } catch {
         setPhoneVerified(false);
+      } finally {
+        setLoadingProfile(false);
       }
+
+      return () => ctrl.abort();
     };
 
     fetchProfile();
-  }, [session]);
+    // Only depend on the stable identifier to prevent noisy re-runs
+  }, [session?.user?.id, session?.access_token, phoneVerified]);
 
   const userId = session?.user?.id ?? "";
 
@@ -126,6 +144,11 @@ const App: React.FC = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<Navigate to="/register" />} />
             </>
+          ) : phoneVerified === null ? (
+            <>
+              {/* While profile is loading, render a simple loading route so VerifyPhone doesn't mount yet */}
+              <Route path="*" element={<div>Loading your profile…{loadingProfile ? " (contacting server)" : ""}</div>} />
+            </>
           ) : !phoneVerified ? (
             <>
               <Route path="/verify-phone" element={<VerifyPhone onComplete={() => setPhoneVerified(true)} />} />
@@ -135,33 +158,34 @@ const App: React.FC = () => {
             <>
               <Route path="/profile" element={<RedirectToOwnProfile />} />
               <Route path="/profile/:slug" element={<PublicProfilePage />} />
-              <Route path="/profile/edit" element={
-                <EditProfile
-                  profile={profile}
-                  userId={userId}
-                  onChange={handleProfileChange}
-                  onSubmit={handleProfileSubmit}
-                  onImageUpload={handleImageUpload}
-                />
-              } />
+              <Route
+                path="/profile/edit"
+                element={
+                  <EditProfile
+                    profile={profile}
+                    userId={userId}
+                    onChange={handleProfileChange}
+                    onSubmit={handleProfileSubmit}
+                    onImageUpload={handleImageUpload}
+                  />
+                }
+              />
               <Route path="/contacts" element={<ContactsPage />} />
               <Route path="/contacts/add" element={<AddContactForm />} />
               <Route path="/referrals" element={<ReferralFeed />} />
               <Route path="/referrals/new" element={<CreateReferralForm />} />
               <Route path="/referral/:slug/thread" element={<ReferralThread />} />
               <Route path="/settings" element={<UserSettingsForm />} />
-              <Route path="/offer-templates" element={
-                <OfferTemplates profile={profile} userId={userId} token={session.access_token} />
-              } />
-              <Route path="/add-offer-template" element={
-                <AddOfferTemplate profile={profile} userId={userId} token={session.access_token} />
-              } />
-              <Route path="/offer-template/:templateId" element={
-                <OfferTemplateDetails token={session.access_token} />
-              } />
-              <Route path="/offer-template/:templateId/edit" element={
-                <EditOfferTemplate token={session.access_token} />
-              } />
+              <Route
+                path="/offer-templates"
+                element={<OfferTemplates profile={profile} userId={userId} token={session.access_token} />}
+              />
+              <Route
+                path="/add-offer-template"
+                element={<AddOfferTemplate profile={profile} userId={userId} token={session.access_token} />}
+              />
+              <Route path="/offer-template/:templateId" element={<OfferTemplateDetails token={session.access_token} />} />
+              <Route path="/offer-template/:templateId/edit" element={<EditOfferTemplate token={session.access_token} />} />
               <Route path="/offers/:assignedOfferId" element={<OfferDetailsPage />} />
               <Route path="/qrcode" element={<QRCodePage />} />
             </>
