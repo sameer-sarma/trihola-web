@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { getProfileBySlug } from "../services/profileService";
 import ProfileView from "../components/ProfileView";
+
+const API_BASE = import.meta.env.VITE_API_BASE as string;
+const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET as string;
 
 interface PublicProfile {
   userId: string;
@@ -10,7 +13,7 @@ interface PublicProfile {
   firstName: string | null;
   lastName: string | null;
   address: string | null;
-  profileImageUrl: string | null;
+  profileImageUrl: string | null; // may be a full URL or a storage path
   bio: string | null;
   location?: string;
   profession?: string;
@@ -47,7 +50,6 @@ const PublicProfilePage: React.FC = () => {
 
       try {
         const fetchedProfile = await getProfileBySlug(slug, token); // calls `/profile/full/{slug}`
-        console.log("Fetched profile:", fetchedProfile);
         setProfile(fetchedProfile);
         setUserIdFromToken(userId ?? null);
       } catch (error) {
@@ -64,51 +66,80 @@ const PublicProfilePage: React.FC = () => {
     if (slug) navigate(`/profile/edit`);
   };
 
-  if (loading) return <p className="text-center mt-6 text-gray-500">Loading profile...</p>;
-  if (!profile) return <p className="text-center mt-6 text-red-500">Profile not found.</p>;
+  // Derive a displayable image URL:
+  // - If DB stored a full URL (http/https), use it.
+  // - If DB stored a storage path, derive a public URL from the bucket.
+  const displayProfile = useMemo(() => {
+    if (!profile) return null;
 
-  const isOwnProfile = profile.userId === userIdFromToken;
+    let displayUrl: string | null = null;
+    const raw = profile.profileImageUrl;
 
-return (
-  <div className="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-md">
-<ProfileView
-  profile={profile}
-  businessProfile={profile.businessProfile || undefined}
-  isOwnProfile={isOwnProfile}
-  onAddContactClick={!isOwnProfile && !profile.isContact ? async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) return;
-      if (!profile.slug) {
-        console.warn("❗ Cannot add contact — slug is missing");
-        return;
+    if (raw) {
+      if (/^https?:\/\//i.test(raw)) {
+        // already a full URL (public/signed)
+        displayUrl = raw;
+      } else {
+        // treat as storage path and resolve a public URL
+        const { data } = supabase.storage.from(BUCKET).getPublicUrl(raw);
+        displayUrl = data?.publicUrl ?? null;
       }
-      await fetch(`${__API_BASE__}/contacts/add/byUserSlug`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ contactSlug: profile.slug }),
-      });
-
-      setProfile({ ...profile, isContact: true });
-    } catch (err) {
-      console.error("Failed to add contact", err);
     }
-  } : undefined}
-/>
 
-    {isOwnProfile && (
-      <div className="flex justify-end mt-6">
-        <button onClick={handleEditClick} className="primary-btn">
-          Edit Profile
-        </button>
-      </div>
-    )}
-  </div>
-);
+    return { ...profile, profileImageUrl: displayUrl };
+  }, [profile]);
+
+  if (loading) return <p style={{ textAlign: "center", marginTop: 24, color: "var(--text-muted)" }}>Loading profile...</p>;
+  if (!displayProfile) return <p style={{ textAlign: "center", marginTop: 24, color: "var(--danger)" }}>Profile not found.</p>;
+
+  const isOwnProfile = displayProfile.userId === userIdFromToken;
+
+  const handleAddContact = !isOwnProfile && !displayProfile.isContact
+    ? async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token;
+          if (!token) return;
+          if (!displayProfile.slug) {
+            console.warn("❗ Cannot add contact — slug is missing");
+            return;
+          }
+          await fetch(`${API_BASE}/contacts/add/byUserSlug`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ contactSlug: displayProfile.slug }),
+          });
+
+          setProfile(prev => (prev ? { ...prev, isContact: true } : prev));
+        } catch (err) {
+          console.error("Failed to add contact", err);
+        }
+      }
+    : undefined;
+
+  return (
+    <div className="container">
+    <div className="page-card">
+      <ProfileView
+        profile={displayProfile}
+        businessProfile={displayProfile.businessProfile || undefined}
+        isOwnProfile={isOwnProfile}
+        onAddContactClick={handleAddContact}
+      />
+
+      {isOwnProfile && (
+        <div className="page-actions">
+          <button onClick={handleEditClick} className="primary-btn">
+            Edit Profile
+          </button>
+        </div>
+      )}
+    </div>
+    </div>
+  );
 };
 
 export default PublicProfilePage;

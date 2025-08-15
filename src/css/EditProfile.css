@@ -1,150 +1,74 @@
-.profile-container {
-  max-width: 600px;
-  margin: 2em auto;
-  padding: 2em;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+/* Layout */
+.edit-grid{
+  display: grid;
+  grid-template-columns: 2fr 1fr; /* personal | business */
+  gap: 20px;
+  align-items: start;
 }
 
-.profile-container h3 {
-  margin-bottom: 1em;
-  text-align: center;
+/* Cards */
+.card{
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.card-header{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom: 10px;
+}
+.card-title{
+  margin:0;
+  font-size: 1.1rem;
+  font-weight: 800;
 }
 
-.profile-image-container {
-  margin-bottom: 1em;
-  display: flex;
-  justify-content: center;
+/* Left column */
+.personal-card{}
+
+.avatar-block{
+  display:flex; align-items:center; gap:16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.avatar-preview{
+  width: 96px; height: 96px; border-radius: 50%;
+  background: #eef2f7; display:flex; align-items:center; justify-content:center;
+  border: 3px solid #e2e8f0;
+  overflow:hidden;
+}
+.avatar-img{
+  width:100%; height:100%; object-fit: cover;
+}
+.avatar-placeholder{ color:#64748b; font-size:.85rem }
+
+/* Form grid */
+.form-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.form-group{ margin-bottom: 0 } /* gaps handled by grid */
+.form-group.span-2{ grid-column: span 2; }
+
+.actions{ display:flex; gap:10px; justify-content:flex-start; }
+.actions.span-2{ grid-column: span 2; }
+
+/* Buttons */
+.tiny{
+  padding: 6px 10px; border-radius: 10px; font-size: .9rem;
 }
 
-.profile-image-preview {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #1e3a8a; /* optional border for better visibility */
-}
+/* Right column */
+.business-card{}
+.form-wrap{ margin-top: 10px; }
 
-.form-group {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1.2em;
-  gap: 1em; /* spacing between label and input */
+/* Responsive */
+@media (max-width: 1080px){
+  .edit-grid{
+    grid-template-columns: 1fr; /* stack on small screens */
+  }
+  .form-grid{ grid-template-columns: 1fr; }
+  .form-group.span-2{ grid-column: auto; }
+  .actions.span-2{ grid-column: auto; }
 }
-
-/* Label appears to the left */
-.form-group label {
-  flex: 0 0 180px; /* fixed width label */
-  font-weight: 600;
-  color: #1e3a8a;
-  margin-bottom: 0; /* remove vertical spacing */
-}
-
-/* Input takes remaining space */
-.form-group input,
-.form-group textarea,
-.form-group select {
-  flex: 1;
-  padding: 0.6em;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 1rem;
-  color: #000;
-}
-
-.primary-btn,
-.secondary-btn,
-.danger-btn {
-  padding: 0.6em 1.2em;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  display: inline-block;
-  margin-top: 1em;
-}
-
-.primary-btn {
-  background-color: #2563eb;
-  color: white;
-}
-
-.primary-btn:hover {
-  background-color: #1e40af;
-}
-
-.primary-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.secondary-btn {
-  background-color: #f3f4f6;
-  color: #111827;
-  border: 1px solid #d1d5db;
-}
-
-.secondary-btn:hover {
-  background-color: #e5e7eb;
-}
-
-.danger-btn {
-  background-color: #e11d48;
-  color: white;
-}
-
-.danger-btn:hover {
-  background-color: #be123c;
-}
-
-/* Special styling for checkbox groups */
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-  font-weight: 600;
-  color: #1e3a8a;
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75em;
-}
-
-.checkbox-group label {
-  margin-bottom: 0;
-}
-
-.custom-select {
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.select-option {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 0.6em;
-  cursor: pointer;
-}
-
-.select-option:hover {
-  background-color: #f0f4ff;
-}
-
-.select-option.selected {
-  background-color: #dbeafe;
-}
-
-.thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-

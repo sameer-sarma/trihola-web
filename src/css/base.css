@@ -1,0 +1,109 @@
+/* base.css — reset-ish + theme tokens */
+:root{
+  --bg: #0b1016;               /* header/nav background */
+  --bg-page: #f7f9fc;          /* page background */
+  --card: #ffffff;
+  --text: #0f172a;             /* slate-900 */
+  --text-muted: #475569;       /* slate-600 */
+  --primary: #2563eb;          /* blue-600 */
+  --primary-ink: #ffffff;
+  --ring: rgba(37,99,235,0.3);
+  --ok: #16a34a;               /* green-600 */
+  --warn: #f59e0b;             /* amber-500 */
+  --danger: #dc2626;           /* red-600 */
+  --radius: 16px;              /* 1rem */
+  --shadow: 0 10px 30px rgba(2,8,23,0.08);
+}
+
+*{ box-sizing:border-box }
+html,body,#root{ height:100% }
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+  color: var(--text);
+  background: var(--bg-page);
+}
+
+/* A responsive container that actually uses the screen */
+.container{
+  width: min(1400px, 96vw);   /* was 1200px/94vw */
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+/* Full-bleed top nav */
+.app-nav{
+  position: sticky; top:0; z-index: 50;
+  width:100%;
+  background: var(--bg);
+  color: white;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+.app-nav-inner{
+  width: min(1200px, 94vw);
+  margin: 0 auto;
+  padding: 14px 16px;
+  display:flex; align-items:center; gap:16px;
+}
+.app-nav a, .app-nav button{
+  color:white; text-decoration:none;
+  opacity:.9;
+}
+.app-nav a:hover{ opacity:1 }
+
+/* Cards */
+.card{
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+/* Buttons */
+.primary-btn, .secondary-btn, .danger-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:8px; font-weight:600; border-radius:12px;
+  padding:10px 14px; border:1px solid transparent; cursor:pointer;
+  transition: transform .02s ease-in, box-shadow .15s ease;
+}
+.primary-btn{ background:var(--primary); color:var(--primary-ink); }
+.primary-btn:hover{ box-shadow: 0 8px 24px var(--ring) }
+.secondary-btn{ background:#eef2ff; color:#1e293b; border-color:#c7d2fe; }
+.secondary-btn:hover{ box-shadow: 0 8px 18px rgba(30,41,59,.08) }
+.danger-btn{ background:var(--danger); color:white; }
+.danger-btn:hover{ box-shadow: 0 8px 24px rgba(220,38,38,.25) }
+
+label{ display:block; font-size:0.92rem; color:var(--text-muted); margin-bottom:6px }
+input, textarea, select{
+  width:100%; border:1px solid #dbe3f0; border-radius:12px; padding:10px 12px;
+  background:white; color:var(--text);
+  outline: none;
+}
+input:focus, textarea:focus, select:focus{ border-color: var(--primary); box-shadow: 0 0 0 4px var(--ring) }
+.form-group{ margin-bottom:14px }
+
+/* Status chips */
+.chip{
+  display:inline-flex; align-items:center; gap:6px;
+  border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600;
+}
+.chip.ok{ background:#ecfdf5; color:#065f46 }
+.chip.warn{ background:#fff7ed; color:#9a3412 }
+.chip.pending{ background:#f1f5f9; color:#475569 }
+.page-card{
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  width: min(1200px, 100%);   /* was min(900px, 100%) */
+  margin: 12px auto;
+}
+/* Optional: a wider variant if you want even more width on desktop */
+.page-card.page-wide{ width: min(1400px, 100%); }
+/* Optional: true full-bleed card */
+.page-card.full-bleed{ width: 100%; margin-left: 0; margin-right: 0; }
+.page-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:16px;
+}

@@ -26,6 +26,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { supabase } from "./supabaseClient";
 import axios from "axios";
+import "./css/base.css";
 
 interface UserProfile {
   phone: string;
