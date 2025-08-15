@@ -1,4 +1,3 @@
-// RedirectToOwnProfile.tsx
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -10,36 +9,64 @@ const RedirectToOwnProfile: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state as LocationState) || null;
+
   const ranOnce = useRef(false);
 
-  // ✅ Prefer slug from state or sessionStorage (set by App after initial /profile)
-  const slugFromState = state?.slug;
-  const slugFromStorage = sessionStorage.getItem("profileSlug");
-
   useEffect(() => {
+    if (ranOnce.current) return;
+    ranOnce.current = true;
+
+    const slugFromState = state?.slug;
+    const slugFromStorage = sessionStorage.getItem("profileSlug");
+
+    // 1) Fast path: state slug
     if (slugFromState) {
+      if (slugFromStorage !== slugFromState) {
+        sessionStorage.setItem("profileSlug", slugFromState);
+      }
       navigate(`/profile/${slugFromState}`, { replace: true });
       return;
     }
+
+    // 2) Fast path: cached slug
     if (slugFromStorage) {
       navigate(`/profile/${slugFromStorage}`, { replace: true });
       return;
     }
-    if (ranOnce.current) return;
-    ranOnce.current = true;
 
+    // 3) Fallback: fetch once
+    const ctrl = new AbortController();
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-      const profile = await getOwnProfile(session.access_token); // falls back only when needed
-      if (profile?.slug) {
-        sessionStorage.setItem("profileSlug", profile.slug);
-        navigate(`/profile/${profile.slug}`, { replace: true });
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) {
+          navigate("/email-login", { replace: true });
+          return;
+        }
+        const me = await getOwnProfile(token); // should return { slug: string }
+        const mySlug = me?.slug;
+        if (mySlug) {
+          sessionStorage.setItem("profileSlug", mySlug);
+          navigate(`/profile/${mySlug}`, { replace: true });
+        } else {
+          navigate("/email-login", { replace: true });
+        }
+      } catch (e: any) {
+        if (e?.name !== "AbortError") {
+          console.error("RedirectToOwnProfile error:", e);
+        }
+        navigate("/email-login", { replace: true });
       }
     })();
-  }, [navigate, slugFromState, slugFromStorage]);
 
-  return <p className="text-center mt-6 text-gray-600">Redirecting to your profile...</p>;
+    return () => ctrl.abort();
+  }, [navigate, state]);
+
+  // Optional tiny placeholder; won't be visible long
+  return <p style={{ textAlign: "center", marginTop: 24, color: "var(--text-muted)" }}>
+    Redirecting to your profile…
+  </p>;
 };
 
 export default RedirectToOwnProfile;
