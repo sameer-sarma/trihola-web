@@ -3,13 +3,14 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { getOwnProfile } from "../services/profileService"; // ✅ use this to fetch slug once
 
 export default function VerifyPhone({
   onComplete,
-  skipInitialCheck = false,        // ✅ new prop
+  skipInitialCheck = false,
 }: {
   onComplete?: () => void;
-  skipInitialCheck?: boolean;       // ✅ new prop type
+  skipInitialCheck?: boolean;
 }) {
   const [otp, setOtp] = useState("");
   const [status, setStatus] =
@@ -18,12 +19,27 @@ export default function VerifyPhone({
   const navigate = useNavigate();
   const ranOnce = useRef(false);
 
+  // Helper: route directly to /profile/:slug and cache it
+  const goToMyProfile = async (token: string) => {
+    try {
+      const me = await getOwnProfile(token);   // single /profile call
+      const mySlug = me?.slug;
+      if (mySlug) {
+        sessionStorage.setItem("profileSlug", mySlug);
+        navigate(`/profile/${mySlug}`, { replace: true }); // ✅ avoid /profile redirect loop
+      } else {
+        navigate("/email-login", { replace: true });
+      }
+    } catch {
+      navigate("/email-login", { replace: true });
+    }
+  };
+
   useEffect(() => {
     if (ranOnce.current) return;
     ranOnce.current = true;
 
     const ctrl = new AbortController();
-
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -35,7 +51,7 @@ export default function VerifyPhone({
         }
 
         if (!skipInitialCheck) {
-          // ✅ Only do this when asked; App already knows unverified
+          // Only check when needed. If already verified, go straight to slug.
           const profileRes = await axios.get(`${__API_BASE__}/profile`, {
             headers: { Authorization: `Bearer ${token}` },
             signal: ctrl.signal,
@@ -43,12 +59,12 @@ export default function VerifyPhone({
           if (profileRes.data.phoneVerified) {
             setStatus("verified");
             setMessage("Phone already verified.");
-            setTimeout(() => navigate("/profile"), 800);
+            await goToMyProfile(token);        // ✅ direct to /profile/:slug
             return;
           }
         }
 
-        // ✅ Send OTP immediately when App told us they’re unverified
+        // Send OTP immediately
         await axios.post(`${__API_BASE__}/auth/send-otp`, null, {
           headers: { Authorization: `Bearer ${token}` },
           signal: ctrl.signal,
@@ -56,10 +72,10 @@ export default function VerifyPhone({
         setStatus("otpSent");
         setMessage("OTP sent to your registered phone number.");
       } catch (err: unknown) {
-          if (axios.isAxiosError(err) && err.code === "ERR_CANCELED") return;
-          console.error("❌ Error during OTP send/check:", err);
-          setMessage("Failed to send OTP. Please try again.");
-          setStatus("error");
+        if (axios.isAxiosError(err) && err.code === "ERR_CANCELED") return;
+        console.error("❌ Error during OTP send/check:", err);
+        setMessage("Failed to send OTP. Please try again.");
+        setStatus("error");
       }
     })();
 
@@ -78,7 +94,7 @@ export default function VerifyPhone({
       });
 
       if (res.status === 200) {
-        // ✅ Single re-check to confirm ‘phoneVerified’
+        // Optional re-check (keeps it to a single /profile call total)
         const profileRes = await axios.get(`${__API_BASE__}/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -86,11 +102,11 @@ export default function VerifyPhone({
         if (profileRes.data.phoneVerified) {
           setMessage("Phone verified successfully!");
           setStatus("verified");
-            if (onComplete) {
-              onComplete();
-            } else {
-              navigate("/profile");
-            }
+          if (onComplete) {
+            onComplete();
+          } else {
+            await goToMyProfile(token);         // ✅ direct to /profile/:slug
+          }
         } else {
           setMessage("Phone verification succeeded, but profile not updated.");
           setStatus("error");
@@ -105,39 +121,39 @@ export default function VerifyPhone({
       setStatus("error");
     }
   };
-  
+
   if (status === "verified") return null;
 
-return (
-  <div className="max-w-sm mx-auto p-4 border rounded-lg shadow">
-    <h2 className="text-xl font-bold mb-2">Verify your phone</h2>
-    <p className="text-gray-600 mb-4">{message}</p>
+  return (
+    <div className="max-w-sm mx-auto p-4 border rounded-lg shadow">
+      <h2 className="text-xl font-bold mb-2">Verify your phone</h2>
+      <p className="text-gray-600 mb-4">{message}</p>
 
-    {(status === "otpSent" || status === "verifying") && (
-      <>
-        <input
-          className="w-full p-2 border rounded mb-3"
-          placeholder="Enter OTP"
-          value={otp}
-          onChange={(e) => setOtp(e.target.value)}
-        />
-        <button
-          className="w-full bg-green-600 text-white p-2 rounded"
-          onClick={handleVerify}
-          disabled={!otp || status === "verifying"}
-        >
-          {status === "verifying" ? "Verifying..." : "Verify OTP"}
-        </button>
-      </>
-    )}
+      {(status === "otpSent" || status === "verifying") && (
+        <>
+          <input
+            className="w-full p-2 border rounded mb-3"
+            placeholder="Enter OTP"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+          />
+          <button
+            className="w-full bg-green-600 text-white p-2 rounded"
+            onClick={handleVerify}
+            disabled={!otp || status === "verifying"}
+          >
+            {status === "verifying" ? "Verifying..." : "Verify OTP"}
+          </button>
+        </>
+      )}
 
-    {status === "checking" && (
-      <p className="text-gray-500 text-sm">Checking phone verification status...</p>
-    )}
+      {status === "checking" && (
+        <p className="text-gray-500 text-sm">Checking phone verification status...</p>
+      )}
 
-    {status === "error" && (
-      <p className="text-red-600 text-sm mt-2">There was a problem. Please try again later.</p>
-    )}
-  </div>
-);
+      {status === "error" && (
+        <p className="text-red-600 text-sm mt-2">There was a problem. Please try again later.</p>
+      )}
+    </div>
+  );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import axios from "axios";
 import "../css/Header.css";
@@ -12,15 +12,16 @@ const Header = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isBusiness, setIsBusiness] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Keep session in sync
+  // Keep session in sync and clear cached slug when signed out
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (mounted) setSession(session);
       if (!session) {
-        // session missing at bootstrap -> clear cached routing hints
         sessionStorage.removeItem("profileSlug");
       }
     })();
@@ -29,7 +30,6 @@ const Header = () => {
       if (!mounted) return;
       setSession(nextSession || null);
       if (!nextSession) {
-        // user signed out / session expired -> clear cached routing hints
         sessionStorage.removeItem("profileSlug");
       }
     });
@@ -46,7 +46,14 @@ const Header = () => {
       setIsBusiness(false);
       return;
     }
+
+    // ✅ Skip fetching on routes that immediately redirect/fetch profile anyway
+    const onRedirectingRoute =
+      location.pathname === "/profile" || location.pathname.startsWith("/verify");
+    if (onRedirectingRoute) return;
+
     const ctrl = new AbortController();
+
     (async () => {
       try {
         const res = await axios.get(`${API_BASE}/profile`, {
@@ -54,21 +61,18 @@ const Header = () => {
           signal: ctrl.signal,
         });
         setIsBusiness(Boolean(res.data?.registeredAsBusiness));
-      } catch (e) {
-        if (!(e as any)?.message?.includes("canceled")) {
+      } catch (e: any) {
+        if (e?.code !== "ERR_CANCELED") {
           console.error("Failed to fetch profile in header", e);
         }
       }
     })();
+
     return () => ctrl.abort();
-  }, [session?.access_token]);
+  }, [session?.access_token, location.pathname]);
 
   const handleLogout = async () => {
-    // Clear any cached navigation hints
     sessionStorage.removeItem("profileSlug");
-    // (optional) clear any other app-specific caches here
-    // sessionStorage.removeItem("lastVisitedReferralSlug");
-
     await supabase.auth.signOut();
     navigate("/email-login", { replace: true });
   };
