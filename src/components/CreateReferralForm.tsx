@@ -114,7 +114,7 @@ const CreateReferralForm: React.FC = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const slug = res.data?.slug;
-      if (slug) navigate(`/referral/${slug}`);
+      if (slug) navigate(`/referral/${slug}/thread`);
       else setMessage("Referral created, but no slug returned.");
     } catch (err: unknown) {
       console.error(err);

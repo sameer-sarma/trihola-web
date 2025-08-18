@@ -72,24 +72,43 @@ const ReferralThread: React.FC = () => {
 
   useEffect(() => { refreshThread(); }, [refreshThread]);
 
-  useEffect(() => {
-    if (!slug || !token) return;
-    const ws = new WebSocket(`${__WS_BASE__}/referrals/${slug}/thread/ws?token=${token}`);
+useEffect(() => {
+  if (!slug || !token) return;
 
-    ws.onmessage = (event) => {
-      try {
-        const newEvent: ReferralThreadEventDTO = JSON.parse(event.data);
-        setEvents((prev) => [...prev, newEvent]);
-      } catch (err) {
-        console.error("Invalid WebSocket message format", err);
-      }
-    };
+  // Build a safe URL and encode the token (JWT contains '.' and '+')
+  let url: URL;
+  try {
+    url = new URL(`/referrals/${slug}/thread/ws`, __WS_BASE__);
+  } catch (e) {
+    console.error("Invalid __WS_BASE__ for WebSocket:", __WS_BASE__, e);
+    return;
+  }
+  url.searchParams.set("token", token);
 
-    ws.onclose = () => console.log("WebSocket closed");
-    ws.onerror = (err) => console.error("WebSocket error", err);
+  const ws = new WebSocket(url.toString());
 
-    return () => ws.close();
-  }, [slug, token]);
+  ws.onopen = () => {
+    console.log("WebSocket open:", url.toString());
+    // Optional: small hello/ping if your server expects it
+    // ws.send(JSON.stringify({ type: "PING" }));
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const newEvent: ReferralThreadEventDTO = JSON.parse(event.data);
+      setEvents((prev) => [...prev, newEvent]);
+    } catch (err) {
+      console.error("Invalid WebSocket message format", err, event.data);
+    }
+  };
+
+  ws.onclose = (ev) =>
+    console.log("WebSocket closed:", ev.code, ev.reason || "(no reason)");
+  ws.onerror = (err) => console.error("WebSocket error", err);
+
+  return () => ws.close();
+}, [slug, token]);
+
 
   // auto-scroll on new events
   useEffect(() => {
