@@ -1,72 +1,74 @@
-import { useEffect, useRef } from "react";
+// src/pages/RedirectToOwnProfile.tsx
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { getOwnProfile } from "../services/profileService";
 
-type LocationState = { slug?: string } | null;
+const PROFILE_SLUG_KEY = "profileSlug";
 
 const RedirectToOwnProfile: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = (location.state as LocationState) || null;
-
-  const ranOnce = useRef(false);
 
   useEffect(() => {
-    if (ranOnce.current) return;
-    ranOnce.current = true;
+    let cancelled = false;
 
-    const slugFromState = state?.slug;
-    const slugFromStorage = sessionStorage.getItem("profileSlug");
-
-    // 1) Fast path: state slug
-    if (slugFromState) {
-      if (slugFromStorage !== slugFromState) {
-        sessionStorage.setItem("profileSlug", slugFromState);
+    const goto = (slug: string) => {
+      if (!slug) {
+        navigate("/email-login", { replace: true });
+        return;
       }
-      navigate(`/profile/${slugFromState}`, { replace: true });
-      return;
-    }
+      const target = `/profile/${slug}`;
+      if (location.pathname !== target) {
+        sessionStorage.setItem(PROFILE_SLUG_KEY, slug);
+        navigate(target, { replace: true });
+      }
+    };
 
-    // 2) Fast path: cached slug
-    if (slugFromStorage) {
-      navigate(`/profile/${slugFromStorage}`, { replace: true });
-      return;
-    }
+    const run = async () => {
+      // If already at /profile/:slug, cache & stop
+      const match = location.pathname.match(/^\/profile\/([^/]+)$/);
+      if (match?.[1]) {
+        const existing = sessionStorage.getItem(PROFILE_SLUG_KEY);
+        if (existing !== match[1]) sessionStorage.setItem(PROFILE_SLUG_KEY, match[1]);
+        return;
+      }
 
-    // 3) Fallback: fetch once
-    const ctrl = new AbortController();
-    (async () => {
+      // 1) state.slug
+      const slugFromState = (location.state as { slug?: string } | null)?.slug;
+      if (slugFromState) { goto(slugFromState); return; }
+
+      // 2) cached slug
+      const cached = sessionStorage.getItem(PROFILE_SLUG_KEY);
+      if (cached) { goto(cached); return; }
+
+      // 3) fetch once
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        if (!token) {
-          navigate("/email-login", { replace: true });
-          return;
-        }
-        const me = await getOwnProfile(token); // should return { slug: string }
-        const mySlug = me?.slug;
-        if (mySlug) {
-          sessionStorage.setItem("profileSlug", mySlug);
-          navigate(`/profile/${mySlug}`, { replace: true });
-        } else {
-          navigate("/email-login", { replace: true });
-        }
+        if (!token) { navigate("/email-login", { replace: true }); return; }
+        const me = await getOwnProfile(token);
+        if (!cancelled) goto(me?.slug ?? "");
       } catch (e: any) {
-        if (e?.name !== "AbortError") {
+        if (!cancelled && e?.name !== "AbortError") {
           console.error("RedirectToOwnProfile error:", e);
+          navigate("/email-login", { replace: true });
         }
-        navigate("/email-login", { replace: true });
       }
-    })();
+    };
 
-    return () => ctrl.abort();
-  }, [navigate, state]);
+    // fire & forget
+    void run();
 
-  // Optional tiny placeholder; won't be visible long
-  return <p style={{ textAlign: "center", marginTop: 24, color: "var(--text-muted)" }}>
-    Redirecting to your profile…
-  </p>;
+    return () => { cancelled = true; };
+    // 👇 key changes on same-path navigations, so logic re-runs
+  }, [location.key, location.pathname, location.state, navigate]);
+
+  return (
+    <p style={{ textAlign: "center", marginTop: 24, color: "var(--text-muted)" }}>
+      Redirecting to your profile…
+    </p>
+  );
 };
 
 export default RedirectToOwnProfile;

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Register from "./pages/Register";
 import EmailLogin from "./pages/EmailLogin";
 import PhoneOtpLogin from "./pages/PhoneOtpLogin";
@@ -7,13 +7,13 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import RedirectToOwnProfile from "./pages/RedirectToOwnProfile";
 import PublicProfilePage from "./pages/PublicProfilePage";
-import VerifyPhone from "./pages/VerifyPhone";
+import VerifyPhone from "./pages/VerifyPhone";            // optional page (not forced)
 import EditProfile from "./pages/EditProfile";
 import ContactsPage from "./pages/ContactsPage";
 import ReferralFeed from "./pages/ReferralFeed";
 import CreateReferralForm from "./components/CreateReferralForm";
 import ReferralThread from "./components/ReferralThread";
-//import ReferralDetails from "./pages/ReferralDetails";
+// import ReferralDetails from "./pages/ReferralDetails";
 import UserSettingsForm from "./pages/UserSettingsForm";
 import OfferTemplates from "./pages/OfferTemplates";
 import AddOfferTemplate from "./pages/AddOfferTemplate";
@@ -41,10 +41,10 @@ interface UserProfile {
   birthday?: string;
   linkedinUrl?: string;
   registeredAsBusiness?: boolean;
-  phoneVerified: boolean;
+  phoneVerified?: boolean;
 }
 
-const App: React.FC = () => {
+const AppInner: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile>({
     phone: "",
@@ -54,72 +54,82 @@ const App: React.FC = () => {
     address: "",
     profileImageUrl: "",
     bio: "",
-    phoneVerified: false,
   });
 
-  // 🔁 Tri-state so we don't mount VerifyPhone until profile is known
-  const [phoneVerified, setPhoneVerified] = useState<boolean | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(false);
-  const lastFetchedUserId = useRef<string | null>(null);
+  const location = useLocation();
 
+  // 🔎 Detect recovery flow (Supabase verify -> redirect with type=recovery)
+  const isRecoveryFlow =
+    location.pathname === "/reset-password" ||
+    location.search.includes("type=recovery") ||
+    location.hash.includes("type=recovery");
+
+  // Keep session in sync
   useEffect(() => {
-    const loadSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-    };
+    let mounted = true;
 
-    loadSession();
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (mounted) setSession(session);
+    })();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (mounted) setSession(nextSession);
     });
 
-    return () => listener?.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
+  // Fetch profile once when logged in (used by EditProfile / OfferTemplates props)
   useEffect(() => {
-    const fetchProfile = async () => {
-      const userId = session?.user?.id;
-      if (!userId) return;
-
-      // Avoid duplicate fetches in React StrictMode/dev or when session object changes shape
-      if (lastFetchedUserId.current === userId && phoneVerified !== null) return;
-      lastFetchedUserId.current = userId;
-
-      const ctrl = new AbortController();
-      setLoadingProfile(true);
+    let cancelled = false;
+    const run = async () => {
+      if (!session?.access_token) return;
       try {
         const { data } = await axios.get(`${__API_BASE__}/profile`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
-          signal: ctrl.signal,
         });
-        setProfile(data);
-        setPhoneVerified(data.phoneVerified);
-      } catch {
-        setPhoneVerified(false);
-      } finally {
-        setLoadingProfile(false);
+        if (!cancelled) setProfile(data);
+      } catch (e) {
+        // Non-fatal: pages can still fetch what they need
+        if (!cancelled) console.warn("Profile fetch failed in App:", e);
       }
-
-      return () => ctrl.abort();
     };
-
-    fetchProfile();
-    // Only depend on the stable identifier to prevent noisy re-runs
-  }, [session?.user?.id, session?.access_token, phoneVerified]);
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.access_token]);
 
   const userId = session?.user?.id ?? "";
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setProfile(prev => ({ ...prev, [name]: value }));
+    setProfile((prev) => ({ ...prev, [name]: value }));
   };
+
+  const refreshProfile = useCallback(async () => {
+    if (!session?.access_token) return;
+    try {
+      const { data } = await axios.get(`${__API_BASE__}/profile`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      setProfile(data);
+    } catch (e) {
+      console.warn("Profile refresh failed:", e);
+    }
+  }, [session?.access_token]);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session) return;
+    if (!session?.access_token) return;
 
-    const { registeredAsBusiness: _, slug: __, ...payload } = profile;
+    const { registeredAsBusiness: _omit, slug: _omit2, ...payload } = profile;
 
     await axios.post(`${__API_BASE__}/profile`, payload, {
       headers: { Authorization: `Bearer ${session.access_token}` },
@@ -127,36 +137,31 @@ const App: React.FC = () => {
   };
 
   const handleImageUpload = (url: string) => {
-    setProfile(prev => ({ ...prev, profileImageUrl: url }));
+    setProfile((prev) => ({ ...prev, profileImageUrl: url }));
   };
 
   return (
-    <Router>
+    <>
       <Header />
       <div className="p-4">
         <Routes>
-          {!session ? (
+          {/* ✅ Always expose reset route so recovery can land here even with a session */}
+          <Route path="/reset-password" element={<ResetPassword />} />
+
+          {/* Public routes if NOT logged in OR if we're in a recovery flow */}
+          {!session || isRecoveryFlow ? (
             <>
               <Route path="/register" element={<Register />} />
               <Route path="/email-login" element={<EmailLogin />} />
               <Route path="/phone-login" element={<PhoneOtpLogin />} />
-              <Route path="/verify-phone" element={<VerifyPhone />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="*" element={<Navigate to="/register" />} />
-            </>
-          ) : phoneVerified === null ? (
-            <>
-              {/* While profile is loading, render a simple loading route so VerifyPhone doesn't mount yet */}
-              <Route path="*" element={<div>Loading your profile…{loadingProfile ? " (contacting server)" : ""}</div>} />
-            </>
-          ) : !phoneVerified ? (
-            <>
-              <Route path="/verify-phone" element={<VerifyPhone onComplete={() => setPhoneVerified(true)} />} />
-              <Route path="*" element={<Navigate to="/verify-phone" />} />
+              {/* optional public access to verify page (can remove if you want) */}
+              <Route path="/verify-phone" element={<VerifyPhone />} />
+              <Route path="*" element={<Navigate to="/email-login" replace />} />
             </>
           ) : (
             <>
+              {/* Profile routes */}
               <Route path="/profile" element={<RedirectToOwnProfile />} />
               <Route path="/profile/:slug" element={<PublicProfilePage />} />
               <Route
@@ -167,10 +172,13 @@ const App: React.FC = () => {
                     userId={userId}
                     onChange={handleProfileChange}
                     onSubmit={handleProfileSubmit}
+                    onProfileRefresh={refreshProfile}
                     onImageUpload={handleImageUpload}
                   />
                 }
               />
+
+              {/* App routes */}
               <Route path="/contacts" element={<ContactsPage />} />
               <Route path="/contacts/add" element={<AddContactForm />} />
               <Route path="/referrals" element={<ReferralFeed />} />
@@ -189,11 +197,22 @@ const App: React.FC = () => {
               <Route path="/offer-template/:templateId/edit" element={<EditOfferTemplate token={session.access_token} />} />
               <Route path="/offers/:assignedOfferId" element={<OfferDetailsPage />} />
               <Route path="/qrcode" element={<QRCodePage />} />
+
+              {/* default for authed users: go to /profile (redirector handles slug) */}
+              <Route path="*" element={<Navigate to="/profile" replace />} />
             </>
           )}
         </Routes>
       </div>
       <Footer />
+    </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <AppInner />
     </Router>
   );
 };

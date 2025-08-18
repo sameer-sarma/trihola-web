@@ -1,7 +1,6 @@
-// src/pages/EmailLogin.tsx
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 
 const EmailLogin: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -12,16 +11,30 @@ const EmailLogin: React.FC = () => {
   const [showResend, setShowResend] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
+  // If already logged in, send to /profile — EXCEPT during password recovery.
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      // ✅ Skip redirect if we're on the reset page or a recovery flow
+      const isRecoveryFlow =
+        location.pathname === "/reset-password" ||
+        location.search.includes("type=recovery") ||
+        location.hash.includes("type=recovery");
+
+      if (isRecoveryFlow) return;
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (session?.user?.id) {
-        navigate("/verify-phone");
+        navigate("/profile", { replace: true });
       }
     };
+
     checkSession();
-  }, [navigate]);
+  }, [navigate, location]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,37 +44,21 @@ const EmailLogin: React.FC = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (error) {
         setError(error.message);
+        if (error.message.includes("Email not confirmed")) setShowResend(true);
+        return;
+      }
 
-        if (error.message.includes("Email not confirmed")) {
-          setShowResend(true);
-        }
-} else if (data.session) {
-  try {
-    const token = data.session.access_token;
-    const res = await fetch(`${__API_BASE__}/profile`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) throw new Error("Failed to fetch profile");
-
-    const profile = await res.json();
-
-    if (!profile.phoneVerified) {
-      navigate("/verify-phone");
-    } else {
-      navigate("/profile"); // this will redirect to /profile/:slug internally
-    }
-  } catch (err) {
-    console.error("Error checking phone verification:", err);
-    navigate("/verify-phone"); // fallback
-  }
-}
+      if (data.session) {
+        // Let RedirectToOwnProfile handle slug.
+        navigate("/profile", { replace: true });
+      }
     } catch (err) {
       setError("Unexpected error occurred.");
       console.error("Login error:", err);
@@ -75,10 +72,8 @@ const EmailLogin: React.FC = () => {
     setError(null);
     setMessage(null);
     const { error } = await supabase.auth.resend({ type: "signup", email });
-
-    if (error) {
-      setError("Failed to resend verification email.");
-    } else {
+    if (error) setError("Failed to resend verification email.");
+    else {
       setMessage("Verification email sent. Please check your inbox.");
       setShowResend(false);
     }

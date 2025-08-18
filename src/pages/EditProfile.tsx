@@ -1,8 +1,10 @@
+// src/pages/EditProfile.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProfilePictureUploader from "../components/ProfilePictureUploader";
 import BusinessProfileForm from "../components/BusinessProfileForm";
 import { unregisterBusiness } from "../services/businessService";
+import VerifyPhoneInline from "../components/VerifyPhoneInline";
 import "../css/EditProfile.css";
 
 interface Props {
@@ -18,13 +20,15 @@ interface Props {
     birthday?: string;
     linkedinUrl?: string;
     phone: string | null;
+    phoneVerified?: boolean;
     registeredAsBusiness?: boolean;
   };
   userId: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
-  onImageUpload: (url: string) => void; // currently URL; later we can switch to path
+  onImageUpload: (url: string) => void;
   loading?: boolean;
+  onProfileRefresh?: () => Promise<void> | void;   // ✅ NEW
 }
 
 const EditProfile: React.FC<Props> = ({
@@ -33,15 +37,24 @@ const EditProfile: React.FC<Props> = ({
   onChange,
   onSubmit,
   onImageUpload,
-  loading
+  loading,
+  onProfileRefresh,                                   // ✅ NEW
 }) => {
   const [isBusiness, setIsBusiness] = useState<boolean>(!!profile.registeredAsBusiness);
   const [showBusinessForm, setShowBusinessForm] = useState<boolean>(false);
+
+  // Local mirror so the banner hides immediately
+  const [phoneVerifiedLocal, setPhoneVerifiedLocal] = useState<boolean>(profile.phoneVerified ?? false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
     setIsBusiness(!!profile.registeredAsBusiness);
   }, [profile.registeredAsBusiness]);
+
+  useEffect(() => {
+    setPhoneVerifiedLocal(profile.phoneVerified ?? false);
+  }, [profile.phoneVerified]);
 
   const handleUnregister = async () => {
     if (confirm("Are you sure you want to unregister as a business?")) {
@@ -68,11 +81,7 @@ const EditProfile: React.FC<Props> = ({
           <div className="avatar-block">
             <div className="avatar-preview">
               {profile.profileImageUrl ? (
-                <img
-                  src={profile.profileImageUrl}
-                  alt="Profile"
-                  className="avatar-img"
-                />
+                <img src={profile.profileImageUrl} alt="Profile" className="avatar-img" />
               ) : (
                 <div className="avatar-placeholder">No Image</div>
               )}
@@ -80,7 +89,26 @@ const EditProfile: React.FC<Props> = ({
             <ProfilePictureUploader userId={userId} onUploadComplete={onImageUpload} />
           </div>
 
+          {/* Phone verification banner */}
+          {profile.phone && !phoneVerifiedLocal && (
+            <section className="card soft mt-3">
+              <header className="card-header compact">
+                <h4 className="card-title">Phone verification</h4>
+              </header>
+              <p className="info-text" style={{ marginTop: 4 }}>
+                Your phone <strong>{profile.phone}</strong> isn’t verified. Verify to enable referrals & messaging.
+              </p>
+              <VerifyPhoneInline
+                onVerified={async () => {
+                  setPhoneVerifiedLocal(true);           // instant UI update
+                  await onProfileRefresh?.();            // ✅ ask parent to refetch profile
+                }}
+              />
+            </section>
+          )}
+
           <form onSubmit={handleSubmit} className="form-grid">
+            {/* ... (rest unchanged) ... */}
             <div className="form-group">
               <label>First Name</label>
               <input name="firstName" value={profile.firstName || ""} onChange={onChange} required />
@@ -136,10 +164,7 @@ const EditProfile: React.FC<Props> = ({
           {!isBusiness ? (
             <>
               {!showBusinessForm ? (
-                <button
-                  className="secondary-btn"
-                  onClick={() => setShowBusinessForm(true)}
-                >
+                <button className="secondary-btn" onClick={() => setShowBusinessForm(true)}>
                   Register as a Business
                 </button>
               ) : (
