@@ -5,6 +5,7 @@ import EmailLogin from "./pages/EmailLogin";
 import PhoneOtpLogin from "./pages/PhoneOtpLogin";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AuthCallback from "./pages/AuthCallback";
 import RedirectToOwnProfile from "./pages/RedirectToOwnProfile";
 import PublicProfilePage from "./pages/PublicProfilePage";
 import VerifyPhone from "./pages/VerifyPhone";            // optional page (not forced)
@@ -147,7 +148,8 @@ const AppInner: React.FC = () => {
         <Routes>
           {/* ✅ Always expose reset route so recovery can land here even with a session */}
           <Route path="/reset-password" element={<ResetPassword />} />
-
+          <Route path="/auth/callback" element={<AuthCallback />} /> 
+          
           {/* Public routes if NOT logged in OR if we're in a recovery flow */}
           {!session || isRecoveryFlow ? (
             <>
