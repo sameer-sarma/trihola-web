@@ -1,0 +1,54 @@
+/* Layout */
+.crf { max-width: 1080px; margin: 0 auto; }
+.crf-title { font-size: 24px; font-weight: 600; margin: 8px 0 16px; }
+
+.crf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .crf-grid { grid-template-columns: 1fr; } }
+
+.crf-column { display: flex; flex-direction: column; gap: 10px; }
+
+/* Selected cards */
+.crf-selected { border: 1px solid #e4e4e7; border-radius: 12px; padding: 12px; background: #fff; }
+.crf-selected-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.crf-label { font-weight: 600; }
+.crf-clear { background: transparent; border: 0; color: #7c3aed; cursor: pointer; font-size: 13px; }
+
+.crf-selected-body { display: flex; gap: 10px; align-items: center; }
+.crf-selected-name { font-weight: 600; }
+.crf-selected-placeholder { color: #6b7280; font-size: 14px; }
+
+/* Search */
+.crf-search { display: flex; gap: 8px; }
+.crf-search input { flex: 1; padding: 8px 10px; border: 1px solid #d4d4d8; border-radius: 10px; }
+.crf-search.with-toggle { align-items: center; justify-content: space-between; }
+.crf-toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #3f3f46; }
+
+/* List */
+.crf-list { border: 1px solid #e4e4e7; border-radius: 12px; background: #fff; max-height: 360px; overflow: auto; }
+.crf-empty { padding: 12px; color: #6b7280; font-size: 14px; }
+
+/* Option row */
+.crf-option { display: grid; grid-template-columns: 40px 1fr; gap: 10px; width: 100%;
+  padding: 8px 10px; border-bottom: 1px solid #f1f5f9; background: #fff; text-align: left; cursor: pointer; }
+.crf-option:last-child { border-bottom: 0; }
+.crf-option:hover { background: #fafafa; }
+.crf-option.is-selected { background: #f5f3ff; outline: 2px solid #d6bcfa; }
+
+.crf-avatar { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: #f4f4f5; }
+.crf-avatar.lg { width: 56px; height: 56px; border-radius: 12px; }
+
+.crf-option-meta { display: flex; flex-direction: column; justify-content: center; }
+.crf-option-primary { font-weight: 600; line-height: 1.2; }
+.crf-option-secondary { font-size: 12px; color: #6b7280; }
+
+/* Note + actions */
+.crf-note { margin-top: 18px; display: grid; gap: 8px; }
+.crf-note textarea { padding: 10px; border: 1px solid #d4d4d8; border-radius: 10px; resize: vertical; }
+
+.crf-actions { margin-top: 16px; display: flex; gap: 12px; align-items: center; }
+.crf-primary { background: #7c3aed; color: #fff; border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+.crf-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.crf-msg { margin: 0; font-size: 14px; }
+.crf-msg.ok { color: #059669; }
+.crf-msg.err { color: #dc2626; }
