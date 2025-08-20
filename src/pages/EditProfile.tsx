@@ -65,7 +65,8 @@ const EditProfile: React.FC<Props> = ({
 
 const handleSubmit = async (e: React.FormEvent) => { 
   e.preventDefault(); await onSubmit(e); 
-  navigate("/profile/${profile.slug}"); 
+  const slug = profile.slug?.trim();
+  navigate(slug ? `/profile/${slug}` : "/profile", { replace: true });
 };
 
   return (
