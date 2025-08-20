@@ -1,0 +1,47 @@
+.grid {
+  display: grid;
+  gap: 16px;
+}
+@media (min-width: 720px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+.card {
+  background: #fff;
+  border: 1px solid #e7e7e9;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(16,24,40,.05);
+  transition: box-shadow .15s ease, transform .02s ease;
+}
+.card:hover { box-shadow: 0 2px 8px rgba(16,24,40,.08); }
+
+.card__title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+.card__desc {
+  color: #4b5563;
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+
+.card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.card__footer {
+  display: flex;
+  gap: 14px;
+  margin-top: 12px;
+}
+.card__link {
+  font-size: 13px;
+  color: #2563eb;
+  text-decoration: none;
+}
+.card__link:hover { text-decoration: underline; }
