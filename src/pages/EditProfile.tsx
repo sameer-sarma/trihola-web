@@ -25,7 +25,7 @@ interface Props {
   };
   userId: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onSubmit: (e: React.FormEvent) => Promise<{ slug: string }> | void;
+  onSubmit: (e: React.FormEvent) => void;
   onImageUpload: (url: string) => void;
   loading?: boolean;
   onProfileRefresh?: () => Promise<void> | void;   // ✅ NEW
@@ -63,19 +63,10 @@ const EditProfile: React.FC<Props> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const updated = await onSubmit(e);
-
-    // If parent returned updated profile
-    if (updated && "slug" in updated) {
-      navigate(`/profile/${updated.slug}`);
-    } else {
-      navigate(`/profile/${profile.slug}`);
-    }
-
-    await onProfileRefresh?.();
-  };
+const handleSubmit = async (e: React.FormEvent) => { 
+  e.preventDefault(); await onSubmit(e); 
+  navigate("/profile/${profile.slug}"); 
+};
 
   return (
     <div className="container">
