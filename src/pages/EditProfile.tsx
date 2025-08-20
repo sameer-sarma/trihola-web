@@ -169,13 +169,31 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </button>
               ) : (
                 <div className="form-wrap">
-                  <BusinessProfileForm />
-                </div>
+                  <BusinessProfileForm
+                      onSuccess={async () => {
+                        await onProfileRefresh?.();                 // refresh App-level profile
+                        navigate("/profile", { replace: true }); // go to templates
+                      }}
+                      onUnregistered={async () => {
+                        await onProfileRefresh?.();
+                        navigate("/profile", { replace: true });
+                      }}
+                    />
+                  </div>
               )}
             </>
           ) : (
             <div className="form-wrap">
-              <BusinessProfileForm />
+              <BusinessProfileForm
+                onSuccess={async () => {
+                  await onProfileRefresh?.();                 // refresh App-level profile
+                  navigate("/profile", { replace: true }); // go to templates
+                }}
+                onUnregistered={async () => {
+                  await onProfileRefresh?.();
+                  navigate("/profile", { replace: true });
+                }}
+              />
             </div>
           )}
         </aside>
