@@ -23,6 +23,7 @@ import OfferTemplateDetails from "./pages/OfferTemplateDetails";
 import OfferDetailsPage from "./pages/OfferDetails";
 import AddContactForm from "./pages/AddContactForm";
 import QRCodePage from "./pages/QRCodePage";
+import LandingPage from "./pages/LandingPage";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { supabase } from "./supabaseClient";
@@ -145,66 +146,76 @@ const AppInner: React.FC = () => {
     <>
       <Header />
       <div className="p-4">
-        <Routes>
-          {/* ✅ Always expose reset route so recovery can land here even with a session */}
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/auth/callback" element={<AuthCallback />} /> 
-          
-          {/* Public routes if NOT logged in OR if we're in a recovery flow */}
-          {!session || isRecoveryFlow ? (
-            <>
-              <Route path="/register" element={<Register />} />
-              <Route path="/email-login" element={<EmailLogin />} />
-              <Route path="/phone-login" element={<PhoneOtpLogin />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              {/* optional public access to verify page (can remove if you want) */}
-              <Route path="/verify-phone" element={<VerifyPhone />} />
-              <Route path="*" element={<Navigate to="/email-login" replace />} />
-            </>
-          ) : (
-            <>
-              {/* Profile routes */}
-              <Route path="/profile" element={<RedirectToOwnProfile />} />
-              <Route path="/profile/:slug" element={<PublicProfilePage />} />
-              <Route
-                path="/profile/edit"
-                element={
-                  <EditProfile
-                    profile={profile}
-                    userId={userId}
-                    onChange={handleProfileChange}
-                    onSubmit={handleProfileSubmit}
-                    onProfileRefresh={refreshProfile}
-                    onImageUpload={handleImageUpload}
-                  />
-                }
-              />
+      <Routes>
+        {/* ✅ Always expose reset route so recovery can land here even with a session */}
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/auth/callback" element={<AuthCallback />} /> 
 
-              {/* App routes */}
-              <Route path="/contacts" element={<ContactsPage />} />
-              <Route path="/contacts/add" element={<AddContactForm />} />
-              <Route path="/referrals" element={<ReferralFeed />} />
-              <Route path="/referrals/new" element={<CreateReferralForm />} />
-              <Route path="/referral/:slug/thread" element={<ReferralThread />} />
-              <Route path="/settings" element={<UserSettingsForm />} />
-              <Route
-                path="/offer-templates"
-                element={<OfferTemplates profile={profile} userId={userId} token={session.access_token} />}
-              />
-              <Route
-                path="/add-offer-template"
-                element={<AddOfferTemplate profile={profile} userId={userId} token={session.access_token} />}
-              />
-              <Route path="/offer-template/:templateId" element={<OfferTemplateDetails token={session.access_token} />} />
-              <Route path="/offer-template/:templateId/edit" element={<EditOfferTemplate token={session.access_token} />} />
-              <Route path="/offers/:assignedOfferId" element={<OfferDetailsPage />} />
-              <Route path="/qrcode" element={<QRCodePage />} />
+        {/* Public routes if NOT logged in OR if we're in a recovery flow */}
+        {!session || isRecoveryFlow ? (
+          <>
+            {/* Landing page (public) */}
+            <Route path="/" element={<LandingPage />} />
 
-              {/* default for authed users: go to /profile (redirector handles slug) */}
-              <Route path="*" element={<Navigate to="/profile" replace />} />
-            </>
-          )}
-        </Routes>
+            {/* Auth-related public routes */}
+            <Route path="/register" element={<Register />} />
+            <Route path="/email-login" element={<EmailLogin />} />
+            <Route path="/phone-login" element={<PhoneOtpLogin />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* optional public access to verify page (can remove if you want) */}
+            <Route path="/verify-phone" element={<VerifyPhone />} />
+
+            {/* Default for public: go to landing */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        ) : (
+          <>
+            {/* Profile routes */}
+            <Route path="/profile" element={<RedirectToOwnProfile />} />
+            <Route path="/profile/:slug" element={<PublicProfilePage />} />
+            <Route
+              path="/profile/edit"
+              element={
+                <EditProfile
+                  profile={profile}
+                  userId={userId}
+                  onChange={handleProfileChange}
+                  onSubmit={handleProfileSubmit}
+                  onProfileRefresh={refreshProfile}
+                  onImageUpload={handleImageUpload}
+                />
+              }
+            />
+
+            {/* App routes */}
+            <Route path="/contacts" element={<ContactsPage />} />
+            <Route path="/contacts/add" element={<AddContactForm />} />
+            <Route path="/referrals" element={<ReferralFeed />} />
+            <Route path="/referrals/new" element={<CreateReferralForm />} />
+            <Route path="/referral/:slug/thread" element={<ReferralThread />} />
+            <Route path="/settings" element={<UserSettingsForm />} />
+            <Route
+              path="/offer-templates"
+              element={<OfferTemplates profile={profile} userId={userId} token={session.access_token} />}
+            />
+            <Route
+              path="/add-offer-template"
+              element={<AddOfferTemplate profile={profile} userId={userId} token={session.access_token} />}
+            />
+            <Route path="/offer-template/:templateId" element={<OfferTemplateDetails token={session.access_token} />} />
+            <Route path="/offer-template/:templateId/edit" element={<EditOfferTemplate token={session.access_token} />} />
+            <Route path="/offers/:assignedOfferId" element={<OfferDetailsPage />} />
+            <Route path="/qrcode" element={<QRCodePage />} />
+
+            {/* For authed users: / → /profile */}
+            <Route path="/" element={<Navigate to="/profile" replace />} />
+
+            {/* Default for authed users */}
+            <Route path="*" element={<Navigate to="/profile" replace />} />
+          </>
+        )}
+      </Routes>
+
       </div>
       <Footer />
     </>

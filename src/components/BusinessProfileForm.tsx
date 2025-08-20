@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // <-- add this
 import {
   getBusinessProfile,
   updateBusinessProfile,
@@ -15,6 +16,7 @@ const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
   onSuccess,
   onUnregistered,
 }) => {
+  const navigate = useNavigate(); // <-- get navigate
   const [formData, setFormData] = useState({
     businessName: "",
     businessDescription: "",
@@ -41,7 +43,9 @@ const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
     fetchProfile();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -52,7 +56,11 @@ const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
     try {
       await updateBusinessProfile(formData);
       alert("Business profile updated successfully.");
-      onSuccess?.();
+      if (onSuccess) {
+        onSuccess(); // let parent override navigation if it wants
+      } else {
+        navigate("/profile", { replace: true }); // <-- go to profile
+      }
     } catch (err) {
       console.error("Failed to update business profile", err);
       alert("Failed to update business profile.");
@@ -71,7 +79,11 @@ const BusinessProfileForm: React.FC<BusinessProfileFormProps> = ({
     try {
       await unregisterBusiness();
       alert("You are no longer registered as a business.");
-      onUnregistered?.();
+      if (onUnregistered) {
+        onUnregistered(); // parent can decide what to do
+      } else {
+        navigate("/profile", { replace: true }); // <-- go to profile
+      }
     } catch (err) {
       console.error("Failed to unregister", err);
       alert("Failed to unregister as a business.");
