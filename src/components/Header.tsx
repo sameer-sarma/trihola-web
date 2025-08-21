@@ -101,9 +101,14 @@ const Header = () => {
                 Settings
               </NavLink>
               {isBusiness && (
+                <>
                 <NavLink to="/offer-templates" className={({ isActive }) => (isActive ? "active" : "")}>
                   Offer Templates
                 </NavLink>
+                <NavLink to="/ecom" className={({ isActive }) => (isActive ? "active" : "")}>
+                   E-commerce
+                </NavLink>
+                </>
               )}
               <button onClick={handleLogout} className="logout-btn" aria-label="Logout">
                 Logout

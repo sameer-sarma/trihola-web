@@ -24,11 +24,15 @@ import OfferDetailsPage from "./pages/OfferDetails";
 import AddContactForm from "./pages/AddContactForm";
 import QRCodePage from "./pages/QRCodePage";
 import LandingPage from "./pages/LandingPage";
+import EcomIntegrations from "./pages/EcomIntegrations";
+import AddEcomIntegration from "./pages/AddEcomIntegration";
+import EditEcomIntegration from "./pages/EditEcomIntegration";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { supabase } from "./supabaseClient";
 import axios from "axios";
 import "./css/base.css";
+const API_BASE = import.meta.env.VITE_API_BASE as string;
 
 interface UserProfile {
   phone: string;
@@ -93,7 +97,7 @@ const AppInner: React.FC = () => {
     const run = async () => {
       if (!session?.access_token) return;
       try {
-        const { data } = await axios.get(`${__API_BASE__}/profile`, {
+        const { data } = await axios.get(`${API_BASE}/profile`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (!cancelled) setProfile(data);
@@ -118,7 +122,7 @@ const AppInner: React.FC = () => {
   const refreshProfile = useCallback(async () => {
     if (!session?.access_token) return;
     try {
-      const { data } = await axios.get(`${__API_BASE__}/profile`, {
+      const { data } = await axios.get(`${API_BASE}/profile`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       setProfile(data);
@@ -133,7 +137,7 @@ const AppInner: React.FC = () => {
 
     const { registeredAsBusiness: _omit, slug: _omit2, ...payload } = profile;
 
-    await axios.post(`${__API_BASE__}/profile`, payload, {
+    await axios.post(`${API_BASE}/profile`, payload, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
   };
@@ -206,7 +210,9 @@ const AppInner: React.FC = () => {
             <Route path="/offer-template/:templateId/edit" element={<EditOfferTemplate token={session.access_token} />} />
             <Route path="/offers/:assignedOfferId" element={<OfferDetailsPage />} />
             <Route path="/qrcode" element={<QRCodePage />} />
-
+            <Route path="/ecom" element={<EcomIntegrations token={session.access_token} profile={profile} userId={userId} />} />
+            <Route path="/ecom/add" element={<AddEcomIntegration token={session.access_token} profile={profile} userId={userId} businessId={userId} />} />
+            <Route path="/ecom/:integrationId/edit" element={<EditEcomIntegration token={session.access_token} profile={profile} />} />
             {/* For authed users: / → /profile */}
             <Route path="/" element={<Navigate to="/profile" replace />} />
 
