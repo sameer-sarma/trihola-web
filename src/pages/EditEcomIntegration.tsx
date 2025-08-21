@@ -1,40 +1,34 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../css/forms.css";
-import { EcomIntegrationRequest, EcomIntegrationResponse, EcomPlatform } from "../types/ecomTypes";
-import { getEcomIntegration, updateEcomIntegration } from "../services/ecomIntegrationService";
+import {
+  EcomIntegrationDTO,
+  getEcomIntegrationById,
+  revealIntegrationSecret,
+  rotateIntegrationSecret,
+  deleteEcomIntegration,
+  buildWebhookUrl,
+} from "../services/ecomIntegrationService";
 
 interface Props {
   token: string;
   profile: { registeredAsBusiness?: boolean };
 }
 
-const domainRe = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
-
-const EditEcomIntegration: React.FC<Props> = ({ token, profile }) => {
+const EditEcomIntegration: React.FC<Props> = ({ profile }) => {
   const { integrationId } = useParams<{ integrationId: string }>();
   const navigate = useNavigate();
-  const [item, setItem] = useState<EcomIntegrationResponse | null>(null);
-  const [form, setForm] = useState<EcomIntegrationRequest | null>(null);
-  const [newSecret, setNewSecret] = useState<string>("");
+  const [item, setItem] = useState<EcomIntegrationDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [secret, setSecret] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!integrationId || !token) return;
-    getEcomIntegration(integrationId, token)
-      .then((x) => {
-        setItem(x);
-        setForm({
-          integrationId: x.id,
-          businessId: x.businessId,
-          platform: x.platform,
-          domain: x.domain,
-          publicKey: x.publicKey,
-          isActive: x.isActive,
-        });
-      })
+    if (!integrationId) return;
+    getEcomIntegrationById(integrationId)
+      .then(setItem)
       .catch(() => setError("Failed to load integration"));
-  }, [integrationId, token]);
+  }, [integrationId]);
 
   if (!profile.registeredAsBusiness) {
     return (
@@ -44,32 +38,6 @@ const EditEcomIntegration: React.FC<Props> = ({ token, profile }) => {
     );
   }
 
-  function setField<K extends keyof EcomIntegrationRequest>(k: K, v: EcomIntegrationRequest[K]) {
-    setForm((p) => (p ? { ...p, [k]: v } : p));
-  }
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form) return;
-    setError(null);
-    if (!domainRe.test(form.domain)) {
-      setError("Please enter a valid domain (e.g., store.example.com)");
-      return;
-    }
-
-    const payload: EcomIntegrationRequest = {
-      ...form,
-      secret: newSecret.trim() ? newSecret : undefined, // rotate if provided
-    };
-
-    try {
-      await updateEcomIntegration(form.integrationId!, payload, token);
-      navigate("/ecom");
-    } catch {
-      setError("Failed to update integration");
-    }
-  }
-
   if (error) {
     return (
       <div className="page-wrap">
@@ -77,7 +45,7 @@ const EditEcomIntegration: React.FC<Props> = ({ token, profile }) => {
       </div>
     );
   }
-  if (!form || !item) {
+  if (!item) {
     return (
       <div className="page-wrap">
         <div className="form-card"><p className="help">Loading…</p></div>
@@ -85,76 +53,100 @@ const EditEcomIntegration: React.FC<Props> = ({ token, profile }) => {
     );
   }
 
+  const webhookUrl = buildWebhookUrl(item);
+
+async function doReveal() {
+  if (!item) {
+    alert("Integration not loaded yet. Please wait.");
+    return;
+  }
+  const s = await revealIntegrationSecret(item.id);
+  if (s) {
+    setSecret(s);
+    await navigator.clipboard.writeText(s).catch(() => {});
+    alert("Secret revealed and copied.");
+  } else {
+    alert("Secret not available to reveal. Use Rotate to generate a new one.");
+  }
+}
+
+async function doRotate() {
+  if (!item) {
+    alert("Integration not loaded yet. Please wait.");
+    return;
+  }
+  try {
+    setBusy(true);
+    await rotateIntegrationSecret(item.id);
+    setSecret(null);
+    alert("Secret rotated. Update your store configuration.");
+  } catch (e: any) {
+    alert(e?.message ?? "Rotate failed");
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function doDelete() {
+  if (!item) {
+    alert("Integration not loaded yet. Please wait.");
+    return;
+  }
+  if (!confirm("Delete this integration? This cannot be undone.")) return;
+  try {
+    await deleteEcomIntegration(item.id);
+    navigate("/ecom");
+  } catch {
+    alert("Failed to delete");
+  }
+}
+
   return (
     <div className="page-wrap">
       <div className="form-card">
-        <h2 className="page-title">Edit E-commerce Integration</h2>
+        <h2 className="page-title">Manage E-commerce Integration</h2>
 
-        <form onSubmit={onSubmit} className="form form--two-col">
-          <div className="section-block" style={{ gridColumn: "1 / -1" }}>
-            <div className="section-header">🔧 Connection</div>
-            <div className="section-grid">
-              <div className="form-group">
-                <label className="label">Platform</label>
-                <select
-                  className="select"
-                  value={form.platform}
-                  onChange={(e) => setField("platform", e.target.value as EcomPlatform)}
-                >
-                  <option value="SHOPIFY">Shopify</option>
-                  <option value="WOOCOMMERCE">WooCommerce</option>
-                  <option value="CUSTOM">Custom</option>
-                </select>
+        <div className="section-block" style={{ gridColumn: "1 / -1" }}>
+          <div className="section-header">🔧 Connection</div>
+          <div className="section-grid">
+            <div className="form-group">
+              <label className="label">Platform</label>
+              <div className="input" style={{ background: "#f9fafb" }}>{item.platform}</div>
+            </div>
+
+            <div className="form-group">
+              <label className="label">Domain</label>
+              <div className="input" style={{ background: "#f9fafb" }}>{item.domain}</div>
+            </div>
+
+            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+              <label className="label">Public Key</label>
+              <div className="input mono" style={{ background: "#f9fafb", wordBreak: "break-all" }}>{item.publicKey}</div>
+            </div>
+
+            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+              <label className="label">Webhook URL</label>
+              <div className="input mono" style={{ background: "#f9fafb", wordBreak: "break-all" }}>{webhookUrl}</div>
+              <div className="help" style={{ marginTop: 6 }}>
+                <button className="btn btn--ghost" onClick={() => navigator.clipboard.writeText(webhookUrl)}>Copy URL</button>
               </div>
+            </div>
 
-              <div className="form-group">
-                <label className="label">Domain</label>
-                <input
-                  className="input"
-                  value={form.domain}
-                  onChange={(e) => setField("domain", e.target.value.trim())}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="label">Public Key / API Key</label>
-                <input
-                  className="input"
-                  value={form.publicKey}
-                  onChange={(e) => setField("publicKey", e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="label">Rotate Secret (optional)</label>
-                <input
-                  className="input"
-                  type="password"
-                  placeholder="Enter a new secret to rotate"
-                  value={newSecret}
-                  onChange={(e) => setNewSecret(e.target.value)}
-                />
-                <div className="help">{item.hasSecret ? "A secret is set." : "No secret currently stored."} Leave blank to keep unchanged.</div>
-              </div>
-
-              <div className="form-group form-group--inline" style={{ gridColumn: "1 / -1" }}>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={!!form.isActive}
-                    onChange={(e) => setField("isActive", e.target.checked)}
-                  />
-                  Active
-                </label>
+            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+              <label className="label">Signing Secret</label>
+              <div className="input mono" style={{ background: "#f9fafb" }}>{secret ?? "••••••••••••••••••••"}</div>
+              <div className="help" style={{ marginTop: 6, display: "flex", gap: 8 }}>
+                <button className="btn btn--ghost" onClick={doReveal}>Reveal</button>
+                <button className="btn btn--ghost" onClick={doRotate} disabled={busy}>{busy ? "Rotating…" : "Rotate"}</button>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="actions" style={{ gridColumn: "1 / -1" }}>
-            <button type="button" className="btn btn--ghost" onClick={() => navigate("/ecom")}>Cancel</button>
-            <button type="submit" className="btn btn--primary">Save Changes</button>
-          </div>
-        </form>
+        <div className="actions" style={{ gridColumn: "1 / -1" }}>
+          <button type="button" className="btn btn--ghost" onClick={() => navigate("/ecom")}>Back</button>
+          <button type="button" className="btn btn--primary" onClick={doDelete}>Delete Integration</button>
+        </div>
       </div>
     </div>
   );

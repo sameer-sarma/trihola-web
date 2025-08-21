@@ -1,29 +1,24 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/forms.css";
-import { EcomIntegrationRequest, EcomPlatform } from "../types/ecomTypes";
 import { createEcomIntegration } from "../services/ecomIntegrationService";
 
 interface Props {
   token: string;
   userId: string;
   profile: { registeredAsBusiness?: boolean };
-  businessId: string; // if you keep userId == businessId, pass userId here
+  businessId: string;
 }
 
+type EcomPlatform = "SHOPIFY" | "WOOCOMMERCE" | "CUSTOM";
 const domainRe = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
 
-const AddEcomIntegration: React.FC<Props> = ({ token, profile, businessId }) => {
+const AddEcomIntegration: React.FC<Props> = ({ profile }) => {
   const navigate = useNavigate();
-  const [form, setForm] = useState<EcomIntegrationRequest>({
-    businessId,
-    platform: "SHOPIFY",
-    domain: "",
-    publicKey: "",
-    secret: "",
-    isActive: true,
-  });
+  const [platform, setPlatform] = useState<EcomPlatform>("WOOCOMMERCE");
+  const [domain, setDomain] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   if (!profile.registeredAsBusiness) {
     return (
@@ -33,20 +28,22 @@ const AddEcomIntegration: React.FC<Props> = ({ token, profile, businessId }) => 
     );
   }
 
-  function setField<K extends keyof EcomIntegrationRequest>(k: K, v: EcomIntegrationRequest[K]) {
-    setForm((p) => ({ ...p, [k]: v }));
-  }
-
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!domainRe.test(form.domain)) {
+    if (!domainRe.test(domain)) {
       setError("Please enter a valid domain (e.g., store.example.com)");
       return;
     }
-    createEcomIntegration(form, token)
-      .then(() => navigate("/ecom"))
-      .catch(() => setError("Failed to create integration"));
+    try {
+      setBusy(true);
+      await createEcomIntegration({ platform, domain: domain.trim().toLowerCase() });
+      navigate("/ecom");
+    } catch (err: any) {
+      setError(err?.message ?? "Failed to create integration");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -61,66 +58,24 @@ const AddEcomIntegration: React.FC<Props> = ({ token, profile, businessId }) => 
             <div className="section-grid">
               <div className="form-group">
                 <label className="label">Platform</label>
-                <select
-                  className="select"
-                  value={form.platform}
-                  onChange={(e) => setField("platform", e.target.value as EcomPlatform)}
-                >
-                  <option value="SHOPIFY">Shopify</option>
+                <select className="select" value={platform} onChange={(e) => setPlatform(e.target.value as EcomPlatform)}>
                   <option value="WOOCOMMERCE">WooCommerce</option>
+                  <option value="SHOPIFY">Shopify</option>
                   <option value="CUSTOM">Custom</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="label">Domain</label>
-                <input
-                  className="input"
-                  placeholder="store.example.com"
-                  value={form.domain}
-                  onChange={(e) => setField("domain", e.target.value.trim())}
-                />
-                <div className="help">Do not include protocol (no http/https).</div>
-              </div>
-
-              <div className="form-group">
-                <label className="label">Public Key / API Key</label>
-                <input
-                  className="input"
-                  placeholder="public key"
-                  value={form.publicKey}
-                  onChange={(e) => setField("publicKey", e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="label">Secret (write-only)</label>
-                <input
-                  className="input"
-                  type="password"
-                  placeholder="secret / signing key"
-                  value={form.secret ?? ""}
-                  onChange={(e) => setField("secret", e.target.value || "")}
-                />
-                <div className="help">Stored securely. You won’t see this again after saving.</div>
-              </div>
-
-              <div className="form-group form-group--inline" style={{ gridColumn: "1 / -1" }}>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={!!form.isActive}
-                    onChange={(e) => setField("isActive", e.target.checked)}
-                  />
-                  Active
-                </label>
+                <label className="label">Store Domain</label>
+                <input className="input" placeholder="store.example.com" value={domain} onChange={(e) => setDomain(e.target.value)} />
+                <div className="help">Do not include http/https.</div>
               </div>
             </div>
           </div>
 
           <div className="actions" style={{ gridColumn: "1 / -1" }}>
             <button type="button" className="btn btn--ghost" onClick={() => navigate("/ecom")}>Cancel</button>
-            <button type="submit" className="btn btn--primary">Save Integration</button>
+            <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? "Saving…" : "Save Integration"}</button>
           </div>
         </form>
       </div>

@@ -2,34 +2,39 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/forms.css";
 import "../css/cards.css";
-import { EcomIntegrationResponse, EcomPlatform } from "../types/ecomTypes";
-import { listEcomIntegrations, updateEcomIntegration, deleteEcomIntegration } from "../services/ecomIntegrationService";
+import {
+  EcomIntegrationDTO,
+  listEcomIntegrations,
+  deleteEcomIntegration,
+  revealIntegrationSecret,
+  rotateIntegrationSecret,
+  buildWebhookUrl,
+} from "../services/ecomIntegrationService";
 
 interface Props {
   profile: { registeredAsBusiness?: boolean };
   token: string;
-  userId: string; // not directly used here but handy for future
+  userId: string;
 }
 
-const EcomIntegrations: React.FC<Props> = ({ profile, token }) => {
+type EcomPlatform = "SHOPIFY" | "WOOCOMMERCE" | "CUSTOM";
+
+const EcomIntegrations: React.FC<Props> = ({ profile }) => {
   const navigate = useNavigate();
-  const [items, setItems] = useState<EcomIntegrationResponse[]>([]);
+  const [items, setItems] = useState<EcomIntegrationDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState<"" | EcomPlatform>("");
-  const [activeOnly, setActiveOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reveal, setReveal] = useState<Record<string, string>>({}); // id -> secret (revealed)
 
   useEffect(() => {
-    if (!profile.registeredAsBusiness || !token) {
-      setLoading(false);
-      return;
-    };
-    listEcomIntegrations(token)
+    if (!profile.registeredAsBusiness) { setLoading(false); return; }
+    listEcomIntegrations()
       .then(setItems)
       .catch(() => setError("Failed to load integrations"))
       .finally(() => setLoading(false));
-  }, [profile, token]);
+  }, [profile]);
 
   const filtered = useMemo(() => {
     let arr = items.slice();
@@ -40,35 +45,42 @@ const EcomIntegrations: React.FC<Props> = ({ profile, token }) => {
       );
     }
     if (typeFilter) arr = arr.filter((x) => x.platform === typeFilter);
-    if (activeOnly) arr = arr.filter((x) => x.isActive);
     arr.sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
     return arr;
-  }, [items, q, typeFilter, activeOnly]);
+  }, [items, q, typeFilter]);
 
-  async function toggleActive(it: EcomIntegrationResponse) {
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this integration? Webhooks from this store will stop working.")) return;
     try {
-      const upd = await updateEcomIntegration(it.id, {
-        integrationId: it.id,
-        businessId: it.businessId,
-        platform: it.platform,
-        domain: it.domain,
-        publicKey: it.publicKey,
-        // IMPORTANT: do not set secret here; leave it undefined
-        isActive: !it.isActive,
-      }, token);
-      setItems((prev) => prev.map((p) => (p.id === it.id ? upd : p)));
+      await deleteEcomIntegration(id);
+      setItems((prev) => prev.filter((x) => x.id !== id));
     } catch {
-      alert("Failed to toggle status");
+      alert("Failed to delete");
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this integration? This cannot be undone.")) return;
+  async function handleReveal(id: string) {
+    const s = await revealIntegrationSecret(id);
+    if (s) {
+      setReveal((m) => ({ ...m, [id]: s }));
+      await navigator.clipboard.writeText(s).catch(() => {});
+      alert("Secret revealed and copied to clipboard. Update your store if needed.");
+    } else {
+      alert("Secret not available to reveal. Use Rotate to get a new one.");
+    }
+  }
+
+  async function handleRotate(id: string) {
     try {
-      await deleteEcomIntegration(id, token);
-      setItems((prev) => prev.filter((x) => x.id !== id));
-    } catch {
-      alert("Failed to delete integration");
+      await rotateIntegrationSecret(id);
+      setReveal((m) => {
+        const n = { ...m };
+        delete n[id];
+        return n;
+      });
+      alert("Secret rotated. Please update your store/webhook configuration.");
+    } catch (e: any) {
+      alert(e?.message ?? "Rotate failed");
     }
   }
 
@@ -119,12 +131,6 @@ const EcomIntegrations: React.FC<Props> = ({ profile, token }) => {
               <option value="CUSTOM">Custom</option>
             </select>
           </div>
-          <div className="form-group form-group--inline">
-            <label className="switch">
-              <input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />
-              Active only
-            </label>
-          </div>
         </div>
       </div>
 
@@ -132,29 +138,42 @@ const EcomIntegrations: React.FC<Props> = ({ profile, token }) => {
         <div className="form-card"><p className="help">No integrations found.</p></div>
       ) : (
         <div className="grid">
-          {filtered.map((it) => (
-            <div className="card" key={it.id}>
-              <h3 className="card__title">{it.domain}</h3>
-              <p className="card__desc">Platform: {it.platform}</p>
+          {filtered.map((it) => {
+            const webhookUrl = buildWebhookUrl(it);
+            const secretShown = reveal[it.id];
+            return (
+              <div className="card" key={it.id}>
+                <h3 className="card__title">{it.domain}</h3>
+                <p className="card__desc">Platform: {it.platform}</p>
 
-              <div className="card__meta">
-                <span className={`pill ${it.isActive ? "pill--ok" : "pill--muted"}`}>
-                  {it.isActive ? "Active" : "Inactive"}
-                </span>
-                <span className="pill pill--info">{it.hasSecret ? "Secret: Set" : "Secret: —"}</span>
-              </div>
+                <div className="card__meta">
+                  <span className="pill pill--info">Public Key: <code>{it.publicKey}</code></span>
+                </div>
 
-              <div className="help" style={{ marginTop: 8 }}>
-                Public Key: <code>{it.publicKey}</code>
-              </div>
+                <div className="help" style={{ marginTop: 8 }}>
+                  <div><strong>Webhook URL</strong></div>
+                  <div className="mono" style={{ wordBreak: "break-all" }}>{webhookUrl}</div>
+                  <div style={{ marginTop: 6 }}>
+                    <button className="btn btn--ghost" onClick={() => navigator.clipboard.writeText(webhookUrl)}>Copy URL</button>
+                  </div>
+                </div>
 
-              <div className="card__footer">
-                <a className="card__link" onClick={() => navigate(`/ecom/${it.id}/edit`)}>Edit</a>
-                <a className="card__link" onClick={() => toggleActive(it)}>{it.isActive ? "Deactivate" : "Activate"}</a>
-                <a className="card__link" onClick={() => handleDelete(it.id)}>Delete</a>
+                <div className="help" style={{ marginTop: 8 }}>
+                  <div><strong>Signing Secret</strong></div>
+                  <div className="mono">{secretShown ? secretShown : "••••••••••••••••••••"}</div>
+                  <div style={{ marginTop: 6, display: "flex", gap: 8 }}>
+                    <button className="btn btn--ghost" onClick={() => handleReveal(it.id)}>Reveal</button>
+                    <button className="btn btn--ghost" onClick={() => handleRotate(it.id)}>Rotate</button>
+                  </div>
+                </div>
+
+                <div className="card__footer">
+                  <a className="card__link" onClick={() => navigate(`/ecom/${it.id}/edit`)}>Manage</a>
+                  <a className="card__link" onClick={() => handleDelete(it.id)}>Delete</a>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
