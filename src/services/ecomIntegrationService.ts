@@ -57,9 +57,15 @@ export async function deleteEcomIntegration(id: string): Promise<void> {
   if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
 }
 
-export async function rotateIntegrationSecret(id: string): Promise<{ rotatedAt: string; publicKey: string }> {
-  const headers = await authHeader();
-  const res = await fetch(`${API_BASE}/ecom/integrations/${id}/rotate-secret`, { method: "POST", headers });
+export async function rotateIntegrationSecret(
+  id: string
+): Promise<{ rotatedAt: string; publicKey: string }> {
+  const headers = { ...(await authHeader()), "Content-Type": "application/json" };
+  const res = await fetch(`${API_BASE}/ecom/integrations/${id}/secret/rotate`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({}),
+  });
   if (!res.ok) {
     const msg = await res.text().catch(() => "");
     throw new Error(`Rotate failed: ${res.status} ${msg}`);
@@ -67,11 +73,16 @@ export async function rotateIntegrationSecret(id: string): Promise<{ rotatedAt: 
   return res.json();
 }
 
-// Optional: only works if you kept GET /ecom/integrations/{id}/secret
-export async function revealIntegrationSecret(id: string): Promise<string | null> {
-  const headers = await authHeader();
-  const res = await fetch(`${API_BASE}/ecom/integrations/${id}/secret`, { headers });
-  if (!res.ok) return null; // treat 404 or 401 as “not available”
+export async function revealIntegrationSecret(
+  id: string
+): Promise<string | null> {
+  const headers = { ...(await authHeader()), "Content-Type": "application/json" };
+  const res = await fetch(`${API_BASE}/ecom/integrations/${id}/secret/reveal`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) return null; // treat 404/401 as “not available”
   const data = await res.json().catch(() => null);
   return data?.secret ?? null;
 }
