@@ -55,6 +55,7 @@ export interface OfferDetailsDTO {
   offerTitle: string;
   description: string;
   offerType: string;
+  claimPolicy: "ONLINE" | "MANUAL" | "BOTH";
   discountPercentage?: number;
   maxDiscountAmount?: number;
   discountAmount?: number;

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../css/ReferralThread.css";
-import { fetchClaimDetails } from "../services/offerService";
+import { fetchClaimDetails, fetchOfferDetails } from "../services/offerService";
 import { supabase } from "../supabaseClient";
 
 interface OfferActivityMetadata {
@@ -9,7 +9,30 @@ interface OfferActivityMetadata {
 }
 
 type ClaimStatus = "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
-type ClaimApprovalPolicy = "BOTH" | "MANUAL" | "OFFLINE";
+type ClaimPolicy = "ONLINE" | "MANUAL" | "BOTH";
+
+const asClaimStatus = (s: string | null | undefined): ClaimStatus | null => {
+  switch (s) {
+    case "PENDING":
+    case "APPROVED":
+    case "REJECTED":
+    case "EXPIRED":
+      return s;
+    default:
+      return null;
+  }
+};
+
+const asClaimPolicy = (s: string | null | undefined): ClaimPolicy | null => {
+  switch (s) {
+    case "ONLINE":
+    case "MANUAL":
+    case "BOTH":
+      return s;
+    default:
+      return null;
+  }
+};
 
 interface OfferActivityProps {
   timestamp: string;
@@ -37,7 +60,7 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
 }) => {
   const [claimStatus, setClaimStatus] = useState<ClaimStatus | null>(null);
   const [claimExpiresAt, setClaimExpiresAt] = useState<string | null>(null);
-  const [approvalPolicy, setApprovalPolicy] = useState<ClaimApprovalPolicy | null>(null);
+  const [claimPolicy, setClaimPolicy] = useState<ClaimPolicy | null>(null);
 
   const trimmedContent = content?.trim();
   const displayMessage =
@@ -47,78 +70,82 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
       ? `${actorName} assigned the offer “${offerTitle}” to the ${recipientName?.toLowerCase() || "recipient"}.`
       : `${actorName} updated the offer “${offerTitle}”.`;
 
-  // Load claim details (status, expiresAt, approval policy)
   useEffect(() => {
-    const loadStatus = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token || !metadata?.claimId) return;
 
       try {
-        // Expecting: { status, expiresAt, approvalPolicy }
+        // 1) Claim
         const claim = await fetchClaimDetails(token, metadata.claimId);
+        const narrowedStatus = asClaimStatus(claim?.status);
+        const expiresAt: string | null = claim?.expiresAt ?? null;
 
-        const rawStatus: ClaimStatus = claim.status;
-        const expiresAt: string | null = claim.expiresAt ?? null; // ISO string or null
-        const policy: ClaimApprovalPolicy | null = claim.approvalPolicy ?? null;
-
-        // Compute EXPIRED if pending & past expiry
-        let effectiveStatus: ClaimStatus = rawStatus;
-        if (rawStatus === "PENDING" && expiresAt) {
-          const now = Date.now();
+        // Pending → Expired based on timestamp
+        let effective: ClaimStatus | null = narrowedStatus;
+        if (effective === "PENDING" && expiresAt) {
           const expMs = new Date(expiresAt).getTime();
-          if (!Number.isNaN(expMs) && expMs < now) {
-            effectiveStatus = "EXPIRED";
+          if (!Number.isNaN(expMs) && expMs < Date.now()) {
+            effective = "EXPIRED";
           }
         }
 
-        setClaimStatus(effectiveStatus);
+        if (effective) setClaimStatus(effective);
         setClaimExpiresAt(expiresAt);
-        setApprovalPolicy(policy);
-      } catch (err) {
-        console.error("Failed to fetch offer/claim status", err);
+
+        // 2) Assigned offer → claimPolicy (try both direct & via template)
+        let policy: ClaimPolicy | null = null;
+        if (claim?.assignedOfferId) {
+          const assigned = await fetchOfferDetails(token, claim.assignedOfferId);
+          // try common locations where teams store this:
+          //   assigned.claimPolicy
+          //   assigned.policy
+          //   assigned.offerTemplate?.claimPolicy
+          //   assigned.template?.claimPolicy
+          policy =
+            asClaimPolicy(assigned?.claimPolicy) ||
+            null;
+        }
+
+        setClaimPolicy(policy);
+      } catch (e) {
+        console.error("OfferActivity load error:", e);
       }
     };
 
-    loadStatus();
+    load();
   }, [metadata?.claimId]);
 
-  // Optional: re-evaluate pending→expired edge while user keeps the thread open
+  // Auto flip to expired while open
   useEffect(() => {
     if (claimStatus !== "PENDING" || !claimExpiresAt) return;
     const expMs = new Date(claimExpiresAt).getTime();
     if (Number.isNaN(expMs)) return;
 
-    const tick = () => {
+    const id = setInterval(() => {
       if (Date.now() > expMs) setClaimStatus("EXPIRED");
-    };
-
-    // check every 30s
-    const id = setInterval(tick, 30_000);
+    }, 30_000);
     return () => clearInterval(id);
   }, [claimStatus, claimExpiresAt]);
 
   const canApprove = useMemo(() => {
-    const isClaimInactive =
+    const inactive =
       claimStatus === "APPROVED" ||
       claimStatus === "REJECTED" ||
       claimStatus === "EXPIRED";
 
-    // Only allow manual approval if policy is MANUAL or BOTH
-    const policyAllowsApproval =
-      approvalPolicy === "MANUAL" || approvalPolicy === "BOTH";
+    // Only MANUAL or BOTH allow business-side approval (never ONLINE)
+    const policyAllows = claimPolicy === "MANUAL" || claimPolicy === "BOTH";
 
-    const result =
+    return (
       !!onApproveClaim &&
-      !isClaimInactive &&
+      !inactive &&
       isBusinessOnReferral &&
       !!metadata?.claimId &&
-      policyAllowsApproval;
-
-    return result;
-  }, [claimStatus, approvalPolicy, isBusinessOnReferral, metadata?.claimId, onApproveClaim]);
+      policyAllows
+    );
+  }, [claimStatus, claimPolicy, isBusinessOnReferral, metadata?.claimId, onApproveClaim]);
 
   const claimId = metadata?.claimId;
 
