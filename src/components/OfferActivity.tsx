@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "../css/ReferralThread.css";
-import { fetchClaimDetails, fetchOfferDetails } from "../services/offerService";
+import { fetchClaimDetails, fetchOfferDetails, markClaimExpired } from "../services/offerService";
 import { supabase } from "../supabaseClient";
 
 interface OfferActivityMetadata {
@@ -8,7 +8,7 @@ interface OfferActivityMetadata {
   claimId?: string;
 }
 
-type ClaimStatus = "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+type ClaimStatus = "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED" | "REDEEMED";
 type ClaimPolicy = "ONLINE" | "MANUAL" | "BOTH";
 
 const asClaimStatus = (s: string | null | undefined): ClaimStatus | null => {
@@ -17,6 +17,7 @@ const asClaimStatus = (s: string | null | undefined): ClaimStatus | null => {
     case "APPROVED":
     case "REJECTED":
     case "EXPIRED":
+    case "REDEEMED":
       return s;
     default:
       return null;
@@ -61,6 +62,10 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
   const [claimStatus, setClaimStatus] = useState<ClaimStatus | null>(null);
   const [claimExpiresAt, setClaimExpiresAt] = useState<string | null>(null);
   const [claimPolicy, setClaimPolicy] = useState<ClaimPolicy | null>(null);
+  const [token, setToken] = useState<string | null>(null); // NEW: keep token so we can call expire later too
+
+  // Guard so we POST /expire only once per claim
+  const sentExpireOnceRef = useRef<Record<string, true>>({});
 
   const trimmedContent = content?.trim();
   const displayMessage =
@@ -73,41 +78,38 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token || !metadata?.claimId) return;
+      const tok = session?.access_token ?? null;
+      setToken(tok);
+      if (!tok || !metadata?.claimId) return;
 
       try {
         // 1) Claim
-        const claim = await fetchClaimDetails(token, metadata.claimId);
+        const claim = await fetchClaimDetails(tok, metadata.claimId);
         const narrowedStatus = asClaimStatus(claim?.status);
         const expiresAt: string | null = claim?.expiresAt ?? null;
 
-        // Pending → Expired based on timestamp
+        // Pending → Expired based on timestamp, and reconcile with server once
         let effective: ClaimStatus | null = narrowedStatus;
         if (effective === "PENDING" && expiresAt) {
           const expMs = new Date(expiresAt).getTime();
           if (!Number.isNaN(expMs) && expMs < Date.now()) {
             effective = "EXPIRED";
+            if (!sentExpireOnceRef.current[claim.id]) {
+              sentExpireOnceRef.current[claim.id] = true;
+              markClaimExpired(tok, claim.id).catch(() => {/* best-effort */});
+            }
           }
         }
 
         if (effective) setClaimStatus(effective);
         setClaimExpiresAt(expiresAt);
 
-        // 2) Assigned offer → claimPolicy (try both direct & via template)
+        // 2) Assigned offer → claimPolicy
         let policy: ClaimPolicy | null = null;
         if (claim?.assignedOfferId) {
-          const assigned = await fetchOfferDetails(token, claim.assignedOfferId);
-          // try common locations where teams store this:
-          //   assigned.claimPolicy
-          //   assigned.policy
-          //   assigned.offerTemplate?.claimPolicy
-          //   assigned.template?.claimPolicy
-          policy =
-            asClaimPolicy(assigned?.claimPolicy) ||
-            null;
+          const assigned = await fetchOfferDetails(tok, claim.assignedOfferId);
+          policy = asClaimPolicy(assigned?.claimPolicy) || null;
         }
-
         setClaimPolicy(policy);
       } catch (e) {
         console.error("OfferActivity load error:", e);
@@ -115,19 +117,28 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
     };
 
     load();
-  }, [metadata?.claimId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metadata?.claimId]); // keep minimal deps like your original
 
-  // Auto flip to expired while open
+  // Auto flip to expired while open (UI), and reconcile server once
   useEffect(() => {
     if (claimStatus !== "PENDING" || !claimExpiresAt) return;
     const expMs = new Date(claimExpiresAt).getTime();
     if (Number.isNaN(expMs)) return;
 
     const id = setInterval(() => {
-      if (Date.now() > expMs) setClaimStatus("EXPIRED");
+      if (Date.now() > expMs) {
+        setClaimStatus("EXPIRED");
+        const claimId = metadata?.claimId;
+        if (token && claimId && !sentExpireOnceRef.current[claimId]) {
+          sentExpireOnceRef.current[claimId] = true;
+          markClaimExpired(token, claimId).catch(() => {/* best-effort */});
+        }
+      }
     }, 30_000);
+
     return () => clearInterval(id);
-  }, [claimStatus, claimExpiresAt]);
+  }, [claimStatus, claimExpiresAt, metadata?.claimId, token]);
 
   const canApprove = useMemo(() => {
     const inactive =

@@ -53,7 +53,7 @@ export async function fetchClaimDetails(token: string, claimId: string): Promise
   });
   if (!res.ok) throw new Error("Failed to fetch claim details");
   return await res.json();
-}
+};
 
 export const approveClaim = async (
   claimId: string,
@@ -76,5 +76,26 @@ export const approveClaim = async (
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Failed to approve claim: ${response.status} ${errorText}`);
+  }
+};
+
+export const markClaimExpired = async (
+  token: string,
+  claimId: string
+): Promise<void> => {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE}/claims/${claimId}/expire`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.warn (`Failed to expire claim: ${response.status} ${errorText}`);
   }
 };
