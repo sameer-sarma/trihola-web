@@ -72,6 +72,7 @@ export interface OfferEventMetadata {
   actorName: string;
   recipientName: string;
   offerId: string;
+  claimId?: string;
   offerTitle: string;
   eventSubType: string;
   previousStatus?: string;

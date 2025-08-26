@@ -1,29 +1,42 @@
 // src/pages/OfferDetails.tsx
-
 import React, { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { supabase } from "../supabaseClient";
 import OfferCard from "../components/OfferCard";
 import { OfferDetailsDTO } from "../types/offer";
-import { QRCodeSVG } from "qrcode.react";
+import { useOfferClaims } from "../hooks/useOfferClaims"; // <-- your hook
 import "../css/OfferDetails.css";
+
+const OfferDetailsLoaded: React.FC<{ offer: OfferDetailsDTO }> = ({ offer }) => {
+  // One fetch for claims (no duplicate API calls)
+  const { manual, online, generateManual, generateOnline } = useOfferClaims(offer);
+
+  return (
+    <div className="offer-details-container">
+      <OfferCard
+        offer={offer}
+        manualClaim={manual}
+        onlineClaim={online}
+        onGenerateManual={generateManual}
+        onGenerateOnline={generateOnline}
+      />
+    </div>
+  );
+};
 
 const OfferDetails: React.FC = () => {
   const { assignedOfferId } = useParams();
   const [offer, setOffer] = useState<OfferDetailsDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [claimQrValue, setClaimQrValue] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOffer = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
+      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
+
       if (!token || !assignedOfferId) {
         setError("Missing token or offer ID.");
         setLoading(false);
@@ -32,9 +45,7 @@ const OfferDetails: React.FC = () => {
 
       try {
         const response = await axios.get(`${__API_BASE__}/offers/${assignedOfferId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setOffer(response.data);
       } catch (error: unknown) {
@@ -57,69 +68,6 @@ const OfferDetails: React.FC = () => {
     fetchOffer();
   }, [assignedOfferId]);
 
-  const handleClaim = async (assignedOffer: OfferDetailsDTO) => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const token = session?.access_token;
-
-    if (!assignedOfferId || !token) return;
-
-    const offerType = offer?.offerType; // e.g., "DISCOUNT", "FREE_SERVICE", etc.
-  const redemptionType = offerType; // reuse offerType for now
-
-  // Optionally determine redemptionValue
-let redemptionValue: string | null = null;
-
-switch (offerType) {
-  case "FIXED_DISCOUNT":
-redemptionValue = assignedOffer?.discountAmount != null
-  ? String(assignedOffer.discountAmount)
-  : null;
-    break;
-  case "FREE_SERVICE":
-    redemptionValue = assignedOffer?.serviceName ?? null;
-    break;
-  case "FREE_PRODUCT":
-    redemptionValue = assignedOffer?.productName ?? null;
-    break;
-  case "PERCENTAGE_DISCOUNT":
-    redemptionValue = null; // not needed or derived later
-    break;
-  default:
-    redemptionValue = null;
-}
-
-  const payload = {
-    redemptionType,
-    redemptionValue,
-    note: "Initiating claim", // optional static or user-entered
-    expiresInMinutes: 10,
-  };
-
-  try {
-    const response = await axios.post(
-      `${__API_BASE__}/offers/${assignedOffer.assignedOfferId}/claim`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    setClaimQrValue(
-      JSON.stringify({
-        assignedOfferId: assignedOffer.assignedOfferId,
-        claimToken: response.data.claimToken,
-      })
-    );
-  } catch (err) {
-    console.error("Failed to claim offer:", err);
-    alert("Failed to claim offer.");
-  }
-};
-
   if (loading) return <p className="center-text">Loading offer...</p>;
 
   if (error) {
@@ -135,49 +83,8 @@ redemptionValue = assignedOffer?.discountAmount != null
 
   if (!offer) return <p className="center-text error-message">Offer not found.</p>;
 
-  return (
-    <div className="offer-details-container">
-      <OfferCard offer={offer} />
-
-      {offer.canClaim && offer.status === "ACTIVE" && !claimQrValue && (
-        <div className="claim-button-container">
-          <button className="claim-button" onClick={() => handleClaim(offer)}>
-            Claim This Offer
-            </button>
-        </div>
-      )}
-
-      {claimQrValue && (
-        <div className="qr-container">
-          <div className="qr-card">
-            <h3 className="qr-title">🎁 Claim QR Code</h3>
-
-            <div className="qr-code">
-              <QRCodeSVG value={claimQrValue} size={160} />
-            </div>
-
-            <p className="qr-description">
-              Show this code at the business to validate your claim.
-            </p>
-
-            <Link
-              to="/qrcode"
-              state={{
-                qrValue: claimQrValue,
-                title: "🎁 Claim QR Code",
-                subtitle: `Assigned to ${offer.assignedToName}`,
-                footer: `Offer: ${offer.offerTitle}`,
-                size: 256,
-              }}
-              className="fullscreen-link"
-            >
-              View Fullscreen QR
-            </Link>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  // Render the loaded section (contains OfferCard and claims UI)
+  return <OfferDetailsLoaded offer={offer} />;
 };
 
 export default OfferDetails;

@@ -78,17 +78,29 @@ export interface ClaimRequestDTO {
   expiresInMinutes?: number;
 }
 
+export type ClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+export type ClaimSource = 'MANUAL' | 'ONLINE';
+export type ClaimPolicy = 'ONLINE' | 'MANUAL' | 'BOTH';
+
 export interface OfferClaimDTO {
   id: string;
   assignedOfferId: string;
   claimantId: string;
+  claimSource: ClaimSource;     // NEW
+  status: ClaimStatus;
+  discountCode?: string | null;
   claimedAt: string;
   expiresAt: string;
-  status: string; // e.g. "PENDING", "APPROVED", "REJECTED", "EXPIRED"
   redeemedAt?: string | null;
-  discountCode?: string | null;
   approvedBy?: string | null;
   redemptionType: string;
   redemptionValue?: string | null;
   note?: string | null;
+  platform?: string | null;
+  domain?: string | null;
+  email?: string | null;
+  checkoutId?: string | null;
+  orderId?: string | null;
+  amountApplied?: string | null;
 }
+

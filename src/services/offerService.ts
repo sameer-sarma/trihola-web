@@ -1,5 +1,5 @@
 import axios from "axios";
-import { OfferTemplateDTO, OfferDetailsDTO, OfferClaimDTO } from "../types/offer";
+import { OfferTemplateDTO, OfferDetailsDTO, OfferClaimDTO, ClaimSource } from "../types/offer";
 
 export const getOfferTemplates = async (token: string): Promise<OfferTemplateDTO[]> => {
   const response = await axios.get(`${__API_BASE__}/offer-templates`, {
@@ -99,3 +99,48 @@ export const markClaimExpired = async (
     console.warn (`Failed to expire claim: ${response.status} ${errorText}`);
   }
 };
+
+export interface ClaimRequest {
+  redemptionType: string;
+  redemptionValue?: string | null;
+  note?: string | null;
+  expiresInMinutes?: number | null;
+  claimSource: 'MANUAL' | 'ONLINE';
+}
+
+/** POST /offers/:id/claim — will honor policy + source on the server */
+export async function requestClaim(
+  token: string,
+  assignedOfferId: string,
+  payload: ClaimRequest
+): Promise<OfferClaimDTO> {
+  const res = await fetch(`${import.meta.env.VITE_API_BASE}/offers/${assignedOfferId}/claim`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || `Failed to request claim (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function fetchActiveClaimForMe(
+  token: string,
+  assignedOfferId: string,
+  source: ClaimSource
+): Promise<OfferClaimDTO | null> {
+  const res = await fetch(
+    `${import.meta.env.VITE_API_BASE}/offers/${assignedOfferId}/claims/active/me?source=${source}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  if (res.status === 404) return null; // no active claim for that source
+  if (!res.ok) return null;            // treat other errors as "none" (UI stays usable)
+
+  return (await res.json()) as OfferClaimDTO;
+}
