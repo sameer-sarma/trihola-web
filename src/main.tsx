@@ -1,10 +1,13 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './css/index.css'
-import App from './App.tsx'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./css/index.css";
+import { ReferralsProvider } from "./context/ReferralsContext";
+import App from "./App"; // extension optional
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <ReferralsProvider>
+      <App />
+    </ReferralsProvider>
+  </React.StrictMode>
+);

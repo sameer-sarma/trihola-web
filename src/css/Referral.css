@@ -202,3 +202,26 @@ button.assign-btn:disabled {
   word-wrap: break-word;
 }
 
+.participant-offer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.offer-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.offer-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: #f3f4f6; /* light gray */
+  transition: transform 120ms ease;
+}
+.offer-badge:hover { transform: scale(1.06); }

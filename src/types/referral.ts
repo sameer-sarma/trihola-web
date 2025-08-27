@@ -19,10 +19,13 @@ export interface ReferralDTO {
   businessSlug?: string;
   businessProfileImageUrl?: string;
 
-  note: string;
+  note?: string | null;
   status: string;
   businessAcceptanceStatus: string;
   prospectAcceptanceStatus: string;
+  
+  referrerOffer?: EmbeddedOfferDTO | null;
+  prospectOffer?: EmbeddedOfferDTO | null;
 
   createdAt: string;
   updatedAt: string;
@@ -94,3 +97,27 @@ export interface SystemAlertMetadata {
 }
 
 export type ParticipantRole = "REFERRER" | "PROSPECT" | "BUSINESS";
+
+export interface EmbeddedOfferDTO {
+  id: string;
+  title: string;
+  status: string;
+  assignedToName?: string | null;
+  assignedByName?: string | null;
+  validFrom?: string | null;
+  validUntil?: string | null;
+}
+
+// WebSocket envelope for side-panel updates
+export type ReferralUpdatedMsg = {
+  type: "REFERRAL_UPDATED";
+  slug: string;
+  updatedAt: string;
+  reason:
+    | "ASSIGN_OFFER" | "UNASSIGN_OFFER" | "OFFER_UPDATED"
+    | "ACCEPT" | "REJECT" | "CANCEL"
+    | "CLAIM_APPROVED" | "CLAIM_REJECTED" | "CLAIM_EXPIRED" | "CLAIM_REDEEMED"
+    | "REFERRAL_CREATED" | string;
+  changed?: string[];
+  referral: ReferralDTO;
+};

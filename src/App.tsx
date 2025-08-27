@@ -14,7 +14,7 @@ import ContactsPage from "./pages/ContactsPage";
 import ReferralFeed from "./pages/ReferralFeed";
 import CreateReferralForm from "./components/CreateReferralForm";
 import ReferralThread from "./components/ReferralThread";
-// import ReferralDetails from "./pages/ReferralDetails";
+
 import UserSettingsForm from "./pages/UserSettingsForm";
 import OfferTemplates from "./pages/OfferTemplates";
 import AddOfferTemplate from "./pages/AddOfferTemplate";
