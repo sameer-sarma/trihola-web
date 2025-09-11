@@ -1,45 +1,80 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { upsertOfferTemplate } from "../services/offerTemplateService";
-import "../css/forms.css";
+import { upsertOfferTemplate, buildOfferTemplatePayload } from "../services/offerTemplateService";
 import {
   OfferTemplateRequest,
+  UiOfferKind,
 } from "../types/offerTemplateTypes";
+import GrantEditor from "../components/GrantEditor";
+
+import ProductPicker from "../components/ProductPicker";
+import BundlePicker  from "../components/BundlePicker";
+import { productPickerLoader, bundlePickerLoader } from "../services/pickerLoaders";
 
 interface Props {
   token: string;
   userId: string;
-  profile: {
-    registeredAsBusiness?: boolean;
-  };
+  profile: { registeredAsBusiness?: boolean };
 }
 
 const AddOfferTemplate: React.FC<Props> = ({ token, userId, profile }) => {
   const navigate = useNavigate();
 
-const [form, setForm] = useState<OfferTemplateRequest>({
-  businessId: userId,
-  templateTitle: "",
-  description: "",
-  imageUrls: [],
-  specialTerms: "",
-  maxRedemptions: undefined,
-  eligibility: "",
-  offerType: "PERCENTAGE_DISCOUNT",
-  minPurchaseAmount: undefined,
-  discountPercentage: undefined,
-  maxDiscountAmount: undefined,
-  discountAmount: undefined,
-  productName: "",
-  serviceName: "",
-  validityType: "ABSOLUTE",
-  validFrom: "",
-  validTo: "",
-  durationDays: undefined,
-  trigger: undefined,
-  isActive: true,
-  claimPolicy: "BOTH",
-});
+  // UI-only selector for mutually exclusive kinds
+  const [uiOfferKind, setUiOfferKind] = useState<UiOfferKind>("PERCENTAGE");
+
+  const [form, setForm] = useState<OfferTemplateRequest>({
+    businessId: userId,
+    templateTitle: "",
+    description: "",
+    imageUrls: [],
+    specialTerms: "",
+    maxRedemptions: undefined,
+    eligibility: "",
+    // start with percentage discount by default
+    offerType: "PERCENTAGE_DISCOUNT",
+    minPurchaseAmount: undefined,
+    discountPercentage: undefined,
+    maxDiscountAmount: undefined,
+    discountAmount: undefined,
+    validityType: "ABSOLUTE",
+    validFrom: "",
+    validTo: "",
+    durationDays: undefined,
+    trigger: undefined,
+    isActive: true,
+    claimPolicy: "BOTH",
+    appliesToType: "ANY_PURCHASE",
+    appliesProductId: undefined,
+    appliesBundleId: undefined,
+    grants: [],
+  });
+
+  useEffect(() => {
+    // keep offer fields in sync when switching kind
+    if (uiOfferKind === "GRANTS") {
+      setForm((prev) => ({
+        ...prev,
+        offerType: undefined,
+        discountPercentage: undefined,
+        maxDiscountAmount: undefined,
+        discountAmount: undefined,
+      }));
+    } else if (uiOfferKind === "PERCENTAGE") {
+      setForm((prev) => ({
+        ...prev,
+        offerType: "PERCENTAGE_DISCOUNT",
+        discountAmount: undefined,
+      }));
+    } else if (uiOfferKind === "ABSOLUTE") {
+      setForm((prev) => ({
+        ...prev,
+        offerType: "FIXED_DISCOUNT",
+        discountPercentage: undefined,
+        maxDiscountAmount: undefined,
+      }));
+    }
+  }, [uiOfferKind]);
 
   if (!profile.registeredAsBusiness) {
     return (
@@ -49,134 +84,169 @@ const [form, setForm] = useState<OfferTemplateRequest>({
     );
   }
 
-// strongly-typed keys
-type NumericKeys =
-  | "discountPercentage"
-  | "maxDiscountAmount"
-  | "discountAmount"
-  | "minPurchaseAmount"
-  | "durationDays"
-  | "maxRedemptions";
+  // ---------- typed change helpers ----------
+  type NumericKeys =
+    | "discountPercentage"
+    | "maxDiscountAmount"
+    | "discountAmount"
+    | "minPurchaseAmount"
+    | "durationDays"
+    | "maxRedemptions";
 
-type BooleanKeys = "isActive";
+  type BooleanKeys = "isActive";
 
-const NUMERIC_KEYS: ReadonlyArray<NumericKeys> = [
-  "discountPercentage",
-  "maxDiscountAmount",
-  "discountAmount",
-  "minPurchaseAmount",
-  "durationDays",
-  "maxRedemptions",
-];
+  const NUMERIC_KEYS: ReadonlyArray<NumericKeys> = [
+    "discountPercentage",
+    "maxDiscountAmount",
+    "discountAmount",
+    "minPurchaseAmount",
+    "durationDays",
+    "maxRedemptions",
+  ];
 
-const BOOLEAN_KEYS: ReadonlyArray<BooleanKeys> = ["isActive"];
+  const BOOLEAN_KEYS: ReadonlyArray<BooleanKeys> = ["isActive"];
 
-function setField<K extends keyof OfferTemplateRequest>(
-  key: K,
-  raw: string,
-  checked: boolean
-) {
-  setForm((prev) => {
-    if (!prev) return prev; // keep null if not loaded yet
+  function setField<K extends keyof OfferTemplateRequest>(
+    key: K,
+    raw: string,
+    checked: boolean
+  ) {
+    setForm((prev) => {
+      const next: OfferTemplateRequest = { ...prev };
+      if ((NUMERIC_KEYS as ReadonlyArray<string>).includes(key as string)) {
+        (next[key] as unknown as number | undefined) =
+          raw === "" ? undefined : Number(raw);
+      } else if ((BOOLEAN_KEYS as ReadonlyArray<string>).includes(key as string)) {
+        (next[key] as unknown as boolean) = checked;
+      } else {
+        (next[key] as unknown as string | undefined) =
+          raw === "" ? undefined : raw;
+      }
+      return next;
+    });
+  }
 
-    const next: OfferTemplateRequest = { ...prev };
+  const updateForm = (patch: Partial<OfferTemplateRequest>) =>
+    setForm((prev) => ({ ...prev, ...patch }));
 
-    if ((NUMERIC_KEYS as ReadonlyArray<string>).includes(key as string)) {
-      // numeric fields: number | undefined
-      (next[key] as unknown as number | undefined) =
-        raw === "" ? undefined : Number(raw);
-    } else if ((BOOLEAN_KEYS as ReadonlyArray<string>).includes(key as string)) {
-      // boolean fields
-      (next[key] as unknown as boolean) = checked;
-    } else {
-      // string-ish optional fields: string | undefined
-      (next[key] as unknown as string | undefined) =
-        raw === "" ? undefined : raw;
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value, checked } = e.target as HTMLInputElement;
+    if (name === "uiOfferKind") {
+      setUiOfferKind(value as UiOfferKind);
+      return;
     }
-
-    return next;
-  });
-}
-
-const handleChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-) => {
-  const { name, value, checked } = e.target as HTMLInputElement;
-  setField(name as keyof OfferTemplateRequest, value, checked);
-};
-
-const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await upsertOfferTemplate(form, token);
-      navigate("/offer-templates");
-    } catch (err) {
-      console.error("Failed to create template", err);
-      alert("Error creating template");
-    }
+    setField(name as keyof OfferTemplateRequest, value, checked);
   };
 
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!form) return;
+
+  // Mutual exclusivity guardrails (validate only)
+  if (uiOfferKind === "GRANTS") {
+    if ((form.grants?.length ?? 0) < 1) {
+      alert("Please add at least one grant (free product or bundle).");
+      return;
+    }
+  } else if (uiOfferKind === "PERCENTAGE") {
+    if (form.discountPercentage == null) {
+      alert("Please enter a discount percentage.");
+      return;
+    }
+  } else if (uiOfferKind === "ABSOLUTE") {
+    if (form.discountAmount == null) {
+      alert("Please enter a flat discount amount.");
+      return;
+    }
+  } // ← CLOSE the else-if chain properly
+
+  // Scope checks
+  if (form.appliesToType === "PRODUCT" && !form.appliesProductId) {
+    alert("Please select a product for applicability.");
+    return;
+  }
+  if (form.appliesToType === "BUNDLE" && !form.appliesBundleId) {
+    alert("Please select a bundle for applicability.");
+    return;
+  }
+  if (form.validityType === "RELATIVE" && !form.trigger) {
+    alert("Please pick an activation trigger for relative validity.");
+    return;
+  }
+  try {
+    const payload = buildOfferTemplatePayload(form, uiOfferKind); // now typed as OfferTemplateRequest
+    await upsertOfferTemplate(payload, token); // no TS error
+    navigate("/offer-templates");
+  } catch (err) {
+    console.error("Failed to save template", err);
+    alert("Error saving template");
+  }
+};
+
+
   return (
-  <div className="page-wrap">
-    <div className="form-card">
-      <h2 className="page-title">Create Offer Template</h2>
-      <form onSubmit={handleSubmit} className="form form--two-col">
+    <div className="page-wrap">
+      <div className="form-card">
+        <h2 className="page-title">Create Offer Template</h2>
 
-        {/* BASICS */}
-        <div className="section-block" style={{ gridColumn: "1 / -1" }}>
-          <div className="section-header">🎯 Basics</div>
-          <div className="section-grid">
-            <div className="form-group">
-              <label className="label">Template Title</label>
-              <input
-                className="input"
-                type="text"
-                name="templateTitle"
-                placeholder="e.g., 15% off for first-time customers"
-                value={form.templateTitle}
-                onChange={handleChange}
-                required
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="th-form" noValidate>
+          {/* BASICS */}
+          <div className="card-section">
+            <h4 className="section-title">🎯 Basics</h4>
+            <div className="th-grid-2">
+              <div className="th-field">
+                <label className="th-label">Template Title</label>
+                <input
+                  className="th-input"
+                  type="text"
+                  name="templateTitle"
+                  placeholder="e.g., 15% off on first order"
+                  value={form.templateTitle}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div className="form-group">
-              <label className="label">Offer Type</label>
-              <select
-                className="select"
-                name="offerType"
-                value={form.offerType}
-                onChange={handleChange}
-              >
-                <option value="PERCENTAGE_DISCOUNT">Percentage Discount</option>
-                <option value="FIXED_DISCOUNT">Fixed Discount</option>
-                <option value="FREE_PRODUCT">Free Product</option>
-                <option value="FREE_SERVICE">Free Service</option>
-              </select>
-            </div>
+              <div className="th-field">
+                <label className="th-label">Offer kind</label>
+                <select
+                  className="select"
+                  name="uiOfferKind"
+                  value={uiOfferKind}
+                  onChange={handleChange}
+                >
+                  <option value="PERCENTAGE">Discount — Percentage</option>
+                  <option value="ABSOLUTE">Discount — Absolute</option>
+                  <option value="GRANTS">Grants — Free items</option>
+                </select>
+              </div>
 
-            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-              <label className="label">Description</label>
-              <textarea
-                className="textarea"
-                name="description"
-                placeholder="Short description customers will see"
-                value={form.description}
-                onChange={handleChange}
-              />
+              <div className="th-field th-col-span-2">
+                <label className="th-label">Description</label>
+                <textarea
+                  className="th-textarea"
+                  name="description"
+                  placeholder="Short description customers will see"
+                  value={form.description ?? ""}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* TYPE-SPECIFIC */}
-        <div className="section-block section-block--accent" style={{ gridColumn: "1 / -1" }}>
+        {/* TYPE-SPECIFIC (full-width stripe with 2-col grid) */}
+        <div className="section-block section-block--accent">
           <div className="section-header">🧩 Type-specific fields</div>
           <div className="section-grid">
-            {form.offerType === "PERCENTAGE_DISCOUNT" && (
+            {/* Percentage discount */}
+            {uiOfferKind === "PERCENTAGE" && (
               <>
-                <div className="form-group">
-                  <label className="label">Discount %</label>
+                <div className="th-field">
+                  <label className="th-label">Discount %</label>
                   <input
-                    className="input"
+                    className="th-input"
                     type="number"
                     name="discountPercentage"
                     placeholder="e.g., 15"
@@ -184,10 +254,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                     onChange={handleChange}
                   />
                 </div>
-                <div className="form-group">
-                  <label className="label">Max Discount Amount</label>
+                <div className="th-field">
+                  <label className="th-label">Max Discount Amount</label>
                   <input
-                    className="input"
+                    className="th-input"
                     type="number"
                     name="maxDiscountAmount"
                     placeholder="e.g., 500"
@@ -198,11 +268,12 @@ const handleSubmit = async (e: React.FormEvent) => {
               </>
             )}
 
-            {form.offerType === "FIXED_DISCOUNT" && (
-              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                <label className="label">Flat Discount Amount</label>
+            {/* Absolute discount (single field spans both columns) */}
+            {uiOfferKind === "ABSOLUTE" && (
+              <div className="th-field col-span-2">
+                <label className="th-label">Flat Discount Amount</label>
                 <input
-                  className="input"
+                  className="th-input"
                   type="number"
                   name="discountAmount"
                   placeholder="e.g., 200"
@@ -212,198 +283,225 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
             )}
 
-            {form.offerType === "FREE_PRODUCT" && (
-              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                <label className="label">Product Name</label>
-                <input
-                  className="input"
-                  type="text"
-                  name="productName"
-                  placeholder="e.g., Free coffee mug"
-                  value={form.productName ?? ""}
-                  onChange={handleChange}
-                />
-              </div>
-            )}
-
-            {form.offerType === "FREE_SERVICE" && (
-              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                <label className="label">Service Name</label>
-                <input
-                  className="input"
-                  type="text"
-                  name="serviceName"
-                  placeholder="e.g., Free hair spa"
-                  value={form.serviceName ?? ""}
-                  onChange={handleChange}
+            {/* Grants: show GrantEditor, spanning full width */}
+            {uiOfferKind === "GRANTS" && (
+              <div className="th-field col-span-2">
+                <label className="th-label">Free items</label>
+                <GrantEditor
+                  value={form.grants ?? []}
+                  onChange={(gr) => updateForm({ grants: gr })}
+                  fetchProducts={productPickerLoader}
+                  fetchBundles={bundlePickerLoader}
                 />
               </div>
             )}
           </div>
         </div>
 
-        {/* VALIDITY */}
-        <div className="section-block" style={{ gridColumn: "1 / -1" }}>
-          <div className="section-header">⏳ Validity</div>
-          <div className="section-grid">
-            <div className="form-group">
-              <label className="label">Validity Type</label>
-              <select
-                className="select"
-                name="validityType"
-                value={form.validityType}
-                onChange={handleChange}
-              >
-                <option value="ABSOLUTE">Absolute</option>
-                <option value="RELATIVE">Relative</option>
-              </select>
-            </div>
+          {/* APPLICABILITY (SCOPE) */}
+          <div className="card-section">
+            <h4 className="section-title">📦 Applicability</h4>
+            <div className="th-grid-2">
+              <div className="th-field">
+                <label className="th-label">Scope</label>
+                <select
+                  className="select"
+                  name="appliesToType"
+                  value={form.appliesToType ?? "ANY_PURCHASE"}
+                  onChange={handleChange}
+                >
+                  <option value="ANY_PURCHASE">Any purchase (global)</option>
+                  <option value="PRODUCT">Specific product</option>
+                  <option value="BUNDLE">Specific bundle</option>
+                </select>
+              </div>
 
-            {form.validityType === "ABSOLUTE" ? (
-              <>
-                <div className="form-group">
-                  <label className="label">Valid From</label>
-                  <input
-                    className="input"
-                    type="date"
-                    name="validFrom"
-                    value={form.validFrom ?? ""}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="label">Valid To</label>
-                  <input
-                    className="input"
-                    type="date"
-                    name="validTo"
-                    value={form.validTo ?? ""}
-                    onChange={handleChange}
-                  />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="form-group">
-                  <label className="label">Duration (days)</label>
-                  <input
-                    className="input"
-                    type="number"
-                    name="durationDays"
-                    placeholder="e.g., 30"
-                    value={form.durationDays ?? ""}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="label">Activation Trigger</label>
-                  <select
-                    className="select"
-                    name="trigger"
-                    value={form.trigger ?? ""}
-                    onChange={handleChange}
-                  >
-                    <option value="">Select Trigger</option>
-                    <option value="ON_ASSIGNMENT">On Assignment</option>
-                    <option value="ON_ACCEPTANCE">On Acceptance</option>
-                    <option value="ON_CLAIM_OF_LINKED_OFFER">On Claim of Linked Offer</option>
-                  </select>
-                </div>
-              </>
+            {form.appliesToType === "PRODUCT" && (
+              <div className="th-field">
+                <label className="th-label">Product</label>
+                <ProductPicker
+                  value={form.appliesProductId ?? null}
+                  onChange={(id) => updateForm({ appliesProductId: id ?? undefined })}
+                  fetchItems={productPickerLoader}
+                  placeholder="Search product…"
+                />
+              </div>
             )}
+
+            {form.appliesToType === "BUNDLE" && (
+              <div className="th-field">
+                <label className="th-label">Bundle</label>
+                <BundlePicker
+                  value={form.appliesBundleId ?? null}
+                  onChange={(id) => updateForm({ appliesBundleId: id ?? undefined })}
+                  fetchItems={bundlePickerLoader}
+                  placeholder="Search bundle…"
+                />
+              </div>
+            )}
+            </div>
+            <p className="th-help">Tip: we can swap these for dropdown selectors later.</p>
           </div>
-        </div>
 
-        {/* RULES (OPTIONAL) */}
-        <details className="group" style={{ gridColumn: "1 / -1" }}>
-          <summary>⚙️  Rules & Optional Limits</summary>
-          <div className="hr" />
-          <div className="section-grid">
-            <div className="form-group">
-              <label className="label">Minimum Purchase Amount</label>
-              <input
-                className="input"
-                type="number"
-                name="minPurchaseAmount"
-                placeholder="e.g., 1000"
-                value={form.minPurchaseAmount ?? ""}
-                onChange={handleChange}
-              />
+          {/* VALIDITY */}
+          <div className="section-block">
+            <div className="section-header">⏳ Validity</div>
+            <div className="section-grid">
+              <div className="th-field">
+                <label className="th-label">Validity Type</label>
+                <select
+                  className="select"
+                  name="validityType"
+                  value={form.validityType}
+                  onChange={handleChange}
+                >
+                  <option value="ABSOLUTE">Absolute</option>
+                  <option value="RELATIVE">Relative</option>
+                </select>
+              </div>
+
+              {form.validityType === "ABSOLUTE" ? (
+                <>
+                  <div className="th-field">
+                    <label className="th-label">Valid From</label>
+                    <input
+                      className="th-input"
+                      type="date"
+                      name="validFrom"
+                      value={form.validFrom ?? ""}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="th-field">
+                    <label className="th-label">Valid To</label>
+                    <input
+                      className="th-input"
+                      type="date"
+                      name="validTo"
+                      value={form.validTo ?? ""}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="th-field">
+                    <label className="th-label">Duration (days)</label>
+                    <input
+                      className="th-input"
+                      type="number"
+                      name="durationDays"
+                      placeholder="e.g., 30"
+                      value={form.durationDays ?? ""}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="th-field">
+                    <label className="th-label">Activation Trigger</label>
+                    <select
+                      className="select"
+                      name="trigger"
+                      value={form.trigger ?? ""}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select Trigger</option>
+                      <option value="ON_ASSIGNMENT">On Assignment</option>
+                      <option value="ON_ACCEPTANCE">On Acceptance</option>
+                      <option value="ON_CLAIM_OF_LINKED_OFFER">On Claim of Linked Offer</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
+          </div>
 
-            <div className="form-group">
-              <label className="label">Max Redemptions</label>
-              <input
-                className="input"
-                type="number"
-                name="maxRedemptions"
-                placeholder="e.g., 100"
-                value={form.maxRedemptions ?? ""}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="label">Claim Mode</label>
-              <select
-                className="select"
-                name="claimPolicy"
-                value={form.claimPolicy || "BOTH"}
-                onChange={handleChange}
-              >
-                <option value="BOTH">Online & Offline</option>
-                <option value="ONLINE">E-commerce only</option>
-                <option value="MANUAL">Direct purchases</option>
-              </select>
-            </div>
-
-            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-              <label className="label">Eligibility</label>
-              <textarea
-                className="textarea"
-                name="eligibility"
-                placeholder="Who can redeem (e.g., new users only)"
-                value={form.eligibility ?? ""}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-              <label className="label">Special Terms</label>
-              <textarea
-                className="textarea"
-                name="specialTerms"
-                placeholder="Important T&Cs to show users"
-                value={form.specialTerms ?? ""}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group form-group--inline" style={{ gridColumn: "1 / -1" }}>
-              <label className="switch">
+          {/* RULES (OPTIONAL) */}
+          <details className="section-details">
+            <summary>⚙️ Rules & Optional Limits</summary>
+            <div className="section-grid">
+              <div className="th-field">
+                <label className="th-label">Minimum Purchase Amount</label>
                 <input
-                  type="checkbox"
-                  name="isActive"
-                  checked={!!form.isActive}
+                  className="th-input"
+                  type="number"
+                  name="minPurchaseAmount"
+                  placeholder="e.g., 1000"
+                  value={form.minPurchaseAmount ?? ""}
                   onChange={handleChange}
                 />
-                Active
-              </label>
-            </div>
-          </div>
-        </details>
+              </div>
 
-        {/* ACTIONS */}
-        <div className="actions" style={{ gridColumn: "1 / -1" }}>
-          <button type="submit" className="btn btn--primary">Save Template</button>
-          <button type="button" className="btn btn--ghost" onClick={() => navigate("/offer-templates")}>
-            Cancel
-          </button>
-        </div>
-</form>
+              <div className="th-field">
+                <label className="th-label">Max Redemptions</label>
+                <input
+                  className="th-input"
+                  type="number"
+                  name="maxRedemptions"
+                  placeholder="e.g., 100"
+                  value={form.maxRedemptions ?? ""}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="th-field col-span-2">
+                <label className="th-label">Claim Mode</label>
+                <select
+                  className="select"
+                  name="claimPolicy"
+                  value={form.claimPolicy || "BOTH"}
+                  onChange={handleChange}
+                >
+                  <option value="BOTH">Online & Offline</option>
+                  <option value="ONLINE">E-commerce only</option>
+                  <option value="MANUAL">Direct purchases</option>
+                </select>
+              </div>
+
+              <div className="th-field col-span-2">
+                <label className="th-label">Eligibility</label>
+                <textarea
+                  className="th-textarea"
+                  name="eligibility"
+                  placeholder="Who can redeem (e.g., new users only)"
+                  value={form.eligibility ?? ""}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="th-field col-span-2">
+                <label className="th-label">Special Terms</label>
+                <textarea
+                  className="th-textarea"
+                  name="specialTerms"
+                  placeholder="Important T&Cs to show users"
+                  value={form.specialTerms ?? ""}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="th-field col-span-2">
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    checked={!!form.isActive}
+                    onChange={handleChange}
+                  />
+                  Active
+                </label>
+              </div>
+            </div>
+          </details>
+
+          {/* ACTIONS */}
+          <div className="actions">
+            <button type="submit" className="btn btn--primary">Save Template</button>
+            <button type="button" className="btn btn--ghost" onClick={() => navigate("/offer-templates")}>Cancel</button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default AddOfferTemplate;

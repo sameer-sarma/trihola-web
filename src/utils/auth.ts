@@ -1,4 +1,5 @@
 import axios from "axios";
+import { supabase } from "../supabaseClient";
 
 export const refreshAccessToken = async (
   setAccessToken: (token: string | null) => void
@@ -19,3 +20,13 @@ export const refreshAccessToken = async (
     return null;
   }
 };
+
+export async function authFetch(url: string, init?: RequestInit): Promise<Response> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  const headers = new Headers(init?.headers);
+  headers.set("Accept", "application/json");
+  if (!headers.has("Content-Type") && init?.body) headers.set("Content-Type", "application/json");
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  return fetch(url, { ...init, headers });
+}

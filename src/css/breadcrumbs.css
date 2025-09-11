@@ -1,0 +1,8 @@
+/* src/css/breadcrumbs.css (import where you like) */
+.th-breadcrumbs { color:#666; margin-bottom:8px; }
+.th-breadcrumbs ol { list-style:none; padding:0; margin:0; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.th-breadcrumbs li { display:flex; gap:6px; align-items:center; max-width:100%; }
+.th-breadcrumbs a { color:#1f6feb; text-decoration:none; }
+.th-breadcrumbs a:hover { text-decoration:underline; }
+.th-breadcrumbs .sep { color:#999; }
+.th-breadcrumbs .current span { color:#111; font-weight:600; }

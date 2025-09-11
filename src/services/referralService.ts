@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ReferralDTO, ReferralThreadEventDTO } from "../types/referral";
+import { CreateReferralReq, ReferralDTO, ReferralThreadEventDTO } from "../types/referral";
 import { supabase } from "../supabaseClient";
 
 const authHeader = (token: string) => ({
@@ -15,17 +15,17 @@ export const fetchMyReferrals = async (token: string): Promise<ReferralDTO[]> =>
 };
 
 // ✅ Create a referral
-interface CreateReferralPayload {
-  prospectEmail?: string;
-  prospectPhone?: string;
-  businessEmail?: string;
-  businessPhone?: string;
-  note: string;
-}
+//interface CreateReferralPayload {
+//  prospectEmail?: string;
+//  prospectPhone?: string;
+//  businessEmail?: string;
+//  businessPhone?: string;
+//  note: string;
+//}
 
 export const createReferral = async (
   token: string,
-  data: CreateReferralPayload
+  data: CreateReferralReq
 ): Promise<ReferralDTO> => {
   const response = await axios.post(`${__API_BASE__}/referral/create`, data, authHeader(token));
   return response.data;

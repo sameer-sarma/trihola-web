@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 const ForgotPassword: React.FC = () => {
@@ -15,31 +16,45 @@ const ForgotPassword: React.FC = () => {
       redirectTo: `${window.location.origin}/reset-password`,
     });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setMessage("Password reset email sent. Please check your inbox.");
-    }
+    if (error) setError(error.message);
+    else setMessage("Password reset email sent. Please check your inbox.");
   };
 
   return (
-    <div className="max-w-sm mx-auto p-4 border rounded-lg shadow">
-      <h3 className="text-xl font-semibold mb-4">Forgot Password</h3>
-      <form onSubmit={handleReset}>
-        <input
-          type="email"
-          placeholder="Your email"
-          className="w-full p-2 border rounded mb-2"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded">
-          Send Reset Email
-        </button>
-      </form>
-      {message && <p className="text-green-600 mt-3">{message}</p>}
-      {error && <p className="text-red-600 mt-3">{error}</p>}
+    <div className="th-page auth-page">
+      <div className="card card--narrow">
+        <h2 className="card-title">Forgot your password?</h2>
+        <p className="card-subtle">We’ll email you a link to reset it.</p>
+
+        <form className="th-form" onSubmit={handleReset}>
+          <div className="th-field">
+            <label htmlFor="fp-email" className="th-label">Email address</label>
+            <input
+              id="fp-email"
+              type="email"
+              className="th-input"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="th-field">
+            <button type="submit" className="btn btn--primary btn--block">
+              Send reset email
+            </button>
+          </div>
+        </form>
+
+        {message && <div className="alert alert--success">{message}</div>}
+        {error && <div className="alert alert--error">{error}</div>}
+
+        <div className="form-help">
+          Remembered it?{" "}
+          <Link to="/email-login" className="th-link">Back to login</Link>
+        </div>
+      </div>
     </div>
   );
 };

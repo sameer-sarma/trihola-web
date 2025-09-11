@@ -1,53 +1,62 @@
-// /src/types/offerTemplateTypes.ts
+// Server-offer types (kept as-is)
+export type OfferType = "PERCENTAGE_DISCOUNT" | "FIXED_DISCOUNT"| "GRANT";
 
-export type OfferTypeEnum = "PERCENTAGE_DISCOUNT" | "FIXED_DISCOUNT" | "FREE_PRODUCT" | "FREE_SERVICE";
-export type ValidityType = "ABSOLUTE" | "RELATIVE";
-export type ActivationCondition = "ON_ASSIGNMENT" | "ON_ACCEPTANCE" | "ON_CLAIM_OF_LINKED_OFFER";
+// UI selector (mutually exclusive)
+export type UiOfferKind = "PERCENTAGE" | "ABSOLUTE" | "GRANTS";
 
-// Keep enum names exactly as Ktor uses them:
-export type ClaimPolicy = "BOTH" | "ONLINE" | "MANUAL";
+// Applicability/scope
+export type OfferAppliesToType = "ANY_PURCHASE" | "PRODUCT" | "BUNDLE";
 
+// Grants (free items)
+export interface OfferGrantLine {
+  itemType: "PRODUCT" | "BUNDLE";
+  productId?: string;
+  bundleId?: string;
+  quantity?: number; // default 1
+}
+
+// Main request used by upsertOfferTemplate
 export interface OfferTemplateRequest {
   businessId: string;
-  offerTemplateId?: string;
+  offerTemplateId?: string | null;
 
-  // Metadata
+  // If UI kind is GRANTS, omit offerType & discount fields
+  offerType?: OfferType;
+  discountPercentage?: number;
+  maxDiscountAmount?: number;
+  discountAmount?: number;
+  minPurchaseAmount?: number;
   templateTitle: string;
-  description: string;
-  imageUrls?: string[] | null;
-  specialTerms?: string | null;
-  maxRedemptions?: number | null;
-  eligibility?: string | null;
+  description?: string;
+  imageUrls?: string[];
+  specialTerms?: string;
+  maxRedemptions?: number;
+  eligibility?: string;
 
-  // Offer Type
-  offerType: OfferTypeEnum;
-  minPurchaseAmount?: number | null;
-
-  // % Discount
-  discountPercentage?: number | null;
-  maxDiscountAmount?: number | null;
-
-  // Fixed Discount
-  discountAmount?: number | null;
-
-  // Free Product / Service
-  productName?: string | null;
-  serviceName?: string | null;
-
-  // Validity
-  validityType: ValidityType;
+  validityType: "ABSOLUTE" | "RELATIVE";
   validFrom?: string | null;
   validTo?: string | null;
-  durationDays?: number | null;
-  trigger?: ActivationCondition | null;
+  durationDays?: number;
+  trigger?: "ON_ASSIGNMENT" | "ON_ACCEPTANCE" | "ON_CLAIM_OF_LINKED_OFFER";
 
-  isActive: boolean;
-  claimPolicy?: ClaimPolicy | null; // default BOTH if omitted
+  isActive?: boolean;
+  claimPolicy?: "BOTH" | "ONLINE" | "MANUAL";
+
+  appliesToType?: OfferAppliesToType;
+  appliesProductId?: string | null;
+  appliesBundleId?: string | null;
+
+  grants?: OfferGrantLine[];
 }
 
-export interface OfferTemplateResponse extends Omit<OfferTemplateRequest, "businessId"> {
-  businessId: string;
+// If you need it elsewhere
+export interface OfferTemplateResponse extends OfferTemplateRequest {
   offerTemplateId: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
+
+export type PickerItem = {
+  id: string;
+  title: string;        // display name
+  subtitle?: string;    // optional extra
+  imageUrl?: string | null;
+};

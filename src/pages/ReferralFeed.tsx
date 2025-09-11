@@ -6,7 +6,7 @@ import {
   fetchMyReferrals,
   acceptReferral,
   rejectReferral,
-  cancelReferral
+  cancelReferral,
 } from "../services/referralService";
 import ReferralCard from "../components/ReferralCard";
 
@@ -31,7 +31,9 @@ const ReferralFeed: React.FC = () => {
 
   useEffect(() => {
     const loadSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.access_token && session.user?.id) {
         setAccessToken(session.access_token);
         setUserId(session.user.id);
@@ -59,31 +61,49 @@ const ReferralFeed: React.FC = () => {
   const handleCancel = async (id: string) => {
     if (!accessToken) return;
     try {
-      await cancelReferral(accessToken, id); // Make sure this exists in referralService
+      await cancelReferral(accessToken, id);
       await loadReferrals(accessToken);
     } catch (err) {
       console.error("Error cancelling referral:", err);
     }
   };
 
-  if (loading) return <p className="text-center mt-6 text-gray-600">Loading referrals...</p>;
-
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Your Referrals</h2>
-        <button
-          onClick={() => navigate("/referrals/new")}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
-        >
-          + New Referral
-        </button>
+    <div className="th-page">
+      {/* Header */}
+      <div className="th-header">
+        <h2 className="page-title">Your Referrals</h2>
+        <div className="th-header-actions">
+          <button
+            onClick={() => navigate("/referrals/new")}
+            className="btn btn--primary"
+          >
+            + New Referral
+          </button>
+        </div>
       </div>
 
-      {referrals.length === 0 ? (
-        <p className="text-gray-500">You have no referrals yet.</p>
+      {/* Content */}
+      {loading ? (
+        <div className="card">
+          <p className="th-muted">Loading referrals…</p>
+        </div>
+      ) : referrals.length === 0 ? (
+        <div className="card">
+          <p className="th-muted" style={{ marginBottom: 10 }}>
+            You have no referrals yet.
+          </p>
+          <div>
+            <button
+              onClick={() => navigate("/referrals/new")}
+              className="btn btn--primary"
+            >
+              Create your first referral
+            </button>
+          </div>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="th-stack">
           {referrals.map((ref) => (
             <ReferralCard
               key={ref.id}
@@ -91,7 +111,7 @@ const ReferralFeed: React.FC = () => {
               userId={userId ?? ""}
               onAccept={handleAccept}
               onReject={handleReject}
-              onCancel={handleCancel} // <-- Pass cancel handler here
+              onCancel={handleCancel}
             />
           ))}
         </div>

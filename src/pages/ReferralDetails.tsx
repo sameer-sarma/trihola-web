@@ -4,10 +4,12 @@ import { supabase } from "../supabaseClient";
 import { Gift } from "lucide-react";
 
 import type { ReferralDTO } from "../types/referral";
+import  { getAttachedInfo } from "../types/referral";
 import type { OfferTemplateDTO } from "../types/offer";
 
-import { getOfferTemplates, assignOfferToReferral } from "../services/offerService";
+import { getOfferTemplates, assignOffer } from "../services/offerService";
 import { acceptReferral, rejectReferral, cancelReferral } from "../services/referralService";
+import { AvatarOrPlaceholder } from "../utils/uiHelper";
 
 import "../css/Referral.css";
 
@@ -52,7 +54,12 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
     } = await supabase.auth.getSession();
     const token = session?.access_token;
     if (!token) return;
-    await assignOfferToReferral(token, referral.id, role, templateId);
+    await assignOffer(token, {
+      offerTemplateId: templateId,
+      targetType: "REFERRAL",
+      referralId: referral.id,
+      recipientRole: role,
+    });
   };
 
   const handleAccept = async () => {
@@ -112,7 +119,7 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
     {
       id: referral.referrerId,
       name: referral.referrerName,
-      slug: referral.referrerSlug,
+      slug: referral.referrerProfileSlug,
       imageUrl: referral.referrerProfileImageUrl,
       role: "REFERRER",
       acceptanceStatus: referrerStatusChip, 
@@ -122,7 +129,7 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
     {
       id: referral.prospectId,
       name: referral.prospectName,
-      slug: referral.prospectSlug,
+      slug: referral.prospectProfileSlug,
       imageUrl: referral.prospectProfileImageUrl,
       role: "PROSPECT",
       acceptanceStatus: prospectStatusChip, 
@@ -132,7 +139,7 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
     {
       id: referral.businessId,
       name: referral.businessName,
-      slug: referral.businessSlug,
+      slug: referral.businessProfileSlug,
       imageUrl: referral.businessProfileImageUrl,
       role: "BUSINESS",
       acceptanceStatus: businessStatusChip, 
@@ -148,7 +155,7 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
         <div className="participant-row" style={{ borderBottom: "none" }}>
           {participants.map((p) => (
             <div key={p.role} className="participant-block">
-              <img src={p.imageUrl || "/default-avatar.png"} alt="Profile" className="profile-img" />
+              <AvatarOrPlaceholder src={p.imageUrl} name={p.name} />
               <Link to={`/profile/${p.slug || p.id}`} className="participant-name">
                 {p.id === userId ? "You" : p.name || "Unknown"}
               </Link>
@@ -190,6 +197,31 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
             <strong>Note:</strong> {referral.note}
           </div>
         </div>
+
+{(() => {
+  const info = getAttachedInfo(referral);
+  if (!info) return null;
+  return (
+    <div className="card" style={{ marginTop: 12, padding: 12 }}>
+      <div style={{ fontWeight: 700, marginBottom: 8 }}>Attached item</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 56, height: 56, borderRadius: 8, overflow: "hidden", background: "#f1f5f9", boxShadow: "inset 0 0 0 1px #e5e7eb" }}>
+          {info.imageUrl ? (
+            <img src={info.imageUrl} alt={info.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <div style={{ width: "100%", height: "100%", background: "linear-gradient(180deg,#f8fafc,#eef2f7)" }} />
+          )}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700 }}>{info.title}</div>
+          <div style={{ marginTop: 4 }}>
+            <Link to={info.url} className="th-link">View {info.kind}</Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+})()}
 
         {/* Action buttons (conditional) */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

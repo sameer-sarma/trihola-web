@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { supabase } from "../supabaseClient"; // Ensure you've configured this
-import "../css/EditProfile.css";
 
 interface Props {
   userId: string;

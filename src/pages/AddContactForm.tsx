@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { supabase } from "../supabaseClient";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "../css/EditProfile.css";
 
 const AddContactForm: React.FC = () => {
   const [form, setForm] = useState({

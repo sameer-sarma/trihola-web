@@ -4,20 +4,31 @@ export interface ReferralDTO {
 
   referrerId: string;
   referrerName?: string;
-  referrerSlug?: string;
+  referrerProfileSlug?: string;
   referrerProfileImageUrl?: string;
   referrerOfferId?: string | null;
 
   prospectId: string;
   prospectName?: string;
-  prospectSlug?: string;
+  prospectProfileSlug?: string;
   prospectProfileImageUrl?: string;
   prospectOfferId?: string | null;
 
   businessId: string;
   businessName?: string;
+  businessProfileSlug?: string;
   businessSlug?: string;
   businessProfileImageUrl?: string;
+
+   // NEW — server enrichment
+  productId?: string | null;
+  productName?: string | null;
+  productImageUrl?: string | null;
+  productSlug?: string | null;
+
+  bundleId?: string | null;
+  bundleTitle?: string | null;
+  bundleSlug?: string | null;
 
   note?: string | null;
   status: string;
@@ -30,6 +41,14 @@ export interface ReferralDTO {
   createdAt: string;
   updatedAt: string;
 }
+
+export type CreateReferralReq = {
+  prospectUserId: string;
+  businessUserId: string;
+  note: string;
+  productId?: string;  // optional, XOR with bundleId
+  bundleId?: string;   // optional
+};
 
 export type ReferralThreadEventType =
   | "USER_MESSAGE"
@@ -121,3 +140,34 @@ export type ReferralUpdatedMsg = {
   changed?: string[];
   referral: ReferralDTO;
 };
+
+export type RefLike = {
+  businessSlug?: string | null;
+
+  // product
+  productId?: string | null;
+  productSlug?: string | null;
+  productName?: string | null;
+  productImageUrl?: string | null;        // fallback
+
+  // bundle
+  bundleId?: string | null;
+  bundleSlug?: string | null;
+  bundleTitle?: string | null;
+};
+
+export function getAttachedInfo(r: RefLike) {
+  if (r.productId || (r.businessSlug && r.productSlug)) {
+    const url = r.businessSlug && r.productSlug
+      ? `/${r.businessSlug}/${r.productSlug}`     // product route
+      : (r.productId ? `/products/${r.productId}` : "#");
+    return { kind: "product" as const, title: r.productName ?? "Product", url, imageUrl: r.productImageUrl ?? null };
+  }
+  if (r.bundleId || (r.businessSlug && r.bundleSlug)) {
+    const url = r.businessSlug && r.bundleSlug
+      ? `/${r.businessSlug}/bundle/${r.bundleSlug}` // bundle route
+      : (r.bundleId ? `/bundles/${r.bundleId}` : "#");
+    return { kind: "bundle" as const, title: r.bundleTitle ?? "Bundle", url, imageUrl: null };
+  }
+  return null;
+}

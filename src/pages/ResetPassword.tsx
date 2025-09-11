@@ -1,4 +1,3 @@
-// src/pages/ResetPassword.tsx
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -30,14 +29,9 @@ const ResetPassword: React.FC = () => {
       const { access_token, refresh_token } = parseHashTokens(location.hash);
 
       if (access_token && refresh_token) {
-        const { error } = await supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        });
+        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
         if (cancelled) return;
-        if (error) {
-          setError(error.message || "Failed to initialize recovery session.");
-        }
+        if (error) setError(error.message || "Failed to initialize recovery session.");
         setBusy(false);
         return;
       }
@@ -45,17 +39,12 @@ const ResetPassword: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (cancelled) return;
 
-      if (!session) {
-        setError("Recovery session not found. Please request a new reset link.");
-      }
+      if (!session) setError("Recovery session not found. Please request a new reset link.");
       setBusy(false);
     };
 
     hydrateSession();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [location.hash]);
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -87,47 +76,52 @@ const ResetPassword: React.FC = () => {
   };
 
   return (
-    <div className="max-w-sm mx-auto p-4 border rounded-lg shadow">
-      <h3 className="text-xl font-semibold mb-4">Set a New Password</h3>
+    <div className="auth-page">
+      <div className="card card--narrow">
+        <h3 className="card-title">Set a New Password</h3>
 
-      {busy && <p>Preparing your recovery session…</p>}
+        {busy && <p className="th-muted">Preparing your recovery session…</p>}
 
-      {!busy && error && <p className="text-red-600">{error}</p>}
+        {!busy && error && <div className="alert alert--error">{error}</div>}
 
-      {!busy && !error && (
-        <form onSubmit={handleUpdate}>
-          <div className="mb-2">
-            <label className="block mb-1">New password</label>
-            <input
-              type="password"
-              className="w-full p-2 border rounded"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-            />
-          </div>
-          <div className="mb-2">
-            <label className="block mb-1">Confirm new password</label>
-            <input
-              type="password"
-              className="w-full p-2 border rounded"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              required
-              minLength={8}
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
-            disabled={busy}
-          >
-            Update Password
-          </button>
-          {message && <p className="text-green-600 mt-3">{message}</p>}
-        </form>
-      )}
+        {!busy && !error && (
+          <form onSubmit={handleUpdate} className="th-form" noValidate>
+            <div className="th-field">
+              <label className="th-label" htmlFor="new-password">New password</label>
+              <input
+                id="new-password"
+                type="password"
+                className="th-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="th-field">
+              <label className="th-label" htmlFor="confirm-password">Confirm new password</label>
+              <input
+                id="confirm-password"
+                type="password"
+                className="th-input"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+            </div>
+
+            <button type="submit" className="btn btn--primary btn--block" disabled={busy}>
+              Update Password
+            </button>
+
+            {message && <div className="alert alert--success" style={{ marginTop: 12 }}>{message}</div>}
+          </form>
+        )}
+      </div>
     </div>
   );
 };

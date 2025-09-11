@@ -14,7 +14,6 @@ import ContactsPage from "./pages/ContactsPage";
 import ReferralFeed from "./pages/ReferralFeed";
 import CreateReferralForm from "./components/CreateReferralForm";
 import ReferralThread from "./components/ReferralThread";
-
 import UserSettingsForm from "./pages/UserSettingsForm";
 import OfferTemplates from "./pages/OfferTemplates";
 import AddOfferTemplate from "./pages/AddOfferTemplate";
@@ -27,6 +26,12 @@ import LandingPage from "./pages/LandingPage";
 import EcomIntegrations from "./pages/EcomIntegrations";
 import AddEcomIntegration from "./pages/AddEcomIntegration";
 import EditEcomIntegration from "./pages/EditEcomIntegration";
+import ProductsList from "./pages/ProductsList";
+import AddProduct from "./pages/AddProduct";
+import ProductDetails from "./pages/ProductDetails";
+import EditProduct from "./pages/EditProduct";
+import BundleDetails from "./pages/BundleDetails";
+
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { supabase } from "./supabaseClient";
@@ -194,6 +199,13 @@ const AppInner: React.FC = () => {
             {/* App routes */}
             <Route path="/contacts" element={<ContactsPage />} />
             <Route path="/contacts/add" element={<AddContactForm />} />
+            <Route path="/products" element={<ProductsList />} />
+            <Route path="/products/new" element={<AddProduct />} />
+            <Route path="/products/:slug" element={<ProductDetails />} />
+            <Route path="/products/:slug/edit" element={<EditProduct />} />
+            <Route path="/:businessSlug/products" element={<ProductsList />} />
+            <Route path="/:businessSlug/:productSlug" element={<ProductDetails />} />
+            <Route path="/:businessSlug/bundle/:bundleSlug" element={<BundleDetails />} />
             <Route path="/referrals" element={<ReferralFeed />} />
             <Route path="/referrals/new" element={<CreateReferralForm />} />
             <Route path="/referral/:slug/thread" element={<ReferralThread />} />

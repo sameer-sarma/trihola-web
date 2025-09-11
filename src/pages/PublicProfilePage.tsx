@@ -120,9 +120,9 @@ const PublicProfilePage: React.FC = () => {
       }
     : undefined;
 
-  return (
-    <div className="container">
-    <div className="page-card">
+return (
+  <div className="th-page">
+    <div className="card">
       <ProfileView
         profile={displayProfile}
         businessProfile={displayProfile.businessProfile || undefined}
@@ -131,15 +131,15 @@ const PublicProfilePage: React.FC = () => {
       />
 
       {isOwnProfile && (
-        <div className="page-actions">
-          <button onClick={handleEditClick} className="primary-btn">
+        <div className="actions">
+          <button onClick={handleEditClick} className="btn btn--primary">
             Edit Profile
           </button>
         </div>
       )}
     </div>
-    </div>
-  );
+  </div>
+);
 };
 
 export default PublicProfilePage;

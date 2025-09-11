@@ -13,10 +13,8 @@ const EmailLogin: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // If already logged in, send to /profile — EXCEPT during password recovery.
   useEffect(() => {
     const checkSession = async () => {
-      // ✅ Skip redirect if we're on the reset page or a recovery flow
       const isRecoveryFlow =
         location.pathname === "/reset-password" ||
         location.search.includes("type=recovery") ||
@@ -24,15 +22,9 @@ const EmailLogin: React.FC = () => {
 
       if (isRecoveryFlow) return;
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session?.user?.id) {
-        navigate("/profile", { replace: true });
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) navigate("/profile", { replace: true });
     };
-
     checkSession();
   }, [navigate, location]);
 
@@ -44,24 +36,15 @@ const EmailLogin: React.FC = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setError(error.message);
-        if (error.message.includes("Email not confirmed")) setShowResend(true);
+        if (error.message?.toLowerCase().includes("not confirmed")) setShowResend(true);
         return;
       }
-
-      if (data.session) {
-        // Let RedirectToOwnProfile handle slug.
-        navigate("/profile", { replace: true });
-      }
-    } catch (err) {
+      if (data.session) navigate("/profile", { replace: true });
+    } catch {
       setError("Unexpected error occurred.");
-      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
@@ -81,63 +64,79 @@ const EmailLogin: React.FC = () => {
   };
 
   return (
-    <div className="max-w-sm mx-auto p-4 border rounded-lg shadow">
-      <h3 className="text-xl font-semibold mb-4">Login with Email</h3>
+    <div className="th-page auth-page">
+      <div className="auth-layout">
+        {/* Left: form */}
+        <div className="card card--narrow">
+          <h2 className="card-title">Login to TriHola</h2>
 
-      <form onSubmit={handleLogin}>
-        <div className="mb-3">
-          <label className="block mb-1">Email:</label>
-          <input
-            className="w-full p-2 border rounded"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            required
-            disabled={loading}
-          />
+          <form className="th-form" onSubmit={handleLogin}>
+            <div className="th-field">
+              <label htmlFor="login-email" className="th-label">Email</label>
+              <input
+                id="login-email"
+                className="th-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                required
+                disabled={loading}
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div className="th-field">
+              <label htmlFor="login-password" className="th-label">Password</label>
+              <input
+                id="login-password"
+                className="th-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="th-field">
+              <button type="submit" className="btn btn--primary btn--block" disabled={loading}>
+                {loading ? "Logging in…" : "Login"}
+              </button>
+            </div>
+          </form>
+
+          <div className="form-help">
+            <Link to="/forgot-password" className="th-link">Forgot password?</Link>
+          </div>
+
+          {showResend && (
+            <div className="form-help">
+              <button onClick={handleResend} className="th-link-button" disabled={loading}>
+                Resend verification email
+              </button>
+            </div>
+          )}
+
+          {message && <div className="alert alert--success">{message}</div>}
+          {error && <div className="alert alert--error">{error}</div>}
         </div>
 
-        <div className="mb-3">
-          <label className="block mb-1">Password:</label>
-          <input
-            className="w-full p-2 border rounded"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
-          disabled={loading}
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-
-      <div className="text-sm mt-3">
-        <Link to="/forgot-password" className="text-blue-600 underline">
-          Forgot Password?
-        </Link>
+        {/* Right: pitch pulled from landing page */}
+        <aside className="auth-aside">
+          <div className="auth-eyebrow">Referrals • Offers • Rewards</div>
+          <h3 className="auth-title">Referrals made simple. Rewards made real.</h3>
+          <p className="auth-sub">
+            Turn every recommendation into a win-win. Connect people with businesses,
+            track in real time, and unlock exclusive rewards.
+          </p>
+          <ul className="auth-bullets">
+            <li><span className="tick">✔</span><strong>Refer</strong> — connect a friend with a trusted business.</li>
+            <li><span className="tick">✔</span><strong>Track</strong> — follow the journey in a thread.</li>
+            <li><span className="tick">✔</span><strong>Reward</strong> — both sides earn when it closes.</li>
+          </ul>
+        </aside>
       </div>
-
-      {showResend && (
-        <div className="mt-3">
-          <button
-            onClick={handleResend}
-            className="text-sm text-orange-600 underline"
-            disabled={loading}
-          >
-            Resend Verification Email
-          </button>
-        </div>
-      )}
-
-      {message && <p className="text-green-600 mt-3">{message}</p>}
-      {error && <p className="text-red-600 mt-3">{error}</p>}
     </div>
   );
 };

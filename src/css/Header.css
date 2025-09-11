@@ -17,6 +17,14 @@
   gap: 16px;
 }
 
+/* Right-side utility area (App Launcher, icons, etc.) */
+.header-tools {
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .logo {
   display: flex;
   align-items: center;

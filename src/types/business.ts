@@ -5,5 +5,6 @@ export interface BusinessProfileDTO {
   businessName?: string;
   businessDescription?: string;
   businessWebsite?: string;
+  businessSlug?: string;
   registeredAt?: string;
 }

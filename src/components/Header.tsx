@@ -5,6 +5,7 @@ import axios from "axios";
 import "../css/Header.css";
 import type { Session } from "@supabase/supabase-js";
 import logo from "../assets/logo.png";
+import AppLauncher from "./AppLauncher";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
@@ -47,7 +48,6 @@ const Header = () => {
       return;
     }
 
-    // ✅ Skip fetching on routes that immediately redirect/fetch profile anyway
     const onRedirectingRoute =
       location.pathname === "/profile" || location.pathname.startsWith("/verify");
     if (onRedirectingRoute) return;
@@ -85,6 +85,7 @@ const Header = () => {
           <span className="logo-text">TriHola</span>
         </Link>
 
+        {/* Primary nav (unchanged) */}
         <nav className="nav-links" aria-label="Primary">
           {session ? (
             <>
@@ -102,17 +103,14 @@ const Header = () => {
               </NavLink>
               {isBusiness && (
                 <>
-                <NavLink to="/offer-templates" className={({ isActive }) => (isActive ? "active" : "")}>
-                  Offer Templates
-                </NavLink>
-                <NavLink to="/ecom" className={({ isActive }) => (isActive ? "active" : "")}>
-                   E-commerce
-                </NavLink>
+                  <NavLink to="/offer-templates" className={({ isActive }) => (isActive ? "active" : "")}>
+                    Offer Templates
+                  </NavLink>
+                  <NavLink to="/ecom" className={({ isActive }) => (isActive ? "active" : "")}>
+                    E-commerce
+                  </NavLink>
                 </>
               )}
-              <button onClick={handleLogout} className="logout-btn" aria-label="Logout">
-                Logout
-              </button>
             </>
           ) : (
             <>
@@ -125,7 +123,18 @@ const Header = () => {
             </>
           )}
         </nav>
-      </div>
+
+{/* Right-side tools: App Launcher (always visible; adapts to auth) */}
+        <div className="header-tools">
+          <AppLauncher
+            isLoggedIn={!!session}
+            isBusiness={isBusiness}
+            onLogout={handleLogout}
+            userLabel={session?.user?.email ?? null}
+            avatarUrl={null /* plug your profile avatar URL if you have it */}
+          />
+        </div>
+      </div> {/* <-- close .header-container */}
     </header>
   );
 };

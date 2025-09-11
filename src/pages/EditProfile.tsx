@@ -5,7 +5,6 @@ import ProfilePictureUploader from "../components/ProfilePictureUploader";
 import BusinessProfileForm from "../components/BusinessProfileForm";
 import { unregisterBusiness } from "../services/businessService";
 import VerifyPhoneInline from "../components/VerifyPhoneInline";
-import "../css/EditProfile.css";
 
 interface Props {
   profile: {
