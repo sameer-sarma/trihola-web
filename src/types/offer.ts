@@ -72,7 +72,7 @@ export interface OfferTemplateDTO {
   eligibility?: string;
 
   // Offer Type
-  offerType: OfferTypeEnum;
+  offerType?: OfferTypeEnum;
   minPurchaseAmount?: number;
 
   // For PERCENTAGE_DISCOUNT

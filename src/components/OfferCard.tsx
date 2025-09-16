@@ -6,6 +6,7 @@ import claimUrlFrom from "../utils/claimUrl";
 import { whatYouGetSentence } from "../utils/offerWhatYouGet";
 import OfferQRCode from "./OfferQRCode"; // expects { url } prop
 import { useOfferClaims } from "../hooks/useOfferClaims";
+import type { OfferTypeEnum } from "../types/offer";
 import "../css/cards.css";
 import "../css/ui-forms.css";
 
@@ -13,7 +14,7 @@ type OfferLike = {
   offerTitle?: string;
   description?: string | null;
 
-  offerType?: "PERCENTAGE_DISCOUNT" | "FIXED_DISCOUNT" | "GRANT";
+  offerType?: OfferTypeEnum;
   discountPercentage?: number;
   discountAmount?: number;
   maxDiscountAmount?: number | null;
@@ -50,7 +51,6 @@ interface Props {
   className?: string;
   showActions?: boolean;
   mode?: "offer" | "template";
-  showDetailsInCard?: boolean;
   onGenerateManual?: () => Promise<void> | void; // optional external override
 }
 
@@ -83,7 +83,6 @@ const OfferCard: React.FC<Props> = ({
   className,
   showActions = true,
   mode = "offer",
-  showDetailsInCard = false,
   onGenerateManual,
 }) => {
   const rootClass = useMemo(
@@ -168,7 +167,7 @@ const handleManualClick = useCallback(async () => {
   const manualCode = activeManual?.discountCode ?? activeManual?.code;
   const qrUrl = manualClaimId ? claimUrlFrom({ id: manualClaimId, discountCode: manualCode }) : "";
 
-  const onlineCode = online?.discountCode ?? online?.code;
+  const onlineCode = online?.discountCode;
 
 
   return (

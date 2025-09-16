@@ -57,14 +57,23 @@ const OfferDetails: React.FC = () => {
     return <div className="page-wrap"><div className="card">Offer not found.</div></div>;
   }
 
+  const toOfferLike = (o: any) => ({
+  ...o,
+  // coerce string -> enum-compatible for OfferCard
+  offerType: o.offerType as any,
+  // (optional) coerce other string unions similarly if needed:
+  claimPolicy: o.claimPolicy as any,
+  validityType: o.validityType as any,
+  trigger: o.trigger as any,
+  scopeKind: o.scopeKind as any,
+});
+
   return (
     <div className="page-wrap">
       {/* Header/summary + Generate Code / Show QR come from OfferCard */}
       <div className="card">
         <OfferCard
-          offer={offer}
-          // Optional: pipe the Applicability UI into the card to avoid a duplicated "Applies"
-          appliesSlot={<></>}
+           offer={toOfferLike(offer)}
         />
       </div>
 

@@ -15,26 +15,6 @@ interface Props {
 
 /* ------------ helpers ------------ */
 
-const claimsText = (p?: string | null) => {
-  const v = String(p || "").toUpperCase();
-  if (v === "ONLINE") return "Online";
-  if (v === "MANUAL") return "Manual (offline)";
-  if (v === "BOTH")   return "Online and offline";
-  return "—";
-};
-
-const scopePillText = (t: any) => {
-  const kind = (t.scopeKind as "ANY" | "LIST") || "ANY";
-  if (kind === "ANY") return "Any purchase";
-  const items = Array.isArray(t.scopeItems) ? t.scopeItems : [];
-  const p = items.filter((it: any) => it.itemType === "PRODUCT").length;
-  const b = items.filter((it: any) => it.itemType === "BUNDLE").length;
-  if (p === 0 && b === 0) return "List (empty)";
-  if (p > 0 && b > 0) return `List: ${p} product${p>1?"s":""} · ${b} bundle${b>1?"s":""}`;
-  if (p > 0) return `List: ${p} product${p>1?"s":""}`;
-  return `List: ${b} bundle${b>1?"s":""}`;
-};
-
 /** Map template → minimal offer-like object accepted by OfferCard */
 const toOfferView = (t: any) => {
   const scopeItems = (t.scopeItems ?? [])

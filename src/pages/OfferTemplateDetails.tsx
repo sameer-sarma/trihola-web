@@ -182,7 +182,11 @@ const OfferTemplateDetails: React.FC<Props> = ({ token }) => {
 
       {/* Grants (templates use ID-based grants) */}
       <OfferGrantsSection
-        grants={template.grants ?? []}
+        grants={(template.grants ?? []).map(g => ({
+          ...g,
+          // normalize quantity to satisfy GrantInput (no nulls)
+          quantity: g.quantity ?? undefined,
+        }))}
         productById={productsMap}
         bundleById={bundlesMap}
         pickLimit={template.grantPickLimit ?? 1}

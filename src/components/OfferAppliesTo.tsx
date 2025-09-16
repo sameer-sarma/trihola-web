@@ -27,11 +27,12 @@ interface Props {
   title?: string;
 }
 
-const OfferAppliesTo: React.FC<Props> = ({ offer, title = "Products / Bundles this applies to" }) => {
+const OfferAppliesTo: React.FC<Props> = ({ offer}) => {
   const scopeKind = (offer as any).scopeKind as "ANY_PURCHASE" | "LIST" | undefined;
   const businessSlugTop = (offer as any).businessSlug as string | undefined;
   const scopeItems = ((offer as any).scopeItems ?? []) as ScopeItem[];
-
+  
+  //console.log(title)
   const products: ScopeProduct[] = useMemo(
     () => scopeItems.filter((i) => i.itemType === "PRODUCT" && (i as any).product)
                     .map((i) => (i as any).product as ScopeProduct),
