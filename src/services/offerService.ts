@@ -1,5 +1,5 @@
 import axios from "axios";
-import { OfferTemplateDTO, OfferDetailsDTO, OfferClaimDTO, ClaimSource, AssignOfferRequest, RecipientRole } from "../types/offer";
+import { OfferTemplateDTO, OfferDetailsDTO, OfferClaimDTO, ClaimSource, AssignOfferRequest, RecipientRole, ClaimRequestDTO, FetchGrantOptionsResponse } from "../types/offer";
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
 export const getOfferTemplates = async (token: string): Promise<OfferTemplateDTO[]> => {
@@ -90,6 +90,12 @@ export const fetchOfferDetails = async (
   return response.data;
 };
 
+export async function fetchGrantOptions(assignedOfferId: string): Promise<FetchGrantOptionsResponse> {
+  const r = await fetch(`/offers/${assignedOfferId}/grant-options`, { credentials: 'include' });
+  if (!r.ok) throw new Error('Failed to load grant options');
+  return r.json();
+}
+
 export async function fetchClaimDetails(token: string, claimId: string): Promise<OfferClaimDTO> {
   const res = await fetch(`${API_BASE}/claims/${claimId}`, {
     headers: {
@@ -145,19 +151,11 @@ export const markClaimExpired = async (
   }
 };
 
-export interface ClaimRequest {
-  redemptionType: string;
-  redemptionValue?: string | null;
-  note?: string | null;
-  expiresInMinutes?: number | null;
-  claimSource: 'MANUAL' | 'ONLINE';
-}
-
 /** POST /offers/:id/claim — will honor policy + source on the server */
 export async function requestClaim(
   token: string,
   assignedOfferId: string,
-  payload: ClaimRequest
+  payload: ClaimRequestDTO
 ): Promise<OfferClaimDTO> {
   const res = await fetch(`${API_BASE}/offers/${assignedOfferId}/claim`, {
     method: 'POST',

@@ -50,6 +50,7 @@ export async function listBusinessBundles(
   businessSlug: string,
   params: { active?: boolean; limit?: number; offset?: number } = {}
 ): Promise<BundleDTO[]> {
+  console.log("listBusinessBundles called with:", businessSlug, params);
   const q = new URLSearchParams();
   if (params.active !== undefined) q.set("active", String(params.active));
   q.set("limit", String(params.limit ?? 100));

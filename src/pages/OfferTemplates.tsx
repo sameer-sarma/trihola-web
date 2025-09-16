@@ -1,46 +1,112 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchOfferTemplates } from "../services/offerTemplateService";
+import { listOfferTemplates } from "../services/offerTemplateService";
 import { OfferTemplateResponse } from "../types/offerTemplateTypes";
-import "../css/ui-forms.css";             // ← use centralized styles
+import OfferCard from "../components/OfferCard";
+import "../css/ui-forms.css";
 import "../css/cards.css";
 
 interface Props {
-  profile: {
-    registeredAsBusiness?: boolean;
-  };
+  profile: { registeredAsBusiness?: boolean };
   token: string;
   userId: string;
+  businessSlug?: string; // optional
 }
 
-// Helper: prettify type
-const prettyType = (t: string) =>
-  t === "PERCENTAGE_DISCOUNT" ? "Percentage discount" :
-  t === "FIXED_DISCOUNT"      ? "Fixed discount" :
-  t === "GRANT"               ? "Grant" :
-  (t || "").replace(/_/g, " ").toLowerCase().replace(/^\w/, c => c.toUpperCase());
+/* ------------ helpers ------------ */
 
-// "Applies" label without exposing IDs
-function appliesLabel(t: any) {
-  const at = t?.appliesToType || "ANY_PURCHASE";
-  if (at === "PRODUCT") return "Product";
-  if (at === "BUNDLE")  return "Bundle";
-  return "Any purchase";
-}
+const claimsText = (p?: string | null) => {
+  const v = String(p || "").toUpperCase();
+  if (v === "ONLINE") return "Online";
+  if (v === "MANUAL") return "Manual (offline)";
+  if (v === "BOTH")   return "Online and offline";
+  return "—";
+};
 
-function grantsSummary(grants: Array<{ itemType: "PRODUCT" | "BUNDLE"; quantity?: number }> = []) {
-  if (!grants.length) return "None";
-  const counts = grants.reduce((acc, g) => {
-    const key = g.itemType;
-    acc[key] = (acc[key] || 0) + (g.quantity ?? 1);
-    return acc;
-  }, {} as Record<"PRODUCT" | "BUNDLE", number>);
-  const parts: string[] = [];
-  if (counts.PRODUCT) parts.push(`${counts.PRODUCT} product${counts.PRODUCT > 1 ? "s" : ""}`);
-  if (counts.BUNDLE)  parts.push(`${counts.BUNDLE} bundle${counts.BUNDLE > 1 ? "s" : ""}`);
-  return parts.join(" · ");
-}
+const scopePillText = (t: any) => {
+  const kind = (t.scopeKind as "ANY" | "LIST") || "ANY";
+  if (kind === "ANY") return "Any purchase";
+  const items = Array.isArray(t.scopeItems) ? t.scopeItems : [];
+  const p = items.filter((it: any) => it.itemType === "PRODUCT").length;
+  const b = items.filter((it: any) => it.itemType === "BUNDLE").length;
+  if (p === 0 && b === 0) return "List (empty)";
+  if (p > 0 && b > 0) return `List: ${p} product${p>1?"s":""} · ${b} bundle${b>1?"s":""}`;
+  if (p > 0) return `List: ${p} product${p>1?"s":""}`;
+  return `List: ${b} bundle${b>1?"s":""}`;
+};
 
+/** Map template → minimal offer-like object accepted by OfferCard */
+const toOfferView = (t: any) => {
+  const scopeItems = (t.scopeItems ?? [])
+    .map((si: any) => {
+      if (si.itemType === "PRODUCT" && si.product) {
+        const p = si.product;
+        return {
+          itemType: "PRODUCT",
+          product: {
+            id: p.id,
+            slug: p.slug,
+            businessSlug: p.businessSlug ?? undefined,
+            name: p.name ?? p.title,
+            primaryImageUrl: p.primaryImageUrl ?? p.imageUrl ?? p.thumbnailUrl ?? undefined,
+          },
+        };
+      }
+      if (si.itemType === "BUNDLE" && si.bundle) {
+        const b = si.bundle;
+        return {
+          itemType: "BUNDLE",
+          bundle: {
+            id: b.id,
+            slug: b.slug,
+            businessSlug: b.businessSlug ?? undefined,
+            name: b.name ?? b.title,
+            primaryImageUrl: b.primaryImageUrl ?? b.imageUrl ?? b.thumbnailUrl ?? undefined,
+          },
+        };
+      }
+      return null;
+    })
+    .filter(Boolean);
+
+  const hasTiers = Array.isArray(t.tiers) && t.tiers.length > 0;
+
+  return {
+    // headline + copy
+    offerTitle: t.templateTitle,
+    description: t.description,
+
+    // type & claim policy
+    offerType: t.offerType,
+    claimPolicy: t.claimPolicy,
+
+    // validity
+    validityType: t.validityType,
+    validFrom: t.validityType === "ABSOLUTE" ? t.validFrom : undefined,
+    validUntil: t.validityType === "ABSOLUTE" ? t.validTo : undefined,
+    durationDays: t.validityType === "RELATIVE" ? t.durationDays : undefined,
+    trigger: t.validityType === "RELATIVE" ? t.trigger : undefined,
+
+    // status / redemptions
+    status: t.isActive ? "ACTIVE" : "INACTIVE",
+    redemptionsUsed: 0,
+    effectiveMaxRedemptions: t.maxRedemptions ?? undefined,
+    redemptionsLeft: t.maxRedemptions ?? undefined,
+
+    // purchase + base discount (only when not tiered)
+    minPurchaseAmount:
+      typeof t.minPurchaseAmount === "number" ? t.minPurchaseAmount : undefined,
+    ...( !hasTiers && typeof t.discountPercentage === "number" ? { discountPercentage: t.discountPercentage } : {}),
+    ...( !hasTiers && typeof t.discountAmount     === "number" ? { discountAmount:     t.discountAmount     } : {}),
+    ...( !hasTiers && typeof t.maxDiscountAmount  === "number" ? { maxDiscountAmount:  t.maxDiscountAmount  } : {}),
+
+    // scope & tiers
+    businessSlug: t.businessSlug ?? undefined,
+    scopeKind: t.scopeKind === "ANY" ? "ANY_PURCHASE" : "LIST",
+    scopeItems,
+    tiers: t.tiers ?? [],
+  };
+};
 
 const OfferTemplates: React.FC<Props> = ({ profile, token }) => {
   const navigate = useNavigate();
@@ -48,18 +114,16 @@ const OfferTemplates: React.FC<Props> = ({ profile, token }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // local filters
+  // filters
   const [q, setQ] = useState("");
-  // make this a string so we can include "GRANT" + legacy types without TS friction
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [activeOnly, setActiveOnly] = useState(false);
 
   useEffect(() => {
     if (!profile.registeredAsBusiness || !token) return;
-
-    fetchOfferTemplates(token)
+    listOfferTemplates(token)
       .then(setTemplates)
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error("Error fetching templates:", err);
         setError("Failed to load offer templates");
       })
@@ -72,22 +136,15 @@ const OfferTemplates: React.FC<Props> = ({ profile, token }) => {
     if (q.trim()) {
       const needle = q.toLowerCase();
       items = items.filter((t: any) => {
-        // include grants info + applies fields in search space
-        const grantsTxt = (t.grants ?? [])
-          .map((g: any) => `${g.itemType}:${g.productId || g.bundleId || ""}:${g.quantity || ""}`)
-          .join(" ");
-
+        const scopeTxt = (Array.isArray(t.scopeItems) ? t.scopeItems
+          .map((it: any) => `${it.itemType}:${it.product?.name || it.bundle?.title || it.product?.title || it.bundle?.name || ""}`)
+          .join(" ") : "");
         return [
           t.templateTitle,
           t.description,
           t.specialTerms ?? "",
           t.eligibility ?? "",
-          t.productName ?? "",   // legacy read fields
-          t.serviceName ?? "",   // legacy read fields
-          t.appliesToType ?? "",
-          t.appliesProductId ?? "",
-          t.appliesBundleId ?? "",
-          grantsTxt,
+          scopeTxt,
           t.offerType ?? ""
         ]
           .join(" ")
@@ -99,7 +156,6 @@ const OfferTemplates: React.FC<Props> = ({ profile, token }) => {
     if (typeFilter) items = items.filter((t: any) => (t.offerType ?? "") === typeFilter);
     if (activeOnly) items = items.filter((t) => t.isActive);
 
-    // sort: updatedAt desc (fallback to title)
     items.sort((a: any, b: any) => {
       const au = a.updatedAt ?? "";
       const bu = b.updatedAt ?? "";
@@ -123,9 +179,7 @@ const OfferTemplates: React.FC<Props> = ({ profile, token }) => {
   if (loading) {
     return (
       <div className="page-wrap">
-        <div className="form-card">
-          <p className="help">Loading offer templates...</p>
-        </div>
+        <div className="form-card"><p className="help">Loading offer templates...</p></div>
       </div>
     );
   }
@@ -133,137 +187,128 @@ const OfferTemplates: React.FC<Props> = ({ profile, token }) => {
   if (error) {
     return (
       <div className="page-wrap">
-        <div className="form-card">
-          <p className="help" style={{ color: "#b91c1c" }}>{error}</p>
-        </div>
+        <div className="form-card"><p className="help" style={{ color: "#b91c1c" }}>{error}</p></div>
       </div>
     );
   }
 
   const filtersActive = q.trim() || typeFilter || activeOnly;
 
-  return (
-    <div className="page-wrap">
-      {/* header */}
-      <div className="meta-row" style={{ justifyContent: "space-between", marginBottom: 16 }}>
-        <h2 className="page-title" style={{ margin: 0 }}>Your Offer Templates</h2>
+return (
+  <div className="page-wrap">
+    {/* Header */}
+    <div className="th-header" style={{ marginBottom: 10 }}>
+      <h2 className="page-title" style={{ margin: 0 }}>Your Offer Templates</h2>
+      <div className="th-header-actions">
         <button onClick={() => navigate("/add-offer-template")} className="btn btn--primary">
           + New Template
         </button>
       </div>
+    </div>
 
-      <div className="form-card" style={{ marginBottom: 16 }}>
-        <form className="th-form" noValidate>
-          {/* first row: Search + Type in two columns */}
-          <div className="section-grid">
-            <div className="th-field">
-              <label className="th-label">Search</label>
-              <input
-                className="th-input"
-                type="text"
-                placeholder="Search by title, details or terms"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-              />
-            </div>
-
-            <div className="th-field">
-              <label className="th-label">Type</label>
-              <select
-                className="select"
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="">All types</option>
-                <option value="PERCENTAGE_DISCOUNT">Percentage Discount</option>
-                <option value="FIXED_DISCOUNT">Fixed Discount</option>
-                <option value="GRANT">Grants (free items)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* second row: checkbox left, Clear filters right */}
-          <div className="meta-row" style={{ marginTop: 8, alignItems: "center", justifyContent: "space-between" }}>
-            <label className="switch" style={{ margin: 0 }}>
-              <input
-                type="checkbox"
-                checked={activeOnly}
-                onChange={(e) => setActiveOnly(e.target.checked)}
-              />
-              Show Active only
-            </label>
-
-            {filtersActive ? (
-              <button
-                type="button"
-                className="btn btn--ghost"
-                onClick={() => {
-                  setQ("");
-                  setTypeFilter("");
-                  setActiveOnly(false);
-                }}
-              >
-                Clear filters
-              </button>
-            ) : <span />}
-          </div>
-        </form>
-      </div>
-
-
-      {/* content */}
-      {filtered.length === 0 ? (
-        <div className="form-card">
-          <p className="help">No offer templates match your filters.</p>
+    {/* Search + filters */}
+    <div className="form-card" style={{ marginBottom: 16 }}>
+      <form className="ot-searchbar" noValidate>
+        <div className="th-field" style={{ margin: 0 }}>
+          <label className="th-label">Search</label>
+          <input
+            className="th-input"
+            type="text"
+            placeholder="Search by title, details or terms"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
         </div>
-      ) : (
-        <div className="grid">
-          {filtered.map((template: any) => (
-            <div key={template.offerTemplateId} className="card">
-              <h3 className="card__title">{template.templateTitle}</h3>
-              <p className="card__desc">{template.description}</p>
 
-              <div className="card__meta">
-                <span className="pill pill--info">Type: {prettyType(template.offerType || "GRANT")}</span>
-                <span className={`pill ${template.isActive ? "pill--ok" : "pill--muted"}`}>
-                  {template.isActive ? "Active" : "Inactive"}
-                </span>
-                {template.claimPolicy && (
-                  <span className="pill pill--info">Claims: {template.claimPolicy}</span>
-                )}
+        <div className="th-field" style={{ margin: 0 }}>
+          <label className="th-label">Type</label>
+          <select
+            className="select"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <option value="">All types</option>
+            <option value="PERCENTAGE_DISCOUNT">Percentage Discount</option>
+            <option value="FIXED_DISCOUNT">Fixed Discount</option>
+            <option value="GRANT">Grants (free items)</option>
+          </select>
+        </div>
 
-                {/* Applies (no IDs shown) */}
-                <span className="pill">Applies: {appliesLabel(template)}</span>
+        <div className="th-field" style={{ margin: 0 }}>
+          <label className="th-label" style={{ visibility: "hidden" }}>Active</label>
+          <label className="switch" style={{ margin: 0 }}>
+            <input
+              type="checkbox"
+              checked={activeOnly}
+              onChange={(e) => setActiveOnly(e.target.checked)}
+            />
+            Show Active only
+          </label>
+        </div>
+      </form>
 
-                {/* Type-specific chip */}
-                {template.offerType === "PERCENTAGE_DISCOUNT" && typeof template.discountPercentage === "number" && (
-                  <span className="pill pill--info">Discount: {template.discountPercentage}%</span>
-                )}
-                {template.offerType === "FIXED_DISCOUNT" && typeof template.discountAmount === "number" && (
-                  <span className="pill pill">Flat: ₹{template.discountAmount}</span>
-                )}
-                {(template.offerType === "GRANT" || (template.grants?.length ?? 0) > 0) && (
-                  <span className="pill pill--info">Grants: {grantsSummary(template.grants)}</span>
-                )}
-              </div>
-              
-
-              {template.specialTerms && (
-                <p className="help" style={{ marginTop: 8, fontStyle: "italic" }}>
-                  * {template.specialTerms}
-                </p>
-              )}
-
-              <div className="card__footer">
-                <a className="card__link" onClick={() => navigate(`/offer-template/${template.offerTemplateId}`)}>View</a>
-                <a className="card__link" onClick={() => navigate(`/offer-template/${template.offerTemplateId}/edit`)}>Edit</a>
-              </div>
-            </div>
-          ))}
+      {filtersActive && (
+        <div className="th-header" style={{ marginTop: 8 }}>
+          <span className="help">Filters applied.</span>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => { setQ(""); setTypeFilter(""); setActiveOnly(false); }}
+          >
+            Clear filters
+          </button>
         </div>
       )}
     </div>
-  );
+
+    {/* CARD GRID — each item is an OfferCard tile */}
+    {filtered.length === 0 ? (
+      <div className="form-card"><p className="help">No offer templates match your filters.</p></div>
+    ) : (
+      <div className="th-grid-auto">
+        {filtered.map((t: any) => {
+          const id = t.offerTemplateId as string;
+          const goDetails = () => navigate(`/offer-template/${id}`);
+          const offerView = toOfferView(t);
+
+          return (
+            <div
+              key={id}
+              className="ot-list-item"
+              role="link"
+              tabIndex={0}
+              onClick={goDetails}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goDetails(); }
+              }}
+              title="Open details"
+              aria-label={`View ${t.templateTitle}`}
+            >
+              <OfferCard
+                offer={offerView as any}
+                appearance="flat"
+                showActions={false}
+                className="card--link offer-card--tile"   // <- tile class
+                mode="template"
+              />
+
+              <div className="th-header" style={{ marginTop: 8 }}>
+                <span />
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={(e) => { e.stopPropagation(); navigate(`/offer-template/${id}/edit`); }}
+                  title="Edit template"
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+);
 };
 
 export default OfferTemplates;

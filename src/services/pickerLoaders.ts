@@ -3,26 +3,12 @@ import type { PickerItem } from "../types/offerTemplateTypes";
 import { listProducts } from "../api/productapi";
 import { listBundles }  from "../api/bundleapi";
 
-const CDN_BASE = ""; // e.g. "https://cdn.yoursite.com" if your API returns relative paths
 
-function normalizeUrl(u?: string | null): string | null {
-  if (!u) return null;
-  // handle relative paths like "/media/..." → prefix if you have a CDN/base
-  if (CDN_BASE && (u.startsWith("/") && !u.startsWith("//"))) return `${CDN_BASE}${u}`;
-  return u;
-}
-
-function pickImageUrl(obj: any): string | null {
-  // prefer primaryImageUrl, then fallbacks
-  const candidate =
-    obj.primaryImageUrl ??
-    obj.primary_image_url ??
-    obj.thumbnailUrl ??
-    obj.imageUrl ??
-    obj.image_url ??
-    (Array.isArray(obj.images) ? obj.images[0]?.url : null) ??
-    null;
-  return normalizeUrl(candidate);
+function pickImageUrl(x: any): string | undefined {
+  return x?.primaryImageUrl
+      ?? x?.imageUrl
+      ?? x?.thumbnailUrl
+      ?? undefined;  // <- ensure undefined, not null
 }
 
 // tolerant mappers

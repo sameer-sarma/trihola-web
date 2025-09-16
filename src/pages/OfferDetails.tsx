@@ -1,29 +1,15 @@
-// src/pages/OfferDetails.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { supabase } from "../supabaseClient";
+import type { OfferDetailsDTO } from "../types/offer";
 import OfferCard from "../components/OfferCard";
-import { OfferDetailsDTO } from "../types/offer";
-import { useOfferClaims } from "../hooks/useOfferClaims"; // <-- your hook
-import "../css/OfferDetails.css";
+import OfferAppliesTo from "../components/OfferAppliesTo";
+import OfferTiersSection from "../components/OfferTiersSection";
+import OfferDetailsSection from "../components/OfferDetailsSection";
+import "../css/ui-forms.css";
 
-const OfferDetailsLoaded: React.FC<{ offer: OfferDetailsDTO }> = ({ offer }) => {
-  // One fetch for claims (no duplicate API calls)
-  const { manual, online, generateManual, generateOnline } = useOfferClaims(offer);
-
-  return (
-    <div className="offer-details-container">
-      <OfferCard
-        offer={offer}
-        manualClaim={manual}
-        onlineClaim={online}
-        onGenerateManual={generateManual}
-        onGenerateOnline={generateOnline}
-      />
-    </div>
-  );
-};
+const API_BASE = import.meta.env.VITE_API_BASE as string;
 
 const OfferDetails: React.FC = () => {
   const { assignedOfferId } = useParams();
@@ -33,58 +19,65 @@ const OfferDetails: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchOffer = async () => {
+    (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-
       if (!token || !assignedOfferId) {
         setError("Missing token or offer ID.");
         setLoading(false);
         return;
       }
-
       try {
-        const response = await axios.get(`${__API_BASE__}/offers/${assignedOfferId}`, {
+        const resp = await axios.get(`${API_BASE}/offers/${assignedOfferId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setOffer(response.data);
-      } catch (error: unknown) {
-        if (axios.isAxiosError(error)) {
-          if (error.response?.status === 403) {
-            setError("You are not authorized to view this offer.");
-          } else {
-            console.error("Failed to fetch offer details:", error);
-            setError("An unexpected error occurred. Please try again later.");
-          }
-        } else {
-          console.error("Unexpected non-Axios error:", error);
-          setError("An unexpected error occurred.");
-        }
+        setOffer(resp.data as OfferDetailsDTO);
+      } catch (e: any) {
+        setError(e?.response?.status === 403 ? "You are not authorized to view this offer." : "Failed to fetch offer.");
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchOffer();
+    })();
   }, [assignedOfferId]);
 
   if (loading) return <p className="center-text">Loading offer...</p>;
 
   if (error) {
     return (
-      <div className="error-box">
-        <p className="error-message">{error}</p>
-        <button onClick={() => navigate(-1)} className="back-button">
-          Go Back
-        </button>
+      <div className="page-wrap">
+        <div className="card">
+          <p className="error-message">{error}</p>
+          <button onClick={() => navigate(-1)} className="btn btn--ghost">Go Back</button>
+        </div>
       </div>
     );
   }
 
-  if (!offer) return <p className="center-text error-message">Offer not found.</p>;
+  if (!offer) {
+    return <div className="page-wrap"><div className="card">Offer not found.</div></div>;
+  }
 
-  // Render the loaded section (contains OfferCard and claims UI)
-  return <OfferDetailsLoaded offer={offer} />;
+  return (
+    <div className="page-wrap">
+      {/* Header/summary + Generate Code / Show QR come from OfferCard */}
+      <div className="card">
+        <OfferCard
+          offer={offer}
+          // Optional: pipe the Applicability UI into the card to avoid a duplicated "Applies"
+          appliesSlot={<></>}
+        />
+      </div>
+
+      {/* Offer Details section */}
+      <OfferDetailsSection title="Details" text={(offer as any).description} />
+
+      {/* Applicability (scopeItems) */}
+      <OfferAppliesTo offer={offer} />
+
+      {/* Tiers */}
+      <OfferTiersSection offer={offer} />
+    </div>
+  );
 };
 
 export default OfferDetails;

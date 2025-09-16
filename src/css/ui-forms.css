@@ -104,7 +104,6 @@
 /* ---- EditProfile-style form grid ---- */
 .form{ display:grid; gap:16px; }
 .form--two-col{ grid-template-columns: 1fr; gap:16px 20px; }
-@media (min-width: 860px){ .form--two-col{ grid-template-columns: 1fr 1fr; } }
 
 /* ---- Fields ---- */
 .form-group{ display:flex; flex-direction:column; gap:8px; }
@@ -243,8 +242,6 @@
 .th-thumb-64 { width: 64px; height: 64px; border-radius: 12px; overflow: hidden; background: #f6f6f6; }
 .th-thumb-40 { width: 40px; height: 40px; border-radius: 8px; overflow: hidden; background: #f4f4f4; }
 
-/* Auto card grid for details pages */
-.th-grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
 
 /* Small preview grid (used in Bundles list cards) */
 .th-imggrid-40 { display: grid; grid-template-columns: repeat(4, 40px); gap: 6px; }
@@ -708,3 +705,269 @@
 .select-empty { padding: 12px; color: #6b7280; text-align: center; }
 .select-actions { display: flex; gap: 8px; }
 .badge { font-size: .8rem; padding: 2px 8px; border-radius: 999px; background:#eef2ff; }
+
+/* --- Offer Template Details (header, pills, summary, tiers) --- */
+
+/* Header */
+.ot-hero { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:8px; }
+.ot-hero__title { font-size: 28px; font-weight: 800; margin: 0; }
+.ot-hero__subtitle { color: var(--ink-mid); margin: 2px 0 12px; }
+.ot-pills { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+/* Pills */
+.ot-pill { display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#eef2ff; color:#1e293b; }
+.ot-pill--ok    { background:#e7f9ef; color:#065f46; }
+.ot-pill--muted { background:#f1f5f9; color:#64748b; }
+.ot-pill--info  { background:#e6f0ff; color:#1d4ed8; }
+
+/* Summary block */
+.ot-summary { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+@media (max-width: 840px){ .ot-summary { grid-template-columns: 1fr; } }
+.ot-summary .th-kv strong { color:#111827; }
+
+/* Discount section */
+.ot-discount { margin-top: 10px; }
+
+/* Read-only tier bands styled like the editor */
+.ot-tiers { margin-top: 8px; }
+.ot-tiers__panel {
+  background:#F4F7FF; border:1px solid var(--border);
+  border-radius:14px; padding:12px;
+}
+.ot-tiers__list { display:flex; flex-direction:column; gap:10px; }
+.ot-tier-row {
+  display:grid; grid-template-columns: 1fr 72px 1fr; gap:12px; align-items:center;
+  background:#fff; border-radius:12px; padding:10px; box-shadow: inset 0 0 0 1px #E5E7EB;
+}
+.ot-band-label { font-weight:700; }
+.ot-unit {
+  border:1px solid #E5E7EB; border-radius:10px; background:#F8FAFC;
+  padding:8px 10px; text-align:center; font-weight:600;
+}
+.ot-value {
+  border:1px solid #E5E7EB; border-radius:10px; background:#F8FAFC;
+  padding:8px 10px; font-weight:600;
+}
+.ot-cap { font-size:12px; color:#64748b; margin-top:2px; }
+
+/* --- Offer Templates: compact list & expandable cards --- */
+
+.ot-list { }
+
+/* Search/header row */
+.ot-searchbar {
+  display: grid;
+  grid-template-columns: 1fr 180px max-content;
+  gap: 12px;
+  align-items: end;
+}
+@media (max-width: 860px) {
+  .ot-searchbar { grid-template-columns: 1fr; }
+}
+
+/* Utility: line clamp */
+.line-clamp-1, .line-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-clamp-1 { -webkit-line-clamp: 1; }
+.line-clamp-2 { -webkit-line-clamp: 2; }
+
+/* Compact card */
+.ot-card--compact .card-title {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  line-height: 1.2;
+}
+.ot-card__top {
+  display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+}
+.ot-card__pills { display:flex; flex-wrap:wrap; gap:8px; }
+
+/* Quick facts row */
+.ot-quick {
+  display: grid; gap: 6px; margin-top: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 640px){ .ot-quick { grid-template-columns: 1fr; } }
+
+.ot-more-btn { display:inline-flex; gap:6px; align-items:center; }
+.ot-chevron { display:inline-block; transition: transform .18s ease; }
+.is-open .ot-chevron { transform: rotate(180deg); }
+
+
+/* === Offer Templates: card-link + expand toggle === */
+
+/* Make the whole card a link (except controls that stop propagation) */
+.card--link { cursor: pointer; }
+.card--link:focus-within,
+.card--link:hover { box-shadow: 0 0 0 2px rgba(64,116,255,0.1); }
+
+/* Compact header already exists (.ot-card--compact). Keep pills row. */
+
+/* Actions row: only Edit button now */
+.ot-actions { display:flex; gap:8px; align-items:center; justify-content:flex-start; margin-top: 10px; }
+
+/* Tiny expand/collapse icon under the buttons */
+.ot-expand-toggle { display:flex; justify-content:flex-end; margin-top:6px; }
+.ot-expand-trigger {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:999px;
+  border:1px solid var(--border); background:#fff; color:#64748b;
+}
+.ot-expand-trigger:hover { background:#f8fafc; }
+.ot-chevron { display:inline-block; transition: transform .18s ease; }
+.is-open .ot-chevron { transform: rotate(180deg); }
+
+/* Expandable section */
+.ot-expand {
+  display:none; border-top:1px dashed var(--border);
+  margin-top:10px; padding-top:10px;
+}
+.is-open .ot-expand { display:block; }
+
+/* Details inside expanded block */
+.ot-quick { display:grid; gap:6px; margin-top:6px; grid-template-columns: repeat(2, minmax(0,1fr)); }
+@media (max-width: 640px){ .ot-quick { grid-template-columns: 1fr; } }
+
+/* Unify typography between filters and cards */
+.ot-list .th-input,
+.ot-list .select,
+.ot-list .card { font-size:14px; }
+
+.amount-input {
+  width: 12ch;   /* enough for ~10 characters comfortably */
+  min-width: 100px;
+}
+
+.select.discount-type {
+  min-width: 60px;   /* enough for '%' or '₹' */
+  text-align: center;
+  padding-right: 24px; /* keeps dropdown arrow clear */
+}
+
+/* --- OfferCard base layout --- */
+.offer-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.offer-card .th-kv {
+  min-width: 0;
+}
+
+.offer-card .th-kv strong {
+  display: block;            /* put the label on its own line */
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+/* Headline/body wrapping that doesn't crush lines */
+.offer-card .th-card-title {
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+/* Old fancy header retained as an opt-in */
+.offer-card--gradient {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #f5d565;            /* soft gold border, optional */
+  background: linear-gradient(180deg, #fff8e1, #ffe7f3);
+}
+
+.ot-list-item {            /* the per-tile wrapper you already render */
+  display: flex;
+  flex-direction: column;
+}
+
+.ot-list-item .card--link {   /* the OfferCard’s outer shell in the tile */
+  flex: 1 1 auto;             /* fill the available track height */
+  display: flex;              /* allow the inner .offer-card to stretch */
+}
+
+.offer-card {                 /* make the card itself fill the shell */
+  height: 100%;
+}
+
+.th-grid-auto {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important;
+  gap: 12px;
+  align-items: start;           /* was: stretch -> causes tall blank space */
+}
+
+/* Make sure items don’t stretch to 100% width like a list */
+.th-grid-auto > .ot-list-item {
+  width: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TILE: let height be natural (remove the 'equal height' behavior) */
+.offer-card--tile {
+  /* remove any previous min-height / height:100% you added */
+  min-height: 0;
+  height: auto;
+  padding: 14px 16px;           /* slightly tighter padding (optional) */
+}
+
+/* Summary spacing tighter in tiles */
+.offer-card--tile .ot-summary {
+  row-gap: 4px;
+  column-gap: 12px;
+}
+
+/* Slightly smaller headings in tiles (optional) */
+.offer-card--tile .card__title {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.offer-card--tile .th-what {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;        /* was 3 */
+  overflow: hidden;
+
+  line-height: 1.35;
+  max-height: calc(1.35em * 2 + 2px);
+}
+
+.offer-card .ot-summary { display: grid; grid-template-columns: 1fr; gap: 8px 16px; }
+@media (min-width: 900px) {
+  .offer-card .ot-summary { grid-template-columns: 1fr 1fr; }
+ .offer-cta {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+}
+
+.offer-cta {
+  display: flex;
+  gap: 16px;
+  align-items: left;            /* vertical alignment with buttons */
+  justify-content: space-between; /* help on left, buttons on right */
+  margin-top: 12px;
+}
+
+.offer-cta__buttons {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;                 /* keep buttons snug on the right */
+}
+
+.offer-cta__help {
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 56ch;                /* prevents super-long lines */
+}
+
+.offer-cta__help strong { font-weight: 600; }
+

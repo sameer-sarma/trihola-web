@@ -15,6 +15,8 @@ import {
   ClaimSource,
 } from "../types/offer";
 import BusinessApproveClaim from "./BusinessApproveClaim";
+// If your hook exports default, switch to: `import claimUrlFrom from "../hooks/useOfferClaims";`
+import claimUrlFrom from "../utils/claimUrl";
 
 interface OfferActivityProps {
   timestamp: string;
@@ -62,19 +64,23 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
   const [claimPolicy, setClaimPolicy] = useState<ClaimPolicy | null>(null);
   const [discountCode, setDiscountCode] = useState<string | null>(null);
   const [claimantId, setClaimantId] = useState<string | null>(null);
-  const [claimSource, setClaimSource] = useState<"MANUAL" | "ONLINE" | null>(null);
+  const [claimSource, setClaimSource] = useState<ClaimSource | null>(null);
   const navigate = useNavigate();
 
   const sentExpireOnceRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const tok = session?.access_token ?? null;
-      if (!tok || !metadata?.claimId) return;
+      const claimId = metadata?.claimId ?? null;
+      if (!tok || !claimId) return;
 
       try {
-        const claim: OfferClaimDTO | null = await fetchClaimDetails(tok, metadata.claimId);
+        const claim: OfferClaimDTO | null = await fetchClaimDetails(tok, claimId);
+
         setDiscountCode(claim?.discountCode ?? null);
         setClaimantId(claim?.claimantId ?? null);
         setClaimSource((claim?.claimSource as ClaimSource) ?? null);
@@ -86,9 +92,12 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
           const expMs = new Date(expiresAt).getTime();
           if (!Number.isNaN(expMs) && expMs < Date.now()) {
             effective = "EXPIRED";
-            if (claim && !sentExpireOnceRef.current[claim.id]) {
+            // Best-effort expiration marking once per claim
+            if (claim?.id && !sentExpireOnceRef.current[claim.id]) {
               sentExpireOnceRef.current[claim.id] = true;
-              markClaimExpired(tok, claim.id).catch(() => { /* best-effort */ });
+              markClaimExpired(tok, claim.id).catch(() => {
+                /* best-effort */
+              });
             }
           }
         }
@@ -96,7 +105,7 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
         if (effective) setClaimStatus(effective);
         setClaimExpiresAt(expiresAt);
 
-        // Offer claimPolicy
+        // Load claimPolicy from the assigned offer
         let policy: ClaimPolicy | null = null;
         if (claim?.assignedOfferId) {
           const assigned = await fetchOfferDetails(tok, claim.assignedOfferId);
@@ -134,13 +143,14 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
     return !Number.isNaN(expMs) && expMs < Date.now();
   }, [claimExpiresAt]);
 
-  const isMine = currentUserId && claimantId && currentUserId === claimantId;
+  const isMine = !!currentUserId && !!claimantId && currentUserId === claimantId;
 
   const showQr = () => {
     if (!isMine || claimSource !== "MANUAL") return;
-    const qrValue = `https://www.trihola.com/redeem-offer?claimId=${encodeURIComponent(
-      metadata!.claimId!
-    )}&code=${encodeURIComponent(discountCode ?? "")}`;
+    const claimId = metadata?.claimId;
+    if (!claimId) return;
+
+    const qrValue = claimUrlFrom({ id: claimId, discountCode: discountCode ?? undefined });
     navigate("/qr", {
       state: {
         qrValue,
@@ -154,9 +164,18 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
 
   const copyCode = async () => {
     if (!discountCode) return;
-    try { await navigator.clipboard.writeText(discountCode); } catch {}
-    alert("Code copied");
+    try {
+      await navigator.clipboard.writeText(discountCode);
+      alert("Code copied");
+    } catch {
+      // no-op
+    }
   };
+
+  const safeTimestamp = useMemo(() => {
+    const ms = new Date(timestamp).getTime();
+    return Number.isNaN(ms) ? "" : new Date(ms).toLocaleString();
+  }, [timestamp]);
 
   const displayMessage = content || `${actorName} acted on offer`;
 
@@ -177,7 +196,7 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
 
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         {/* Claimant-side affordances */}
-        {isMine && claimStatus === "PENDING" && claimSource === "MANUAL" && !isExpired  && (
+        {isMine && claimStatus === "PENDING" && claimSource === "MANUAL" && !isExpired && (
           <button
             onClick={showQr}
             style={{
@@ -194,7 +213,7 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
           </button>
         )}
 
-        {isMine && claimSource === "ONLINE" && discountCode && !isExpired  && (
+        {isMine && claimSource === "ONLINE" && !!discountCode && !isExpired && (
           <button
             onClick={copyCode}
             style={{
@@ -215,12 +234,13 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
         {canApprove && metadata?.claimId && (
           <BusinessApproveClaim
             claimId={metadata.claimId}
-            canApprove={!!canApprove}                // from your computed memo
-            claimPolicy={claimPolicy ?? "BOTH"}      // already loaded from assigned offer
-            expiresAt={claimExpiresAt ?? undefined}  // already in state
+            canApprove={!!canApprove}
+            claimPolicy={claimPolicy ?? "BOTH"}
+            expiresAt={claimExpiresAt ?? undefined}
             onApproved={() => onApproveClaim?.(metadata.claimId!)}
           />
         )}
+
         <small
           style={{
             whiteSpace: "nowrap",
@@ -228,7 +248,7 @@ const OfferActivity: React.FC<OfferActivityProps> = ({
             fontSize: "0.75rem",
           }}
         >
-          {new Date(timestamp).toLocaleString()}
+          {safeTimestamp}
         </small>
       </div>
     </div>

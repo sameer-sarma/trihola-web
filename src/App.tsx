@@ -37,6 +37,8 @@ import Footer from "./components/Footer";
 import { supabase } from "./supabaseClient";
 import axios from "axios";
 import "./css/base.css";
+import { getMyBusiness } from "./services/profileService";
+
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
 interface UserProfile {
@@ -55,6 +57,15 @@ interface UserProfile {
   phoneVerified?: boolean;
 }
 
+interface BusinessProfile {
+  userId: string;
+  businessName?: string;
+  businessDescription?: string;
+  businessWebsite?: string;
+  businessSlug?: string;
+  registeredAt?: string;
+}
+
 const AppInner: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile>({
@@ -66,6 +77,9 @@ const AppInner: React.FC = () => {
     profileImageUrl: "",
     bio: "",
   });
+
+   // Business profile (new)
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);
 
   const location = useLocation();
 
@@ -117,6 +131,27 @@ const AppInner: React.FC = () => {
     };
   }, [session?.access_token]);
 
+  // 🔄 When the user is a business, fetch the business profile to get its slug
+  useEffect(() => {
+    let cancelled = false;
+    const loadBusiness = async () => {
+      if (!session?.access_token) return;
+      if (!profile?.registeredAsBusiness) {
+        if (!cancelled) setBusiness(null);
+        return;
+      }
+      try {
+        const data = await getMyBusiness(session.access_token);
+        if (!cancelled) setBusiness(data);
+      } catch (e) {
+   if (!cancelled) { setBusiness(null); console.warn("getMyBusiness failed:", e); }      }
+    };
+    loadBusiness();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.access_token, profile?.registeredAsBusiness]);
+
   const userId = session?.user?.id ?? "";
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -150,6 +185,9 @@ const AppInner: React.FC = () => {
   const handleImageUpload = (url: string) => {
     setProfile((prev) => ({ ...prev, profileImageUrl: url }));
   };
+
+    // expose the business slug for children that need it
+  const businessSlug = business?.businessSlug;
 
   return (
     <>
@@ -212,14 +250,14 @@ const AppInner: React.FC = () => {
             <Route path="/settings" element={<UserSettingsForm />} />
             <Route
               path="/offer-templates"
-              element={<OfferTemplates profile={profile} userId={userId} token={session.access_token} />}
+              element={<OfferTemplates profile={profile} userId={userId} token={session.access_token} businessSlug={businessSlug} />}
             />
             <Route
               path="/add-offer-template"
-              element={<AddOfferTemplate profile={profile} userId={userId} token={session.access_token} />}
+              element={<AddOfferTemplate profile={profile} userId={userId} token={session.access_token} businessSlug={businessSlug}/>}
             />
             <Route path="/offer-template/:templateId" element={<OfferTemplateDetails token={session.access_token} />} />
-            <Route path="/offer-template/:templateId/edit" element={<EditOfferTemplate token={session.access_token} />} />
+            <Route path="/offer-template/:templateId/edit" element={<EditOfferTemplate token={session.access_token} businessSlug={businessSlug}/>} />
             <Route path="/offers/:assignedOfferId" element={<OfferDetailsPage />} />
             <Route path="/qrcode" element={<QRCodePage />} />
             <Route path="/ecom" element={<EcomIntegrations token={session.access_token} profile={profile} userId={userId} />} />

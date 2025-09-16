@@ -32,6 +32,14 @@ export interface GrantItemSnapshot {
   bundle?: BundleMini | null;
 }
 
+export type OfferTierRow = {
+  minAmount: number;                // e.g., 0, 5000, 10000
+  discountAmount?: number;          // fixed ₹ off (present for fixed tiers)
+  discountPercentage?: number;      // % off (present for percentage tiers)
+  maxDiscountAmount?: number;       // cap for % tiers (0 or undefined means no cap per your API)
+};
+
+
 export interface AssignOfferRequest {
   offerTemplateId: string;
   targetType: AssignmentTargetType;
@@ -117,6 +125,9 @@ export interface OfferDetailsDTO {
   maxDiscountAmount?: number | null;
   discountAmount?: number | null;
 
+  // Tiers
+  tiers?: OfferTierRow[];      
+
   // Validity (summary)
   trigger?: ValidityTrigger | string | null;
   validityType?: ValidityType | null;
@@ -155,10 +166,16 @@ export interface OfferDetailsDTO {
 
 
 export interface ClaimRequestDTO {
-  redemptionType: string;
+  redemptionType?: string;
   redemptionValue?: string;
   note?: string;
   expiresInMinutes?: number;
+  claimSource?: 'MANUAL' | 'ONLINE';
+  platform?: string;
+  domain?: string;
+  email?: string;
+  checkoutId?: string;
+  selectedGrants?: GrantSelectionInput[]; // NEW
 }
 
 export type ClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
@@ -188,3 +205,19 @@ export interface OfferClaimDTO {
   grants: GrantItemSnapshot[];
 }
 
+export type GrantSelectionInput =
+  | { itemType: 'PRODUCT'; productId: string; quantity?: number }
+  | { itemType: 'BUNDLE';  bundleId:  string; quantity?: number };
+  
+export interface GrantOption {
+  itemType: 'PRODUCT' | 'BUNDLE';
+  id: string;              // productId or bundleId
+  title: string;
+  imageUrl?: string | null;
+  defaultQuantity: number; // from template snapshot
+}
+
+export type FetchGrantOptionsResponse = {
+  options: GrantOption[];
+  pickLimit: number;
+};
