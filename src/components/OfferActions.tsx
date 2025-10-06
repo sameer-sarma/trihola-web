@@ -153,12 +153,14 @@ const OfferActions: React.FC<Props> = ({
   const [viewerIsBusiness, setViewerIsBusiness] = useState(!!offer.canApproveClaim);
   const showConsumer = !viewerIsBusiness;
 
+/*
   // policy gates
   const manualAllowed = offer.claimPolicy === "MANUAL" || offer.claimPolicy === "BOTH";
   const onlineAllowed = offer.claimPolicy === "ONLINE" || offer.claimPolicy === "BOTH";
   const canClaimBase = !!offer.canClaim && !!assignedId;
   const canManual = canClaimBase && manualAllowed;
   const canOnline = canClaimBase && onlineAllowed;
+*/
 
   // state: active claims
   const [manual, setManual] = useState<ClaimView | null>(initialManual);
@@ -449,7 +451,7 @@ const OfferActions: React.FC<Props> = ({
       {showConsumer && (offer.offerType === "GRANT") && (offer.grantPickLimit ?? 0) > 0 && assignedId && (
         <ClaimModal
           assignedOfferId={assignedId}
-          isOpen={/* state */ false} // unchanged: your existing open/close logic above
+          isOpen={showClaimModal} 
           onClose={() => setShowClaimModal(false)}
           onCreated={(claim) => { setManual(claim); setExpiredManual(false); }}
           grantMode={true}

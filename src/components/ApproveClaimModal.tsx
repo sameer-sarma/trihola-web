@@ -254,7 +254,7 @@ const computeRedemptionValue = () => {
   // -------------- gate UI --------------
   if (!isOpen) return null;
 
-  const grantsRemaining = Math.max(
+/*   const grantsRemaining = Math.max(
     0,
     requiredGrantCount - selectedGrants.length
   );
@@ -263,6 +263,7 @@ const computeRedemptionValue = () => {
         grantsRemaining ? ` • ${grantsRemaining} remaining` : ""
       }`
     : "Grant selection";
+*/
 
   // -------------- render --------------
   return (
