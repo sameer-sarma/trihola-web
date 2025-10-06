@@ -1,258 +1,76 @@
 // src/components/OfferActivity.tsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import "../css/ReferralThread.css";
-import {
-  fetchClaimDetails,
-  fetchOfferDetails,
-  markClaimExpired,
-} from "../services/offerService";
-import { supabase } from "../supabaseClient";
-import { useNavigate } from "react-router-dom";
-import {
-  ClaimStatus,
-  ClaimPolicy,
-  OfferClaimDTO,
-  ClaimSource,
-} from "../types/offer";
-import BusinessApproveClaim from "./BusinessApproveClaim";
-// If your hook exports default, switch to: `import claimUrlFrom from "../hooks/useOfferClaims";`
-import claimUrlFrom from "../utils/claimUrl";
+import React from "react";
+import "../css/ui-forms.css";
+import "../css/cards.css";
 
-interface OfferActivityProps {
-  timestamp: string;
-  actorName: string;
-  offerTitle: string;     // still allowed in props, just not destructured
-  recipientName: string;  // "
-  eventSubType: string;   // "
-  content: string;
-  metadata?: { claimId?: string };
-  isBusinessOnReferral: boolean;
-  onApproveClaim?: (claimId: string) => void;
-  currentUserId?: string;
+type Activity = {
+  id: string;
+  createdAt: string;           // ISO
+  eventType: string;           // e.g. CLAIM_REQUESTED_MANUAL, CLAIM_APPROVED, CLAIM_EXPIRED
+  actorName?: string;          // e.g. "Sameer Sarma"
+  offerTitle?: string;         // e.g. "Grant"
+  content?: string;               // pre-rendered message (preferred if present)
+  metadata?: any;              // optional, for message fallback
+};
+
+interface Props {
+  activity: Activity;
+  isBusinessOnReferral?: boolean; // kept for API compatibility; not used here
 }
 
-const asClaimStatus = (raw?: string): ClaimStatus | null => {
-  if (!raw) return null;
-  const val = raw.toUpperCase();
-  if (["PENDING", "APPROVED", "REJECTED", "EXPIRED"].includes(val)) {
-    return val as ClaimStatus;
+const fmt = (iso?: string) =>
+  iso ? new Date(iso).toLocaleString() : "—";
+
+// Build a readable line without hitting the network.
+// Uses `text` if provided; otherwise derives from eventType + metadata.
+function toLine(a: Activity): string {
+  if (a.content) return a.content;
+
+  const m = a.metadata ?? {};
+  const who = m.actorName ?? a.actorName ?? "Someone";
+  const title = m.offerTitle ?? a.offerTitle ?? "offer";
+  const claimant = m.claimantName ? ` for ${m.claimantName}` : "";
+
+  switch ((a.eventType || "").toUpperCase()) {
+    case "CLAIM_REQUESTED_MANUAL":
+      return `${who} requested an in-store QR for "${title}".`;
+    case "CLAIM_REQUESTED_ONLINE":
+      return `${who} generated an online code for "${title}".`;
+    case "CLAIM_APPROVED":
+      return `${who} approved redemption of "${title}"${claimant}.`;
+    case "CLAIM_REJECTED":
+      return `${who} rejected the claim for "${title}"${claimant}.`;
+    case "CLAIM_EXPIRED":
+    case "CLAIM_TIMED_OUT":
+      return "Claim has timed out";
+    default:
+      return m.message ?? a.eventType ?? "Activity";
   }
-  return null;
-};
+}
 
-const asClaimPolicy = (raw?: string): ClaimPolicy | null => {
-  if (!raw) return null;
-  const val = raw.toUpperCase();
-  if (["ONLINE", "MANUAL", "BOTH"].includes(val)) {
-    return val as ClaimPolicy;
-  }
-  return null;
-};
-
-const OfferActivity: React.FC<OfferActivityProps> = ({
-  timestamp,
-  actorName,
-  // offerTitle, recipientName, eventSubType  ← intentionally not destructured
-  content,
-  metadata,
-  isBusinessOnReferral,
-  onApproveClaim,
-  currentUserId,
-}) => {
-  const [claimStatus, setClaimStatus] = useState<ClaimStatus | null>(null);
-  const [claimExpiresAt, setClaimExpiresAt] = useState<string | null>(null);
-  const [claimPolicy, setClaimPolicy] = useState<ClaimPolicy | null>(null);
-  const [discountCode, setDiscountCode] = useState<string | null>(null);
-  const [claimantId, setClaimantId] = useState<string | null>(null);
-  const [claimSource, setClaimSource] = useState<ClaimSource | null>(null);
-  const navigate = useNavigate();
-
-  const sentExpireOnceRef = useRef<Record<string, boolean>>({});
-
-  useEffect(() => {
-    const load = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const tok = session?.access_token ?? null;
-      const claimId = metadata?.claimId ?? null;
-      if (!tok || !claimId) return;
-
-      try {
-        const claim: OfferClaimDTO | null = await fetchClaimDetails(tok, claimId);
-
-        setDiscountCode(claim?.discountCode ?? null);
-        setClaimantId(claim?.claimantId ?? null);
-        setClaimSource((claim?.claimSource as ClaimSource) ?? null);
-
-        let effective = asClaimStatus(claim?.status);
-        const expiresAt: string | null = claim?.expiresAt ?? null;
-
-        if (effective === "PENDING" && expiresAt) {
-          const expMs = new Date(expiresAt).getTime();
-          if (!Number.isNaN(expMs) && expMs < Date.now()) {
-            effective = "EXPIRED";
-            // Best-effort expiration marking once per claim
-            if (claim?.id && !sentExpireOnceRef.current[claim.id]) {
-              sentExpireOnceRef.current[claim.id] = true;
-              markClaimExpired(tok, claim.id).catch(() => {
-                /* best-effort */
-              });
-            }
-          }
-        }
-
-        if (effective) setClaimStatus(effective);
-        setClaimExpiresAt(expiresAt);
-
-        // Load claimPolicy from the assigned offer
-        let policy: ClaimPolicy | null = null;
-        if (claim?.assignedOfferId) {
-          const assigned = await fetchOfferDetails(tok, claim.assignedOfferId);
-          policy = asClaimPolicy(assigned?.claimPolicy) || null;
-        }
-        setClaimPolicy(policy);
-      } catch (e) {
-        console.error("OfferActivity load error:", e);
-      }
-    };
-
-    load();
-  }, [metadata?.claimId]);
-
-  const canApprove = useMemo(() => {
-    const inactive =
-      claimStatus === "APPROVED" ||
-      claimStatus === "REJECTED" ||
-      claimStatus === "EXPIRED";
-
-    const policyAllows = claimPolicy === "MANUAL" || claimPolicy === "BOTH";
-
-    return (
-      !!onApproveClaim &&
-      !inactive &&
-      isBusinessOnReferral &&
-      !!metadata?.claimId &&
-      policyAllows
-    );
-  }, [claimStatus, claimPolicy, isBusinessOnReferral, metadata?.claimId, onApproveClaim]);
-
-  const isExpired = useMemo(() => {
-    if (!claimExpiresAt) return false;
-    const expMs = new Date(claimExpiresAt).getTime();
-    return !Number.isNaN(expMs) && expMs < Date.now();
-  }, [claimExpiresAt]);
-
-  const isMine = !!currentUserId && !!claimantId && currentUserId === claimantId;
-
-  const showQr = () => {
-    if (!isMine || claimSource !== "MANUAL") return;
-    const claimId = metadata?.claimId;
-    if (!claimId) return;
-
-    const qrValue = claimUrlFrom({ id: claimId, discountCode: discountCode ?? undefined });
-    navigate("/qr", {
-      state: {
-        qrValue,
-        title: "Present this QR to the business",
-        subtitle: "They'll approve it to redeem the offer",
-        footer: claimExpiresAt ? `Expires at ${new Date(claimExpiresAt).toLocaleString()}` : undefined,
-        size: 256,
-      },
-    });
-  };
-
-  const copyCode = async () => {
-    if (!discountCode) return;
-    try {
-      await navigator.clipboard.writeText(discountCode);
-      alert("Code copied");
-    } catch {
-      // no-op
-    }
-  };
-
-  const safeTimestamp = useMemo(() => {
-    const ms = new Date(timestamp).getTime();
-    return Number.isNaN(ms) ? "" : new Date(ms).toLocaleString();
-  }, [timestamp]);
-
-  const displayMessage = content || `${actorName} acted on offer`;
-
+const OfferActivity: React.FC<Props> = ({ activity }) => {
   return (
-    <div
-      className="event-card"
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "8px 12px",
-        borderBottom: "1px solid #e5e7eb",
-      }}
-    >
-      <p className="referral-line" style={{ margin: 0 }}>
-        {displayMessage}
-      </p>
-
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        {/* Claimant-side affordances */}
-        {isMine && claimStatus === "PENDING" && claimSource === "MANUAL" && !isExpired && (
-          <button
-            onClick={showQr}
-            style={{
-              padding: "4px 8px",
-              fontSize: "0.8rem",
-              backgroundColor: "#111827",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            🧾 Show QR
-          </button>
-        )}
-
-        {isMine && claimSource === "ONLINE" && !!discountCode && !isExpired && (
-          <button
-            onClick={copyCode}
-            style={{
-              padding: "4px 8px",
-              fontSize: "0.8rem",
-              backgroundColor: "#2563eb",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            🔐 Copy Code
-          </button>
-        )}
-
-        {/* Business-side approval for manual claims */}
-        {canApprove && metadata?.claimId && (
-          <BusinessApproveClaim
-            claimId={metadata.claimId}
-            canApprove={!!canApprove}
-            claimPolicy={claimPolicy ?? "BOTH"}
-            expiresAt={claimExpiresAt ?? undefined}
-            onApproved={() => onApproveClaim?.(metadata.claimId!)}
-          />
-        )}
-
-        <small
-          style={{
-            whiteSpace: "nowrap",
-            color: "#6b7280",
-            fontSize: "0.75rem",
-          }}
-        >
-          {safeTimestamp}
-        </small>
+    <div className="activity-row" style={{ margin: "6px 0" }}>
+      <div
+        className="bubble"
+        style={{
+          display: "inline-block",
+          background: "#f3f4f6",
+          padding: "10px 14px",
+          borderRadius: 18,
+          boxShadow: "0 1px 1px rgba(0,0,0,0.04)",
+        }}
+      >
+        {toLine(activity)}
+      </div>
+      <div
+        className="timestamp"
+        style={{ fontSize: 12, color: "#6b7280", marginLeft: 8, display: "inline-block" }}
+      >
+        {fmt(activity.createdAt)}
       </div>
     </div>
   );
 };
 
-export default OfferActivity;
+export default React.memo(OfferActivity);

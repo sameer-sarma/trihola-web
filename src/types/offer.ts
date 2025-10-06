@@ -11,17 +11,17 @@ export type ValidityType = "RELATIVE" | "ABSOLUTE"; // adjust as per backend enu
 
 export interface ProductMini {
   id: string;
-  slug: string;
+  slug?: string | null;
   businessSlug?: string | null;
-  name: string;
+  name?: string | null;
   primaryImageUrl?: string | null;
 }
 
 export interface BundleMini {
   id: string;
-  slug: string;
+  slug?: string| null;
   businessSlug?: string | null;
-  title: string;
+  title?: string | null;
   primaryImageUrl?: string | null;
 }
 
@@ -31,6 +31,16 @@ export interface GrantItemSnapshot {
   product?: ProductMini | null;
   bundle?: BundleMini | null;
 }
+
+export interface ScopeItemSnapshot {
+  itemType: "PRODUCT" | "BUNDLE";
+  product?: ProductMini | null;
+  bundle?: BundleMini | null;
+}
+
+export type GrantLine =
+  | { itemType: "PRODUCT"; productId: string; quantity?: number }
+  | { itemType: "BUNDLE";  bundleId:  string; quantity?: number };
 
 export type OfferTierRow = {
   minAmount: number;                // e.g., 0, 5000, 10000
@@ -220,4 +230,50 @@ export interface GrantOption {
 export type FetchGrantOptionsResponse = {
   options: GrantOption[];
   pickLimit: number;
+};
+
+type GrantItem = {
+  product?: ProductMini;
+  bundleTitle?: string;
+  quantity: number;
+  title?: string; // fallback label if product/bundle title isn't present
+};
+
+export type OfferClaimView = {
+  id: string;
+  source: "MANUAL" | "ONLINE" | string;
+  status: "PENDING" | "APPROVED" | "REDEEMED" | "EXPIRED" | "REJECTED" | "CANCELLED" | string;
+  discountCode?: string | null;
+  claimedAt: string;               // ISO
+  redeemedAt?: string | null;      // ISO
+  note?: string | null;
+  redemptionType?: "DISCOUNT" | "GRANT" | string;
+  redemptionValue?: string | number | null;
+  grantItems?: GrantItem[] | null; // for GRANT redemptions
+};
+
+export type RedemptionType = "GRANT" | "PERCENTAGE_DISCOUNT" | "FIXED_DISCOUNT";
+
+export type OfferScopeKind = "ANY" | "LIST";
+export type GrantDiscountType = "FREE" | "PERCENTAGE" | "FIXED_AMOUNT" | "FIXED_PRICE";
+
+export type ClaimPreviewRequest = {
+  redemptionType: RedemptionType;
+  billTotal?: number; // scope ANY
+  cart?: { productId?: string; bundleId?: string; qty: number; unitPrice?: number }[]; // scope LIST
+  selectedGrants?: { productId: string; qty: number }[]; // GRANT
+};
+
+export type ClaimPreviewResponse = {
+  eligibleSubtotal: number;
+  applied?: {
+    type: RedemptionType;
+    value?: number; // currency amount for %/fixed
+    percent?: number;
+    grants?: { productId: string; qty: number }[];
+  };
+  finalTotal?: number;
+  warnings: string[];
+  nextTierHint?: { spendMore: number; nextPercent: number } | null;
+  canApprove: boolean;
 };

@@ -1,9 +1,8 @@
+// src/pages/OfferTemplateDetails.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchOfferTemplateById } from "../services/offerTemplateService";
 import type { OfferTemplateResponse } from "../types/offerTemplateTypes";
-import { getProductById } from "../api/productapi";
-import { getBundleById } from "../api/bundleapi";
 import OfferCard from "../components/OfferCard";
 import OfferAppliesTo from "../components/OfferAppliesTo";
 import OfferTiersSection from "../components/OfferTiersSection";
@@ -12,13 +11,10 @@ import OfferDetailsSection from "../components/OfferDetailsSection";
 import "../css/ui-forms.css";
 import "../css/cards.css";
 
-type AnyMap = Record<string, any>;
-
 interface Props {
   token: string;
 }
 
-/** Map OfferTemplateResponse -> minimal "offer-like" object for shared components */
 /** Map OfferTemplateResponse -> minimal "offer-like" object for shared components */
 const templateToOfferView = (t: any) => {
   const scopeItems = (t.scopeItems ?? [])
@@ -56,34 +52,28 @@ const templateToOfferView = (t: any) => {
   const hasTiers = Array.isArray(t.tiers) && t.tiers.length > 0;
 
   return {
-    // headline + copy
     offerTitle: t.templateTitle,
     description: t.description,
 
-    // type & claim policy
     offerType: t.offerType,
     claimPolicy: t.claimPolicy,
 
-    // validity
     validityType: t.validityType,
     validFrom: t.validityType === "ABSOLUTE" ? t.validFrom : undefined,
     validUntil: t.validityType === "ABSOLUTE" ? t.validTo : undefined,
     durationDays: t.validityType === "RELATIVE" ? t.durationDays : undefined,
     trigger:      t.validityType === "RELATIVE" ? t.trigger      : undefined,
 
-    // status / redemptions (templates don’t track usage)
     status: t.isActive ? "ACTIVE" : "INACTIVE",
     redemptionsUsed: 0,
     effectiveMaxRedemptions: t.maxRedemptions ?? undefined,
     redemptionsLeft: t.maxRedemptions ?? undefined,
 
-    // purchase + base discount
     minPurchaseAmount: typeof t.minPurchaseAmount === "number" ? t.minPurchaseAmount : undefined,
     ...( !hasTiers && typeof t.discountPercentage === "number" ? { discountPercentage: t.discountPercentage } : {}),
     ...( !hasTiers && typeof t.discountAmount     === "number" ? { discountAmount:     t.discountAmount     } : {}),
     ...( !hasTiers && typeof t.maxDiscountAmount  === "number" ? { maxDiscountAmount:  t.maxDiscountAmount  } : {}),
 
-    // scope & tiers
     businessSlug: t.businessSlug ?? undefined,
     scopeKind: t.scopeKind === "ANY" ? "ANY_PURCHASE" : "LIST",
     scopeItems,
@@ -96,9 +86,6 @@ const OfferTemplateDetails: React.FC<Props> = ({ token }) => {
   const navigate = useNavigate();
 
   const [template, setTemplate] = useState<OfferTemplateResponse | null>(null);
-  // Used to hydrate Grants (template grants are ID-based)
-  const [productsMap, setProductsMap] = useState<AnyMap>({});
-  const [bundlesMap, setBundlesMap] = useState<AnyMap>({});
 
   // Load template
   useEffect(() => {
@@ -108,59 +95,13 @@ const OfferTemplateDetails: React.FC<Props> = ({ token }) => {
       .catch(() => console.error("Failed to load offer template details"));
   }, [templateId, token]);
 
-  // Hydrate Grants with names/images from IDs
-  useEffect(() => {
-    let closed = false;
-    if (!template) return;
-
-    (async () => {
-      const pIds = new Set<string>();
-      const bIds = new Set<string>();
-
-      for (const g of template.grants ?? []) {
-        if (g.itemType === "PRODUCT" && g.productId) pIds.add(g.productId);
-        if (g.itemType === "BUNDLE" && g.bundleId) bIds.add(g.bundleId);
-      }
-
-      const [pEntries, bEntries] = await Promise.all([
-        Promise.all(
-          [...pIds].map(async (id) => {
-            try {
-              return [id, await getProductById(id)] as const;
-            } catch {
-              return [id, null] as const;
-            }
-          })
-        ),
-        Promise.all(
-          [...bIds].map(async (id) => {
-            try {
-              return [id, await getBundleById(id)] as const;
-            } catch {
-              return [id, null] as const;
-            }
-          })
-        ),
-      ]);
-
-      if (!closed) {
-        setProductsMap(Object.fromEntries(pEntries));
-        setBundlesMap(Object.fromEntries(bEntries));
-      }
-    })();
-
-    return () => {
-      closed = true;
-    };
-  }, [template]);
-
   if (!template) {
     return (
-      <div className="page-wrap">
-        <div className="card">
-          <p className="help">Loading…</p>
+        <div className="page-wrap">
+          <div className="card">
+            <p className="help">Loading…</p>
+          </div>
         </div>
-      </div>
     );
   }
 
@@ -169,7 +110,7 @@ const OfferTemplateDetails: React.FC<Props> = ({ token }) => {
   return (
     <div className="page-wrap">
       {/* Header / summary (flat, actions hidden for templates) */}
-      <OfferCard offer={offerView as any} appearance="flat" showActions={false}  mode="template"/>
+      <OfferCard offer={offerView as any} appearance="flat" mode="template" />
 
       {/* Offer Details section */}
       <OfferDetailsSection title="Details" text={(offerView as any).description} />
@@ -180,15 +121,13 @@ const OfferTemplateDetails: React.FC<Props> = ({ token }) => {
       {/* Tiers (if present) */}
       <OfferTiersSection offer={offerView as any} />
 
-      {/* Grants (templates use ID-based grants) */}
+      {/* Grants — pass through directly (server already provides product/bundle minis) */}
       <OfferGrantsSection
         grants={(template.grants ?? []).map(g => ({
           ...g,
-          // normalize quantity to satisfy GrantInput (no nulls)
-          quantity: g.quantity ?? undefined,
+          quantity: g.quantity ?? undefined, // normalize nulls if any
         }))}
-        productById={productsMap}
-        bundleById={bundlesMap}
+        // productById / bundleById omitted on purpose
         pickLimit={template.grantPickLimit ?? 1}
         discountType={template.grantDiscountType ?? "FREE"}
         discountValue={template.grantDiscountValue}

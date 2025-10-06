@@ -4,15 +4,20 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { useReferrals } from "../context/ReferralsContext";
 import { fetchReferralThread, fetchReferralBySlug, postThreadMessage } from "../services/referralService";
-import { approveClaim } from "../services/offerService";
-import type { MessageMetadata, OfferEventMetadata, SystemAlertMetadata, ReferralDTO, ReferralThreadEventDTO, ReferralUpdatedMsg } from "../types/referral";
+import type { MessageMetadata, SystemAlertMetadata, ReferralDTO, ReferralThreadEventDTO, ReferralUpdatedMsg } from "../types/referral";
+import {
+  mapScopeToPickerItems,
+  mapGrantsToProductPickerItems,
+  mapGrantsToBundlePickerItems,
+  makeLocalFetcher,
+} from "../utils/pickerHelper";
 import ReferralDetails from "../pages/ReferralDetails";
 import MessageBubble from "../components/MessageBubble";
 import ReferralFeedPanel from "../components/ReferralFeedPanel";
 import ReferralActivity from "./ReferralActivity";
 import OfferActivity from "./OfferActivity";
 import SystemActivity from "../components/SystemActivity";
-import ApproveClaimModal from "../components/ApproveClaimModal";
+import ActiveClaimsPanel from "../components/ActiveClaimsPanel";
 import "../css/Thread.css";
 
 const formatDay = (iso: string) =>
@@ -27,15 +32,14 @@ const ReferralThread: React.FC = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalClaimId, setModalClaimId] = useState<string | null>(null);
-  const [modalRedemptionValue, setModalRedemptionValue] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
 
   // 0) session
   useEffect(() => {
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setCurrentUserId(session?.user?.id || null);
       setToken(session?.access_token || null);
     })();
@@ -47,7 +51,9 @@ const ReferralThread: React.FC = () => {
     setLoading(true);
     try {
       const thread = await fetchReferralThread(slug);
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const t = session?.access_token;
       if (!t) return;
       const ref = await fetchReferralBySlug(t, slug);
@@ -58,7 +64,12 @@ const ReferralThread: React.FC = () => {
     }
   }, [slug]);
 
-  useEffect(() => { void initialLoad(); }, [initialLoad]);
+  const didInit = React.useRef(false);
+  useEffect(() => {
+    if (didInit.current) return;
+    didInit.current = true;
+    void initialLoad();
+  }, [initialLoad]);
 
   // 2) WebSocket: handle timeline events + REFERRAL_UPDATED side-panel updates
   useEffect(() => {
@@ -79,12 +90,12 @@ const ReferralThread: React.FC = () => {
         const msg = JSON.parse(e.data);
         if (msg?.type === "REFERRAL_UPDATED") {
           const upd = msg as ReferralUpdatedMsg;
-          setReferral(upd.referral);         // 🔥 no refetch
-          updateFeedItem(upd.referral);      // keep right-hand list in sync
+          setReferral(upd.referral); // 🔥 no refetch
+          updateFeedItem(upd.referral); // keep right-hand list in sync
           return;
         }
         // else treat as normal timeline event
-        setEvents(prev => [...prev, msg as ReferralThreadEventDTO]);
+        setEvents((prev) => [...prev, msg as ReferralThreadEventDTO]);
       } catch (err) {
         console.error("WS parse error", err, e.data);
       }
@@ -105,21 +116,6 @@ const ReferralThread: React.FC = () => {
     // rely on WS echo to append; if your server doesn't echo, you can optimistically append here
   };
 
-  const handleApproveClaim = (claimId: string, redemptionValue?: string) => {
-    setModalClaimId(claimId);
-    setModalRedemptionValue(redemptionValue || "");
-    setModalOpen(true);
-  };
-
-  const finalizeApproveClaim = async (redemptionValue: string, note?: string) => {
-    if (!token || !modalClaimId) return;
-    await approveClaim(modalClaimId, token, redemptionValue, note);
-    setModalOpen(false);
-    setModalClaimId(null);
-    setModalRedemptionValue(null);
-    // no refetch — server will emit REFERRAL_UPDATED + OFFER_EVENT
-  };
-
   const isInputDisabled = (() => {
     if (!referral || !currentUserId) return true;
     if (referral.status === "CANCELLED") return true;
@@ -137,6 +133,39 @@ const ReferralThread: React.FC = () => {
     return groups;
   }, [events]);
 
+  // ----- Build picker fetchers from embedded offers (scopeItems + grants) -----
+  const refAO = referral?.referrerOffer;
+  const proAO = referral?.prospectOffer;
+
+  const refPickers = useMemo(() => {
+    if (!refAO) return undefined;
+    const scope = mapScopeToPickerItems(refAO.scopeItems ?? []);
+    const productgrants = mapGrantsToProductPickerItems(refAO.grants ?? []);
+    const bundlegrants = mapGrantsToBundlePickerItems(refAO.grants ?? []);
+    return {
+      fetchScopeProducts: makeLocalFetcher(scope.products),
+      fetchScopeBundles: makeLocalFetcher(scope.bundles),
+      fetchGrantProducts: makeLocalFetcher(productgrants),
+      fetchGrantBundles: makeLocalFetcher(bundlegrants),
+    } as const;
+  }, [refAO]);
+
+  const proPickers = useMemo(() => {
+    if (!proAO) return undefined;
+    const scope = mapScopeToPickerItems(proAO.scopeItems ?? []);
+    const productgrants = mapGrantsToProductPickerItems(proAO.grants ?? []);
+    const bundlegrants = mapGrantsToBundlePickerItems(proAO.grants ?? []);
+    return {
+      fetchScopeProducts: makeLocalFetcher(scope.products),
+      fetchScopeBundles: makeLocalFetcher(scope.bundles),
+      fetchGrantProducts: makeLocalFetcher(productgrants),
+      fetchGrantBundles: makeLocalFetcher(bundlegrants),
+    } as const;
+  }, [proAO]);
+
+  // decide who's viewing; if this is your business console you can force "BUSINESS"
+  const viewer: "BUSINESS" | "USER" = "BUSINESS";
+
   if (loading || !currentUserId) return <p>Loading thread...</p>;
 
   return (
@@ -144,7 +173,32 @@ const ReferralThread: React.FC = () => {
       <div className="referral-layout">
         <div className="thread-sidebar">
           {referral ? (
-            <ReferralDetails referral={referral} setReferral={setReferral} />
+            <>
+              <ReferralDetails referral={referral} setReferral={setReferral} />
+
+              {/* Active claims panel below the card */}
+              {token && refAO?.id && (
+                <ActiveClaimsPanel
+                  assignedOfferId={refAO.id}
+                  token={token}
+                  viewer={viewer}
+                  onUpdated={undefined}
+                  scopeKind={refAO.scopeKind === "LIST" ? "LIST" : "ANY"}
+                  pickers={refPickers}
+                />
+              )}
+
+              {token && proAO?.id && (
+                <ActiveClaimsPanel
+                  assignedOfferId={proAO.id}
+                  token={token}
+                  viewer={viewer}
+                  onUpdated={undefined}
+                  scopeKind={proAO.scopeKind === "LIST" ? "LIST" : "ANY"}
+                  pickers={proPickers}
+                />
+              )}
+            </>
           ) : (
             <p className="info-message">Referral not found.</p>
           )}
@@ -176,23 +230,34 @@ const ReferralThread: React.FC = () => {
                           <ReferralActivity slug={slug ?? ""} content={event.content} timestamp={event.createdAt} />
                         </div>
                       );
-                    case "OFFER_EVENT":
+                    case "OFFER_EVENT": {
+                      const meta = (event.metadata ?? {}) as {
+                        actorName?: string;
+                        offerTitle?: string;
+                        recipientName?: string; // aka claimantName
+                        eventSubType?: string; // older payloads
+                        [k: string]: any;
+                      };
+
+                      const activity = {
+                        id: event.id,
+                        createdAt: event.createdAt,
+                        eventType: (meta.eventType ?? meta.eventSubType ?? event.eventType) as string,
+                        actorName: meta.actorName,
+                        offerTitle: meta.offerTitle,
+                        content: event.content,
+                        metadata: {
+                          ...meta,
+                          claimantName: meta.recipientName,
+                        },
+                      };
+
                       return (
                         <div className="event-row activity-center" key={event.id}>
-                          <OfferActivity
-                            timestamp={event.createdAt}
-                            actorName={(event.metadata as OfferEventMetadata)?.actorName}
-                            offerTitle={(event.metadata as OfferEventMetadata)?.offerTitle}
-                            recipientName={(event.metadata as OfferEventMetadata)?.recipientName}
-                            eventSubType={(event.metadata as OfferEventMetadata)?.eventSubType || "CLAIM"}
-                            content={event.content}
-                            metadata={event.metadata as OfferEventMetadata}
-                            currentUserId={currentUserId}
-                            isBusinessOnReferral={referral?.businessId === currentUserId}
-                            onApproveClaim={(claimId) => handleApproveClaim(claimId, (event.metadata as OfferEventMetadata)?.redemptionValue)}
-                          />
+                          <OfferActivity activity={activity} isBusinessOnReferral={referral?.businessId === currentUserId} />
                         </div>
                       );
+                    }
                     default:
                       return (
                         <div className="event-row msg-system" key={event.id}>
@@ -230,18 +295,11 @@ const ReferralThread: React.FC = () => {
           </div>
         </div>
 
-   {/* Right column: feed panel */}
+        {/* Right column: feed panel */}
         <div className="thread-aside">
           <ReferralFeedPanel />
         </div>
       </div>
-
-      <ApproveClaimModal
-        isOpen={modalOpen}
-        defaultValue={modalRedemptionValue ?? ""}
-        onClose={() => setModalOpen(false)}
-        onApprove={finalizeApproveClaim}
-      />
     </div>
   );
 };

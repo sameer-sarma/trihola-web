@@ -267,7 +267,6 @@ return (
               <OfferCard
                 offer={offerView as any}
                 appearance="flat"
-                showActions={false}
                 className="card--link offer-card--tile"   // <- tile class
                 mode="template"
               />

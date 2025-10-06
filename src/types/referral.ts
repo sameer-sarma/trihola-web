@@ -1,3 +1,10 @@
+import type {
+  OfferScopeKind,
+  ScopeItemSnapshot,
+  GrantItemSnapshot,
+  GrantDiscountType,
+} from "../types/offer"; // ← adjust relative path
+
 export interface ReferralDTO {
   id: string;
   slug: string;
@@ -125,6 +132,12 @@ export interface EmbeddedOfferDTO {
   assignedByName?: string | null;
   validFrom?: string | null;
   validUntil?: string | null;
+  scopeKind?: OfferScopeKind | null;         // server default: ANY
+  scopeItems: ScopeItemSnapshot[];           // [] by default from server
+  grants: GrantItemSnapshot[];               // [] by default from server
+  grantPickLimit: number;                    // server default: 1
+  grantDiscountType?: GrantDiscountType | null; // server default: FREE
+  grantDiscountValue?: number | null;        // server default: null
 }
 
 // WebSocket envelope for side-panel updates
