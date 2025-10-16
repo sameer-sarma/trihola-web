@@ -265,7 +265,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
 
           {manual.expiresAt && (
             <div style={{ marginTop: 6 }}>
-              <ExpiryCountdown expiresAt={manual.expiresAt} onExpire={() => onUpdated?.()} />
+              <ExpiryCountdown expiresAt={manual.expiresAt} onExpire={() => { loadClaims(); onUpdated?.(); }} />
             </div>
           )}
 
@@ -303,7 +303,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
             </div>
             {online.expiresAt && (
               <div style={{ marginTop: 6 }}>
-                <ExpiryCountdown expiresAt={online.expiresAt} onExpire={() => onUpdated?.()} />
+                <ExpiryCountdown expiresAt={online.expiresAt} onExpire={() => { loadClaims(); onUpdated?.(); }} />
               </div>
             )}
 

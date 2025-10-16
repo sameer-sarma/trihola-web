@@ -107,15 +107,48 @@ const OfferDetails: React.FC = () => {
     if (!token || !assignedOfferId) return;
     const id = setInterval(() => reload(), 180000);
     //const onFocus = () => reload();
-    const onVis = () => { if (document.visibilityState === "visible") reload(); };
+    //const onVis = () => { if (document.visibilityState === "visible") reload(); };
     //window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVis);
+    //document.addEventListener("visibilitychange", onVis);
     return () => {
       clearInterval(id);
       //window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVis);
+      //document.removeEventListener("visibilitychange", onVis);
     };
   }, [token, assignedOfferId, reload]);
+
+
+    // refresh on web socket updates
+  useEffect(() => {
+  if (!assignedOfferId || !token) return;
+
+  let url: URL;
+  try {
+    url = new URL(`/offers/${assignedOfferId}/ws`, __WS_BASE__); // same pattern as ReferralThread
+  } catch {
+    console.error("Invalid __WS_BASE__:", __WS_BASE__);
+    return;
+  }
+  url.searchParams.set("token", token);
+  const ws = new WebSocket(url.toString());
+
+  ws.onopen = () => {
+    // ask server for a fresh snapshot (optional, mirrors thread “resync”)
+    try { ws.send("resync"); } catch {}
+  };
+
+  ws.onmessage = () => {
+    // simplest path: any server event triggers a refetch
+    reload();
+  };
+
+  ws.onerror = () => {
+    // optional: log; we still let onclose clean up
+    console.warn("Offer WS error");
+  };
+
+  return () => ws.close();
+}, [assignedOfferId, token, reload]);
 
   if (loading) return <p className="center-text">Loading offer...</p>;
 
@@ -197,6 +230,11 @@ const OfferDetails: React.FC = () => {
               ? "BUSINESS"
               : "USER"
           }
+          canClaim={(offer as any).canClaim}
+          claimPolicy={(offer as any).claimPolicy}
+          offerType={(offer as any).offerType}
+          discountAmount={(offer as any).discountAmount}
+          grantPickLimit={(offer as any).grantPickLimit}
           scopeKind={(offer as any)?.scopeKind ?? "ANY"}
           onUpdated={() => reload()}
         />
