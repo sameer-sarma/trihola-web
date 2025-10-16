@@ -8,9 +8,10 @@ import OfferCard from "../components/OfferCard";
 import OfferAppliesTo from "../components/OfferAppliesTo";
 import OfferTiersSection from "../components/OfferTiersSection";
 import OfferDetailsSection from "../components/OfferDetailsSection";
-import OfferActions from "../components/OfferActions";
+//import OfferActions from "../components/OfferActions";
 import OfferGrantsSection from "../components/OfferGrantsSection";
 import OfferClaimsSection from "../components/OfferClaimsSection";
+import ActiveClaimsPanel from "../components/ActiveClaimsPanel";
 import {fetchOfferClaims} from "../services/offerService";
 import {OfferClaimView } from "../types/offer";
 import "../css/ui-forms.css";
@@ -62,39 +63,59 @@ const OfferDetails: React.FC = () => {
   const [err, setErr] = useState<string | null>(null);
   const navigate = useNavigate();
 
+    // central reload used by interval, focus/visibility, and child callbacks
+  const reload = React.useCallback(async () => {
+    if (!token || !assignedOfferId) return;
+    try {
+      setLoading(true);
+      // 1) Offer details
+      const offerResp = await axios.get(`${API_BASE}/offers/${assignedOfferId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOffer(offerResp.data as OfferDetailsDTO);
+      // 2) Claims for this offer
+      const claimsResp = await fetchOfferClaims(assignedOfferId, token);
+      setClaims((claimsResp ?? []).map(toClaimView));
+      setErr(null);
+    } catch (e: any) {
+      setErr(
+        e?.response?.status === 403
+          ? "You are not authorized to view this offer."
+          : "Failed to fetch offer details."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [token, assignedOfferId]);
+
+    // fetch access token once
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const t = session?.access_token ?? null;
       setToken(t);
-
-      if (!t || !assignedOfferId) {
-        setErr("Missing token or offer ID.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // 1) Offer details
-        const offerResp = await axios.get(`${API_BASE}/offers/${assignedOfferId}`, {
-          headers: { Authorization: `Bearer ${t}` },
-        });
-        setOffer(offerResp.data as OfferDetailsDTO);
-
-        // 2) Claims for this offer
-        const claimsResp = await fetchOfferClaims(assignedOfferId, t);
-        setClaims((claimsResp ?? []).map(toClaimView));
-      } catch (e: any) {
-        setErr(
-          e?.response?.status === 403
-            ? "You are not authorized to view this offer."
-            : "Failed to fetch offer details."
-        );
-      } finally {
-        setLoading(false);
-      }
     })();
-  }, [assignedOfferId]);
+  }, []);
+
+  // initial and subsequent reload when token/id ready
+  useEffect(() => {
+    if (token && assignedOfferId) reload();
+  }, [token, assignedOfferId, reload]);
+
+    // lightweight auto-refresh (180s) + focus/visibility
+  useEffect(() => {
+    if (!token || !assignedOfferId) return;
+    const id = setInterval(() => reload(), 180000);
+    //const onFocus = () => reload();
+    const onVis = () => { if (document.visibilityState === "visible") reload(); };
+    //window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(id);
+      //window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [token, assignedOfferId, reload]);
 
   if (loading) return <p className="center-text">Loading offer...</p>;
 
@@ -117,9 +138,14 @@ const OfferDetails: React.FC = () => {
     );
   }
 
+  
   const toOfferLike = (o: any) => ({
     ...o,
+     assignedOfferId: o.id ?? o.assignedOfferId,
+    assignedId: o.id ?? o.assignedOfferId,
     offerType: o.offerType as any,
+    canClaim: !!(o as any).canClaim,
+    canApproveClaim: !!(o as any).canApproveClaim,
     claimPolicy: o.claimPolicy as any,
     validityType: o.validityType as any,
     trigger: o.trigger as any,
@@ -159,13 +185,21 @@ const OfferDetails: React.FC = () => {
       {/* Summary */}
       <OfferCard offer={offerForCard} />
 
-      {/* Claim / Approve actions */}
-      {!(isExpired || isFullyClaimed) && (
-      <OfferActions
-        offer={toOfferLike(offer)}
-        token={token}
-        onUpdated={() => navigate(0)}
-      />
+      {/* Live active claims (QR / online code, countdown, approval) */}
+      {token && assignedOfferId && (
+        <ActiveClaimsPanel
+          assignedOfferId={assignedOfferId}
+          token={token}
+          viewer={
+            (offer as any).canApproveClaim
+              ? "BUSINESS"
+              : (offer as any)?.viewerRole === "BUSINESS"
+              ? "BUSINESS"
+              : "USER"
+          }
+          scopeKind={(offer as any)?.scopeKind ?? "ANY"}
+          onUpdated={() => reload()}
+        />
       )}
 
       {/* Details */}

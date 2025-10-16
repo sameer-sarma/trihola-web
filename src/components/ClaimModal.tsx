@@ -10,6 +10,8 @@ interface Props {
   // Parent provides pre-auth’d functions (no token logic in the modal)
   fetchGrantOptions: (assignedOfferId: string) => Promise<{ options: GrantOption[]; pickLimit: number }>;
   createClaim: (body: ClaimRequestDTO) => Promise<any>;
+  claimSource?: "MANUAL" | "ONLINE";            // NEW (default MANUAL)
+  primaryCtaLabel?: string;                      // Optional: override button text
 }
 
 const ClaimModal: React.FC<Props> = ({
@@ -20,6 +22,8 @@ const ClaimModal: React.FC<Props> = ({
   grantMode = true,
   fetchGrantOptions,
   createClaim,
+  claimSource = "MANUAL",
+  primaryCtaLabel,
 }) => {
   const [loading, setLoading] = useState(false);
   const [opts, setOpts] = useState<GrantOption[]>([]);
@@ -153,7 +157,7 @@ const ClaimModal: React.FC<Props> = ({
       setError("");
       setLoading(true);
       const body: ClaimRequestDTO = {
-        claimSource: "MANUAL",
+        claimSource, 
         selectedGrants: grantMode ? sel : undefined,
       };
       const claim = await createClaim(body);
@@ -260,7 +264,7 @@ const ClaimModal: React.FC<Props> = ({
 
             <div className="actions" style={{ marginTop: 12 }}>
               <button className="btn btn--primary btn--block" onClick={generate} disabled={!canGenerate}>
-                Generate QR
+                {primaryCtaLabel ?? (claimSource === "MANUAL" ? "Generate QR" : "Generate code")}
               </button>
               <button className="btn btn--ghost btn--block" onClick={onClose}>
                 Cancel
