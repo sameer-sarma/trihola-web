@@ -1,8 +1,4 @@
 // src/components/ActiveClaimsPanel.tsx
-// Single source of truth for Active Claim display + creation/regeneration
-// - USER view: create/regenerate MANUAL (QR) or ONLINE code
-// - GRANT offers: picker only for MANUAL; ONLINE bypasses picks (cart reconciliation)
-
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import * as offerService from "../services/offerService";
 import ExpiryCountdown from "./ExpiryCountdown";
@@ -13,14 +9,14 @@ import ClaimModal from "./ClaimModal";
 import type { PickerItem } from "../types/offerTemplateTypes";
 import { supabase } from "../supabaseClient";
 
-// ---------- Types ----------
 type ClaimSource = "MANUAL" | "ONLINE";
+type ClaimStatus = "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
 
 type ClaimView = {
   id: string;
   assignedOfferId?: string;
   claimSource: ClaimSource;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+  status: ClaimStatus;
   discountCode?: string | null;
   expiresAt?: string | null;
   grants?: any[];
@@ -33,13 +29,13 @@ function normalizeClaim(c: any): ClaimView {
     id: String(c?.id ?? c?.claimId ?? ""),
     assignedOfferId: c?.assignedOfferId,
     claimSource: (c?.claimSource || c?.source || "MANUAL") as ClaimSource,
-    status: (c?.status || "PENDING") as ClaimView["status"],
+    status: (c?.status || "PENDING") as ClaimStatus,
     discountCode: c?.discountCode ?? c?.code ?? null,
     expiresAt: c?.expiresAt ?? null,
     grants: c?.grants ?? c?.grantItems ?? [],
     redemptionType: c?.redemptionType ?? c?.type,
     grantPickLimit: c?.grantPickLimit,
-  } as ClaimView;
+  };
 }
 
 export type PickerFns = {
@@ -51,21 +47,19 @@ export type PickerFns = {
 
 interface Props {
   assignedOfferId: string;
-  token: string; // required
+  token: string;
   viewer: "USER" | "BUSINESS";
   onUpdated?: () => void;
 
-  // gates to enable/disable creation buttons
   canClaim?: boolean;
   claimPolicy?: "ONLINE" | "MANUAL" | "BOTH";
   offerType?: "PERCENTAGE_DISCOUNT" | "FIXED_DISCOUNT" | "GRANT";
-  discountAmount?: number | null; // for FIXED when needed
-  grantPickLimit?: number; // number of items a user may pick for GRANT
-  redemptionsLeft?: number; // guard when 0 left
+  discountAmount?: number | null;
+  grantPickLimit?: number;
+  redemptionsLeft?: number;
 
-  // extras
   scopeKind?: "ANY" | "LIST";
-  pickers?: PickerFns; // pass to BusinessApproveClaim & ClaimModal
+  pickers?: PickerFns;
 }
 
 const ActiveClaimsPanel: React.FC<Props> = ({
@@ -85,11 +79,10 @@ const ActiveClaimsPanel: React.FC<Props> = ({
   const [manual, setManual] = useState<ClaimView | null>(null);
   const [online, setOnline] = useState<ClaimView | null>(null);
   const [loading, setLoading] = useState(true);
-  const [now, setNow] = useState<number>(Date.now());
   const [busy, setBusy] = useState<"MANUAL" | "ONLINE" | null>(null);
   const [showGrantModal, setShowGrantModal] = useState(false);
 
-  // auth helpers
+  // ===== Auth helpers
   const withAuth = useCallback(
     async <T,>(fn: (t: string) => Promise<T>): Promise<T | null> => {
       if (token) return fn(token);
@@ -100,7 +93,6 @@ const ActiveClaimsPanel: React.FC<Props> = ({
     },
     [token]
   );
-
   const withAuthOrThrow = useCallback(
     async <T,>(fn: (t: string) => Promise<T>): Promise<T> => {
       const out = await withAuth(fn);
@@ -110,14 +102,20 @@ const ActiveClaimsPanel: React.FC<Props> = ({
     [withAuth]
   );
 
-  // 1s ticker for relative countdown (UI-only, not network polling)
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
+  // ===== One-shot load of active claim(s) — guarded, no polling
+  const inFlightRef = React.useRef(false);
+  const lastFetchMsRef = React.useRef(0);
 
-  // One-shot load of currently active claim(s); 404 -> null (no claim)
-  const loadClaims = React.useCallback(async () => {
+  const loadClaimsOnce = useCallback(async () => {
+    if (!assignedOfferId || !token) return;
+    if (inFlightRef.current) return;
+
+    // Cooldown to prevent rapid repeats (e.g., cascade re-renders)
+    const now = Date.now();
+    if (now - lastFetchMsRef.current < 1000) return; // 1s cooldown
+    lastFetchMsRef.current = now;
+
+    inFlightRef.current = true;
     setLoading(true);
     try {
       if (viewer === "USER") {
@@ -142,7 +140,6 @@ const ActiveClaimsPanel: React.FC<Props> = ({
           setOnline(null);
         }
       } else {
-        // BUSINESS view: show approvable manual claim (if any)
         const approvable = await offerService
           .fetchApprovableManualClaim(assignedOfferId, token)
           .catch((e: any) => (e?.response?.status === 404 ? null : Promise.reject(e)));
@@ -150,30 +147,26 @@ const ActiveClaimsPanel: React.FC<Props> = ({
         setOnline(null);
       }
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   }, [assignedOfferId, token, viewer, claimPolicy]);
 
   useEffect(() => {
-    loadClaims();
-  }, [loadClaims]);
+    loadClaimsOnce();
+  }, [loadClaimsOnce]);
 
-  // formatting helpers
-  const fmtAbs = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : "—");
-  const fmtRel = (iso?: string | null) => {
-    if (!iso) return "";
-    const diff = new Date(iso).getTime() - now;
-    if (diff <= 0) return "expired";
-    const s = Math.floor(diff / 1000);
-    const m = Math.floor(s / 60);
-    const ss = s % 60;
-    return m > 0 ? `${m}m ${ss}s` : `${ss}s`;
-  };
-
-  // active/visible state
+  // ===== Countdown ticker ONLY when a claim exists (avoid render churn otherwise)
   const hasAny =
     (!!manual && manual.status !== "EXPIRED") || (!!online && online.status !== "EXPIRED");
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  useEffect(() => {
+    if (!hasAny) return;
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [hasAny]);
 
+  // ===== Helpers
   const manualQrUrl = useMemo(
     () =>
       manual?.id
@@ -182,7 +175,18 @@ const ActiveClaimsPanel: React.FC<Props> = ({
     [manual]
   );
 
-  // Creation / Regeneration handlers
+  const fmtAbs = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : "—");
+  const fmtRel = (iso?: string | null) => {
+    if (!iso) return "";
+    const diff = new Date(iso).getTime() - nowMs;
+    if (diff <= 0) return "expired";
+    const s = Math.floor(diff / 1000);
+    const m = Math.floor(s / 60);
+    const ss = s % 60;
+    return m > 0 ? `${m}m ${ss}s` : `${ss}s`;
+  };
+
+  // ===== Creation / Regeneration
   const manualNeedsGrantFlow = offerType === "GRANT" && (grantPickLimit ?? 0) > 0;
 
   async function createManual() {
@@ -204,13 +208,12 @@ const ActiveClaimsPanel: React.FC<Props> = ({
   }
 
   async function createOnline() {
-    // For FIXED without default amount, steer to MANUAL approval flow
     if (offerType === "FIXED_DISCOUNT" && (discountAmount === null || Number(discountAmount) <= 0)) {
       return createManual();
     }
-    // ONLINE: never ask for grant picks; cart will reconcile.
     setBusy("ONLINE");
     try {
+      // ONLINE: never send grant picks; cart reconciliation will handle grants
       const body: any = { claimSource: "ONLINE", expiresInMinutes: 15 };
       if (String(offerType).toUpperCase() === "FIXED_DISCOUNT") body.redemptionValue = discountAmount;
       const res = await withAuthOrThrow((t) => offerService.requestClaim(t, assignedOfferId, body));
@@ -225,7 +228,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
   const regenerateManual = createManual;
   const regenerateOnline = createOnline;
 
-  // CTA guard
+  // ===== CTA guards + empty state
   const claimPolicyAllows =
     claimPolicy === "ONLINE" || claimPolicy === "MANUAL" || claimPolicy === "BOTH";
 
@@ -251,7 +254,6 @@ const ActiveClaimsPanel: React.FC<Props> = ({
     <div className="card" style={{ marginTop: 12 }}>
       <div className="section-header">Claims</div>
 
-      {/* Top row: Status + Expires (when an active claim exists) */}
       {hasAny && (
         <div className="kv-grid-4" style={{ rowGap: 8 }}>
           <div className="kv-item span-2">
@@ -279,7 +281,10 @@ const ActiveClaimsPanel: React.FC<Props> = ({
             <div style={{ marginTop: 6 }}>
               <ExpiryCountdown
                 expiresAt={manual.expiresAt}
-                onExpire={() => { loadClaims(); onUpdated?.(); }}
+                onExpire={() => {
+                  loadClaimsOnce();
+                  onUpdated?.();
+                }}
               />
             </div>
           )}
@@ -317,7 +322,10 @@ const ActiveClaimsPanel: React.FC<Props> = ({
               <div style={{ marginTop: 6 }}>
                 <ExpiryCountdown
                   expiresAt={online.expiresAt}
-                  onExpire={() => { loadClaims(); onUpdated?.(); }}
+                  onExpire={() => {
+                    loadClaimsOnce();
+                    onUpdated?.();
+                  }}
                 />
               </div>
             )}
@@ -348,7 +356,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
         </div>
       )}
 
-      {/* USER view: No active claim (show CTAs if allowed by policy) */}
+      {/* USER view: show CTAs when allowed by policy */}
       {viewer === "USER" && !hasAny && canShowCtas && (
         <div className="kv-grid-4" style={{ marginTop: 12 }}>
           {(claimPolicy === "MANUAL" || claimPolicy === "BOTH") && (
@@ -395,13 +403,8 @@ const ActiveClaimsPanel: React.FC<Props> = ({
           onClose={() => setShowGrantModal(false)}
           onCreated={(c: any) => {
             const v = normalizeClaim(c);
-            if (v.claimSource === "MANUAL") {
-              setManual(v);
-              setOnline(null);
-            } else {
-              setOnline(v);
-              setManual(null);
-            }
+            if (v.claimSource === "MANUAL") { setManual(v); setOnline(null); }
+            else { setOnline(v); setManual(null); }
             setShowGrantModal(false);
             onUpdated?.();
           }}
