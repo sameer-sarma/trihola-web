@@ -132,14 +132,62 @@ const OfferDetails: React.FC = () => {
   url.searchParams.set("token", token);
   const ws = new WebSocket(url.toString());
 
+  // Debounce + last-run guards
+let debounceTimer: number | null = null;
+const scheduleReload = (delay = 300) => {
+  if (debounceTimer !== null) return;
+  debounceTimer = window.setTimeout(() => {
+    debounceTimer = null;
+    reload();
+  }, delay);
+};
+
+// Return true only for interesting events
+const shouldReloadFromEvent = (raw: any): boolean => {
+  // 1) Empty/keepalive
+  if (raw == null) return false;
+  if (raw === "ping" || raw === "pong") return false;
+
+  // 2) Text frames we can parse
+  let obj: any = null;
+  if (typeof raw === "string") {
+    try { obj = JSON.parse(raw); } catch { /* not JSON */ }
+    if (!obj) {
+      // Treat bare strings like "ok", "ack" etc as ignorable
+      const s = raw.toLowerCase();
+      if (s === "ok" || s === "ack" || s === "resynced") return false;
+      // Unknown string: be conservative (no reload)
+      return false;
+    }
+  } else if (typeof raw === "object") {
+    obj = raw;
+  }
+
+  // 3) Only reload on meaningful types
+  const type = String(obj?.type ?? obj?.event ?? obj?.kind ?? "").toLowerCase();
+  if (!type) return false;
+  const meaningful = new Set([
+    "offer_updated",
+    "offer_status_changed",
+    "claim_created",
+    "claim_updated",
+    "claim_deleted",
+  ]);
+  return meaningful.has(type);
+};
+
   ws.onopen = () => {
-    // ask server for a fresh snapshot (optional, mirrors thread “resync”)
+    //  Optional: only ping/resync if you truly need a server push
     try { ws.send("resync"); } catch {}
   };
 
   ws.onmessage = () => {
-    // simplest path: any server event triggers a refetch
-    reload();
+ws.onmessage = (evt) => {
+  // Reload only for meaningful events, and debounce them
+  const payload = (evt && "data" in evt) ? evt.data : undefined;
+  if (shouldReloadFromEvent(payload)) {
+    scheduleReload(250);
+  }
   };
 
   ws.onerror = () => {
