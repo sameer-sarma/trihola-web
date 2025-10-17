@@ -250,7 +250,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
 
   return (
     <div className="card" style={{ marginTop: 12 }}>
-      <h3 style={{ margin: 0, marginBottom: 8 }}>Active claim</h3>
+      <div className="section-header">Claims</div>
 
       {/* Top row: Status + Expires (when an active claim exists) */}
       {hasAny && (
@@ -357,7 +357,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
           )}
           {(claimPolicy === "ONLINE" || claimPolicy === "BOTH") && (
             <div className="kv-item span-2">
-              <button className="btn w-full" onClick={createOnline} disabled={busy !== null}>
+              <button className="btn btn--primary w-full" onClick={createOnline} disabled={busy !== null}>
                 {busy === "ONLINE" ? "Generating…" : "Generate online code"}
               </button>
             </div>
