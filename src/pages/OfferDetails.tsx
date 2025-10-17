@@ -235,6 +235,7 @@ const OfferDetails: React.FC = () => {
           offerType={(offer as any).offerType}
           discountAmount={(offer as any).discountAmount}
           grantPickLimit={(offer as any).grantPickLimit}
+          redemptionsLeft={(offer as any).redemptionsLeft}
           scopeKind={(offer as any)?.scopeKind ?? "ANY"}
           onUpdated={() => reload()}
         />

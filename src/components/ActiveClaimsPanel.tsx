@@ -65,7 +65,7 @@ interface Props {
   offerType?: "PERCENTAGE_DISCOUNT" | "FIXED_DISCOUNT" | "GRANT";
   discountAmount?: number | null; // guard for FIXED when needed
   grantPickLimit?: number; // number of items a user may pick for GRANT
-
+  redemptionsLeft?: number; // to guard when 0 left
   // Already existed
   scopeKind?: "ANY" | "LIST";
   pickers?: PickerFns; // pass to BusinessApproveClaim (preview) & ClaimModal (grant picker)
@@ -81,6 +81,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
   offerType,
   discountAmount = null,
   grantPickLimit,
+  redemptionsLeft,
   scopeKind = "ANY",
   pickers,
 }) => {
@@ -175,10 +176,11 @@ const ActiveClaimsPanel: React.FC<Props> = ({
   );
 
   // ------ Creation / Regeneration handlers ------
-  const grantsFlowNeeded = offerType === "GRANT" && (grantPickLimit ?? 0) > 0;
+  // Only MANUAL (QR) needs grant picks. ONLINE codes bypass picks (cart reconciliation).
+  const manualNeedsGrantFlow = offerType === "GRANT" && (grantPickLimit ?? 0) > 0;
 
   async function createManual() {
-    if (grantsFlowNeeded) {
+    if (manualNeedsGrantFlow) {
       setShowGrantModal(true);
       setGrantFlowSource("MANUAL");     
       return;
@@ -203,12 +205,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
       // Fallback to manual creation so the business can approve with value
       return createManual();
     }
-    if (grantsFlowNeeded) {
-      // Online codes for GRANT offers should capture picks as well
-      setShowGrantModal(true);
-      setGrantFlowSource("ONLINE");     
-      return;
-    }
+// ONLINE codes for GRANT must **not** ask for picks; reconciliation happens against cart.
     setBusy("ONLINE");
     try {
       const body: any = { claimSource: "ONLINE", expiresInMinutes: 15 };
@@ -227,9 +224,26 @@ const ActiveClaimsPanel: React.FC<Props> = ({
   const regenerateOnline = createOnline;
 
   // Hide the entire card if nothing active *and* user cannot create
-  const canShowCtas = viewer === "USER" && canClaim === true;
+
+  // --- Hardened CTA gate ---
+  const claimPolicyAllows =
+    claimPolicy === "ONLINE" || claimPolicy === "MANUAL" || claimPolicy === "BOTH";
+  const canShowCtas =
+    viewer === "USER" &&
+    (canClaim ?? true) &&
+    claimPolicyAllows &&
+    (redemptionsLeft == null || redemptionsLeft > 0);
+
+// Empty-state reason (when CTAs hidden)
+  const emptyStateReason =
+    viewer !== "USER" ? null
+    : !claimPolicyAllows ? "Claiming is disabled for this offer."
+    : redemptionsLeft === 0 ? "No redemptions left on this offer."
+    : canClaim === false ? "You are not eligible to claim this offer."
+    : null;
+
   if (loading) return null;
-  if (!hasAny && !canShowCtas) return null;
+//  if (!hasAny && !canShowCtas) return null;
 
   const topStatus = manual?.status ?? online?.status ?? "—";
   const topExpiryIso = manual?.expiresAt ?? online?.expiresAt;
@@ -317,20 +331,34 @@ const ActiveClaimsPanel: React.FC<Props> = ({
         </div>
       )}
 
+      {/* USER view: Empty state when neither active claim nor CTAs */}
+      {viewer === "USER" && !hasAny && !canShowCtas && (
+        <div className="kv-item span-4" style={{
+          marginTop: 12,
+          padding: "12px 14px",
+          border: "1px dashed rgba(0,0,0,.12)",
+          borderRadius: 10,
+          background: "rgba(0,0,0,.02)",
+          color: "rgba(0,0,0,.7)"
+        }}>
+          <strong>No active claim.</strong>{" "}
+          {emptyStateReason ? <span>{emptyStateReason}</span> : null}
+        </div>
+      )}
       {/* USER view: No active claim (show CTAs if allowed by policy) */}
       {viewer === "USER" && !hasAny && canShowCtas && (
         <div className="kv-grid-4" style={{ marginTop: 12 }}>
           {(claimPolicy === "MANUAL" || claimPolicy === "BOTH") && (
             <div className="kv-item span-2">
               <button className="btn btn--primary w-full" onClick={createManual} disabled={busy !== null}>
-                {busy === "MANUAL" ? "Generating…" : grantsFlowNeeded ? "Choose grant & get QR" : "Generate QR"}
+                {busy === "MANUAL" ? "Generating…" : manualNeedsGrantFlow ? "Choose grant & get QR" : "Generate QR"}
               </button>
             </div>
           )}
           {(claimPolicy === "ONLINE" || claimPolicy === "BOTH") && (
             <div className="kv-item span-2">
               <button className="btn w-full" onClick={createOnline} disabled={busy !== null}>
-                {busy === "ONLINE" ? "Generating…" : grantsFlowNeeded ? "Choose grant & get code" : "Generate online code"}
+                {busy === "ONLINE" ? "Generating…" : "Generate online code"}
               </button>
             </div>
           )}
@@ -358,8 +386,8 @@ const ActiveClaimsPanel: React.FC<Props> = ({
         </div>
       )}
 
-      {/* GRANT pick modal for USER: delegates to offerService.requestClaim under the hood */}
-      {viewer === "USER" && grantsFlowNeeded && (
+      {/* GRANT pick modal for USER (MANUAL only) */}
+      {viewer === "USER" && manualNeedsGrantFlow && (
         <ClaimModal
           assignedOfferId={assignedOfferId}
           isOpen={showGrantModal}
@@ -377,7 +405,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
             onUpdated?.();
           }}
           grantMode={true}
-          claimSource={grantFlowSource}
+          claimSource={"MANUAL"}
           primaryCtaLabel={grantFlowSource === "MANUAL" ? "Generate QR" : "Generate code"}
 
           fetchGrantOptions={(assignedOfferId) => withAuthOrThrow((t) => offerService.fetchGrantOptions(assignedOfferId, t))}
