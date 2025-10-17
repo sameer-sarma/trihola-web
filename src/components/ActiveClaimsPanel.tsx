@@ -361,14 +361,14 @@ const ActiveClaimsPanel: React.FC<Props> = ({
         <div className="kv-grid-4" style={{ marginTop: 12 }}>
           {(claimPolicy === "MANUAL" || claimPolicy === "BOTH") && (
             <div className="kv-item span-2">
-              <button className="btn btn--primary w-full" onClick={createManual} disabled={busy !== null}>
+              <button type="button" className="btn btn--primary w-full" onClick={createManual} disabled={busy !== null}>
                 {busy === "MANUAL" ? "Generating…" : manualNeedsGrantFlow ? "Choose grant & get QR" : "Generate QR"}
               </button>
             </div>
           )}
           {(claimPolicy === "ONLINE" || claimPolicy === "BOTH") && (
             <div className="kv-item span-2">
-              <button className="btn btn--primary w-full" onClick={createOnline} disabled={busy !== null}>
+              <button type="button" className="btn btn--primary w-full" onClick={createOnline} disabled={busy !== null}>
                 {busy === "ONLINE" ? "Generating…" : "Generate online code"}
               </button>
             </div>

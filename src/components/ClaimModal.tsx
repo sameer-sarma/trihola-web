@@ -229,7 +229,7 @@ const ClaimModal: React.FC<Props> = ({
 
                     {/* Qty steppers – disabled until selected */}
                     <div className="select-actions">
-                      <button
+                      <button type="button"
                         className="btn btn--ghost btn--sm"
                         onClick={() => setQtyStrict(o, qtyVal - 1)}
                         disabled={!selected || qtyVal <= 0}
@@ -248,7 +248,7 @@ const ClaimModal: React.FC<Props> = ({
                         disabled={!selected}
                       />
 
-                      <button
+                      <button type="button"
                         className="btn btn--ghost btn--sm"
                         onClick={() => setQtyStrict(o, qtyVal + 1)}
                         disabled={!selected || capForThis <= 0}
@@ -263,10 +263,10 @@ const ClaimModal: React.FC<Props> = ({
             </div>
 
             <div className="actions" style={{ marginTop: 12 }}>
-              <button className="btn btn--primary btn--block" onClick={generate} disabled={!canGenerate}>
+              <button type="button" className="btn btn--primary btn--block" onClick={generate} disabled={!canGenerate}>
                 {primaryCtaLabel ?? (claimSource === "MANUAL" ? "Generate QR" : "Generate code")}
               </button>
-              <button className="btn btn--ghost btn--block" onClick={onClose}>
+              <button type="button" className="btn btn--ghost btn--block" onClick={onClose}>
                 Cancel
               </button>
             </div>

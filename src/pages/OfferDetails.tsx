@@ -128,6 +128,7 @@ const OfferDetails: React.FC = () => {
       if (debounceTimer !== null) return;
       debounceTimer = window.setTimeout(() => {
         debounceTimer = null;
+        console.log("OfferDetails: reloading due to WS event: scheduleReload");
         reload();
       }, delay);
     };
@@ -168,6 +169,7 @@ const OfferDetails: React.FC = () => {
     ws.onmessage = (evt) => {
       const payload = (evt && "data" in evt) ? evt.data : undefined;
       const type = eventTypeFromMessage(payload);
+      console.log("OfferDetails: WS event received:", type);
       if (type) scheduleReload(250);
     };
 
@@ -264,7 +266,7 @@ const OfferDetails: React.FC = () => {
           grantPickLimit={(offer as any).grantPickLimit}
           redemptionsLeft={(offer as any).redemptionsLeft}
           scopeKind={(offer as any)?.scopeKind ?? "ANY"}
-          onUpdated={() => reload()}
+          onUpdated={() => {}}
         />
       )}
 
