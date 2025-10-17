@@ -12,19 +12,11 @@ import OfferDetailsSection from "../components/OfferDetailsSection";
 import OfferGrantsSection from "../components/OfferGrantsSection";
 import OfferClaimsSection from "../components/OfferClaimsSection";
 import ActiveClaimsPanel from "../components/ActiveClaimsPanel";
-import {fetchOfferClaims} from "../services/offerService";
-import {OfferClaimView } from "../types/offer";
+import { fetchOfferClaims } from "../services/offerService";
+import { OfferClaimView } from "../types/offer";
 import "../css/ui-forms.css";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
-
-// --- Debug logging controls
-const RELOAD_LOG = true; // flip to false to silence logs
-let __reloadCount = 0;
-const dlog = (...args: any[]) => { if (RELOAD_LOG) console.log("[OfferDetails]", ...args); };
-const dtime = (label: string) => { if (RELOAD_LOG) console.time(label); };
-const dtimeEnd = (label: string) => { if (RELOAD_LOG) console.timeEnd(label); };
-
 
 type GrantForSection = {
   itemType: "PRODUCT" | "BUNDLE";
@@ -51,11 +43,9 @@ const toClaimView = (v: any): OfferClaimView => {
     note: c.note ?? undefined,
     redemptionType: rt,
     redemptionValue: c.redemptionValue ?? undefined, // can be string or number
-
-    // normalize grant items
     grantItems: grants.map((g: any) => ({
       quantity: g.quantity ?? 1,
-      product: g.product, // hydrated mini if present
+      product: g.product,
       bundleTitle: g.bundle?.title ?? g.bundleTitle,
       title: g.title ?? g.productName ?? g.bundleName ?? g.sku,
     })),
@@ -71,13 +61,8 @@ const OfferDetails: React.FC = () => {
   const [err, setErr] = useState<string | null>(null);
   const navigate = useNavigate();
 
-    // central reload used by interval, WS, and child callbacks
-//  const reload = React.useCallback(async () => {
-  const reload = React.useCallback(async (reason?: string, meta?: any) => {
-    __reloadCount += 1;
-    const tag = `reload#${__reloadCount}`;
-    dlog(`RELOAD requested: ${tag}`, { reason, meta, assignedOfferId, hasToken: !!token });
-    dtime(tag);
+  // central reload used by interval, WS, and child callbacks
+  const reload = React.useCallback(async () => {
     if (!token || !assignedOfferId) return;
     try {
       setLoading(true);
@@ -96,145 +81,102 @@ const OfferDetails: React.FC = () => {
           ? "You are not authorized to view this offer."
           : "Failed to fetch offer details."
       );
-      dlog(`RELOAD error: ${tag}`, e);
     } finally {
       setLoading(false);
-      dtimeEnd(tag);
     }
   }, [token, assignedOfferId]);
 
-    // fetch access token once
+  // fetch access token once
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const t = session?.access_token ?? null;
       setToken(t);
-      dlog("Token fetched", { hasToken: !!t });
     })();
   }, []);
 
   // initial and subsequent reload when token/id ready
   useEffect(() => {
-    if (token && assignedOfferId) 
-      {
-        dlog("Initial ready → reload()");
-        reload("initial-ready");
-      }
+    if (token && assignedOfferId) reload();
   }, [token, assignedOfferId, reload]);
 
-    // lightweight auto-refresh (180s) + focus/visibility
+  // lightweight auto-refresh (180s)
   useEffect(() => {
     if (!token || !assignedOfferId) return;
-//    const id = setInterval(() => reload(), 180000);
-    dlog("Interval started (180s)");
-    const id = setInterval(() => {
-      dlog("Interval tick → reload()");
-      reload("interval-180s");
-    }, 180000);
-    //const onFocus = () => reload();
-    //const onVis = () => { if (document.visibilityState === "visible") reload(); };
-    //window.addEventListener("focus", onFocus);
-    //document.addEventListener("visibilitychange", onVis);
-    return () => {
-      clearInterval(id);
-      dlog("Interval cleared");
-      //window.removeEventListener("focus", onFocus);
-      //document.removeEventListener("visibilitychange", onVis);
-    };
+    const id = setInterval(() => reload(), 180000);
+    return () => clearInterval(id);
   }, [token, assignedOfferId, reload]);
 
-
-    // refresh on web socket updates
+  // refresh on web socket updates
   useEffect(() => {
-  if (!assignedOfferId || !token) return;
+    if (!assignedOfferId || !token) return;
 
-  let url: URL;
-  try {
-    url = new URL(`/offers/${assignedOfferId}/ws`, __WS_BASE__); // same pattern as ReferralThread
-  } catch {
-    console.error("Invalid __WS_BASE__:", __WS_BASE__);
-    return;
-  }
-  url.searchParams.set("token", token);
-  const ws = new WebSocket(url.toString());
-  dlog("WS connecting", { url: url.toString() });
-
-  // Debounce + last-run guards
-let debounceTimer: number | null = null;
-const scheduleReload = (delay = 300, reason?: string, meta?: any) => {
-  if (debounceTimer !== null) return;
-  debounceTimer = window.setTimeout(() => {
-    debounceTimer = null;
-    reload(reason ?? "ws-debounced", meta);
-  }, delay);
-};
-
-// Return eventType (string) for interesting events; null otherwise
-const eventTypeFromMessage = (raw: any): string | null => {
-  // 1) Empty/keepalive
-  if (raw == null) return false;
-  if (raw === "ping" || raw === "pong") return false;
-
-  // 2) Text frames we can parse
-  let obj: any = null;
-  if (typeof raw === "string") {
-    try { obj = JSON.parse(raw); } catch { /* not JSON */ }
-    if (!obj) {
-      // Treat bare strings like "ok", "ack" etc as ignorable
-      const s = raw.toLowerCase();
-      if (s === "ok" || s === "ack" || s === "resynced") return false;
-      // Unknown string: be conservative (no reload)
-      return null;
+    let url: URL;
+    try {
+      // same pattern as ReferralThread
+      url = new URL(`/offers/${assignedOfferId}/ws`, __WS_BASE__);
+    } catch {
+      console.error("Invalid __WS_BASE__:", __WS_BASE__);
+      return;
     }
-  } else if (typeof raw === "object") {
-    obj = raw;
-  }
+    url.searchParams.set("token", token);
+    const ws = new WebSocket(url.toString());
 
-  // 3) Only reload on meaningful types
-  const type = String(obj?.type ?? obj?.event ?? obj?.kind ?? "").toLowerCase();
-  if (!type) return null;
-  const meaningful = new Set([
-    "offer_updated",
-    "offer_status_changed",
-    "claim_created",
-    "claim_updated",
-    "claim_deleted",
-  ]);
-  return meaningful.has(type) ? type : null;
-};
+    // Debounce + last-run guards
+    let debounceTimer: number | null = null;
+    const scheduleReload = (delay = 300) => {
+      if (debounceTimer !== null) return;
+      debounceTimer = window.setTimeout(() => {
+        debounceTimer = null;
+        reload();
+      }, delay);
+    };
 
-  ws.onopen = () => {
-    dlog("WS open");
-    //  Optional: only ping/resync if you truly need a server push
-    try { ws.send("resync"); } catch {}
-  };
+    // Return eventType (string) for interesting events; null otherwise
+    const eventTypeFromMessage = (raw: any): string | null => {
+      if (raw == null) return null;
+      if (raw === "ping" || raw === "pong") return null;
 
-ws.onmessage = (evt) => {
-  const payload = (evt && "data" in evt) ? evt.data : undefined;
-  const type = eventTypeFromMessage(payload);
-  if (type) {
-    dlog("WS message", { type });
-    scheduleReload(250, `ws:${type}`);
-  } else {
-    // Noise/heartbeat
-    dlog("WS message (ignored)", typeof payload === "string" ? payload.slice(0, 120) : payload);
-  }
-};
+      let obj: any = null;
+      if (typeof raw === "string") {
+        try { obj = JSON.parse(raw); } catch { /* not JSON */ }
+        if (!obj) {
+          const s = raw.toLowerCase();
+          if (s === "ok" || s === "ack" || s === "resynced") return null;
+          return null;
+        }
+      } else if (typeof raw === "object") {
+        obj = raw;
+      }
 
-  ws.onerror = () => {
-    // optional: log; we still let onclose clean up
-    console.warn("[OfferDetails] WS error");
-  };
+      const type = String(obj?.type ?? obj?.event ?? obj?.kind ?? "").toLowerCase();
+      if (!type) return null;
+      const meaningful = new Set([
+        "offer_updated",
+        "offer_status_changed",
+        "claim_created",
+        "claim_updated",
+        "claim_deleted",
+      ]);
+      return meaningful.has(type) ? type : null;
+    };
 
-  ws.onclose = (e) => {
-    dlog("WS closed", { code: e.code, reason: e.reason });
-  };
+    ws.onopen = () => {
+      try { ws.send("resync"); } catch {}
+    };
 
-  return () => {
-    dlog("WS cleanup → close()");
-    ws.close();
-  };
-}, [assignedOfferId, token, reload]);
+    ws.onmessage = (evt) => {
+      const payload = (evt && "data" in evt) ? evt.data : undefined;
+      const type = eventTypeFromMessage(payload);
+      if (type) scheduleReload(250);
+    };
+
+    ws.onerror = () => {
+      // allow onclose to clean up; avoid noisy logs
+    };
+
+    return () => ws.close();
+  }, [assignedOfferId, token, reload]);
 
   if (loading) return <p className="center-text">Loading offer...</p>;
 
@@ -257,10 +199,9 @@ ws.onmessage = (evt) => {
     );
   }
 
-  
   const toOfferLike = (o: any) => ({
     ...o,
-     assignedOfferId: o.id ?? o.assignedOfferId,
+    assignedOfferId: o.id ?? o.assignedOfferId,
     assignedId: o.id ?? o.assignedOfferId,
     offerType: o.offerType as any,
     canClaim: !!(o as any).canClaim,
@@ -275,7 +216,7 @@ ws.onmessage = (evt) => {
     itemType: g.itemType,
     quantity: typeof g.quantity === "number" ? g.quantity : undefined,
     product: g.itemType === "PRODUCT" ? g.product : undefined,
-    bundle:  g.itemType === "BUNDLE"  ? g.bundle  : undefined,
+    bundle: g.itemType === "BUNDLE" ? g.bundle : undefined,
   }));
 
   const nowMs = Date.now();
@@ -323,7 +264,7 @@ ws.onmessage = (evt) => {
           grantPickLimit={(offer as any).grantPickLimit}
           redemptionsLeft={(offer as any).redemptionsLeft}
           scopeKind={(offer as any)?.scopeKind ?? "ANY"}
-          onUpdated={() => reload("child:onUpdated")}
+          onUpdated={() => reload()}
         />
       )}
 
