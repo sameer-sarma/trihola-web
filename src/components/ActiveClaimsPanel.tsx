@@ -245,7 +245,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
     : canClaim === false ? "You are not eligible to claim this offer."
     : null;
 
-  if (loading) return null;
+  if (loading && !showGrantModal) return null;
 
   const topStatus = manual?.status ?? online?.status ?? "—";
   const topExpiryIso = manual?.expiresAt ?? online?.expiresAt;
@@ -396,10 +396,10 @@ const ActiveClaimsPanel: React.FC<Props> = ({
       )}
 
       {/* GRANT pick modal for USER (MANUAL only) */}
-      {viewer === "USER" && manualNeedsGrantFlow && (
+      {viewer === "USER" && (
         <ClaimModal
           assignedOfferId={assignedOfferId}
-          isOpen={showGrantModal}
+          isOpen={ manualNeedsGrantFlow && showGrantModal}
           onClose={() => setShowGrantModal(false)}
           onCreated={(c: any) => {
             const v = normalizeClaim(c);
