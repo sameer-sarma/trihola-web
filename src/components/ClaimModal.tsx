@@ -94,7 +94,7 @@ const ClaimModal: React.FC<Props> = ({
   }, [isOpen]);
 
   // ------------------ Early return (SAFE after hooks) ------------------
-  if (!isOpen) return null;
+//  if (!isOpen) return null;
 
   // ------------------ Helper fns ------------------
   const findIdxIn = (arr: GrantSelectionInput[], o: GrantOption) =>
@@ -185,12 +185,33 @@ const ClaimModal: React.FC<Props> = ({
 
   // ------------------ Render ------------------
   return (
-    <div className="modal-backdrop">
-      <div
-        className="modal card card--form ecom-card--narrow"
-        role="dialog"
-        aria-modal="true"
-      >
+<div
+    className="modal-backdrop"
+    style={{
+      // keep DOM stable to avoid hook-order confusion
+      display: isOpen ? "flex" : "none",
+      position: "fixed",
+      inset: 0,
+      background: "rgba(2,6,23,0.48)",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+    }}
+  >
+    <div
+      className="modal card card--form ecom-card--narrow"
+      role="dialog"
+      aria-modal="true"
+      style={{
+        background: "#fff",
+        borderRadius: 12,
+        boxShadow: "0 16px 48px rgba(2,6,23,.24)",
+        width: "min(92vw, 520px)",
+        maxHeight: "90vh",
+        overflow: "auto",
+        padding: 16,
+      }}
+    >
         <h3 className="card__title">Choose your free items</h3>
 
         <div className="help" style={{ marginBottom: 4 }}>
