@@ -1053,3 +1053,30 @@
 .status-inactive  { background:#f3f4f6; color:#374151; border-color:#e5e7eb; }   /* gray */
 .status-expired   { background:#fef2f2; color:#991b1b; border-color:#fecaca; }   /* red */
 .status-completed { background:#eef2ff; color:#3730a3; border-color:#c7d2fe; }   /* indigo */
+
+/* ---- Modal base (used by ClaimModal) ---- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.48);   /* dim page */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;                       /* above headers/navs */
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(2,6,23,.24);
+  width: min(92vw, 520px);             /* responsive width */
+  max-height: 90vh;                     /* prevent off-screen */
+  overflow: auto;                       /* scroll content if tall */
+  padding: 16px;
+}
+
+/* Optional: body scroll lock when a modal is open (toggle this class in JS) */
+.body--modal-open { overflow: hidden; }
+
+/* Your existing narrow card class already exists; keep it */
+.ecom-card--narrow { max-width: 420px; }
