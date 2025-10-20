@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import "../css/ApproveClaimModal.css";
 import { previewClaim } from "../services/offerService";
@@ -44,6 +44,10 @@ interface ApproveClaimModalProps {
 
   // pickers
   pickers?: PickerFns;
+    initialGrants?: Array<
+    | { itemType?: "PRODUCT"; product?: { id: string }; quantity: number }
+    | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity: number }
+  >;
 }
 
 type UiCartRow = {
@@ -68,14 +72,55 @@ const ApproveClaimModal: React.FC<ApproveClaimModalProps> = ({
   approvalPickLimit,
   defaultBillTotal = 0,
   pickers,
+  initialGrants,
 }) => {
+
   // -------------- state (unconditional hooks) --------------
   const [billTotal, setBillTotal] = useState<number>(defaultBillTotal);
 
   const [rows, setRows] = useState<UiCartRow[]>([]);
   const [topItemPicker, setTopItemPicker] = useState<ItemPickerValue>(null);
 
+
   const [selectedGrants, setSelectedGrants] = useState<UiGrant[]>([]);
+ // Seed selected grants from the existing claim (if any) when the modal opens
+    useEffect(() => {
+      if (!isOpen) return;
+      if (!initialGrants?.length) return;
+
+      const toUiGrant = (
+        g:
+          | { itemType?: "PRODUCT"; product?: { id: string }; quantity: number }
+          | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity: number }
+      ): UiGrant => {
+        const qty = Math.max(1, g.quantity ?? 1);
+
+        // Treat as BUNDLE if explicitly marked or if a bundle object is present
+        const isBundle = g.itemType === "BUNDLE" || ("bundle" in g && !!g.bundle);
+
+        if (isBundle) {
+          // safely read bundle id (fall back to product id if your payload sometimes uses that)
+          const id =
+            (("bundle" in g && g.bundle?.id) as string | undefined) ??
+            (("product" in g && (g as any).product?.id) as string | undefined);
+
+          return { itemType: "BUNDLE", bundleId: String(id ?? ""), qty };
+        }
+
+        // PRODUCT path
+        const id =
+          (("product" in g && g.product?.id) as string | undefined) ??
+          (("bundle" in g && (g as any).bundle?.id) as string | undefined);
+
+        return { itemType: "PRODUCT", productId: String(id ?? ""), qty };
+      };
+
+      setSelectedGrants(initialGrants.map(toUiGrant));
+      // We just synced with server state; allow Preview immediately
+      setDirty(false);
+    }, [isOpen, initialGrants]);
+
+
   const [grantAdd, setGrantAdd] = useState<ItemPickerValue>(null);
 
   const [note, setNote] = useState<string>("");
@@ -88,6 +133,10 @@ const ApproveClaimModal: React.FC<ApproveClaimModalProps> = ({
   const isGrant = redemptionType === "GRANT";
   const requiredGrantCount = Math.max(0, approvalPickLimit ?? 0);
   const needsGrantPicker = isGrant && requiredGrantCount > 0;
+  // Show the grants block if: this is a GRANT claim and either we need to pick OR we already have grants.
+  const showGrantSection = isGrant && (needsGrantPicker || selectedGrants.length > 0);
+  // If no picks are required, show the existing grants read-only.
+  const grantsReadOnly = isGrant && requiredGrantCount === 0;
 
   // -------------- helpers --------------
   const markDirty = () => setDirty(true);
@@ -415,7 +464,7 @@ const computeRedemptionValue = () => {
         )}
 
         {/* Grants */}
-        {needsGrantPicker && (
+        {showGrantSection &&  (
           <div className="card soft mb-3">
             <div className="text-sm font-semibold mb-2">{`${
               selectedGrants.length
@@ -425,63 +474,41 @@ const computeRedemptionValue = () => {
                 : ""
             }`}</div>
 
-            <ItemPicker
-              value={grantAdd}
-              onChange={(next) => {
-                if (!next) return;
-                if (selectedGrants.length >= requiredGrantCount) return;
-
-                const defaultQty = (next.item?.payload as any)?.defaultQty ?? 1;
-                if (next.kind === "PRODUCT") {
-                  if (
-                    selectedGrants.some(
-                      (g) => g.itemType === "PRODUCT" && g.productId === next.id
-                    )
-                  )
-                    return;
-                  setSelectedGrants((prev) => [
-                    ...prev,
-                    {
-                      itemType: "PRODUCT",
-                      productId: next.id,
-                      qty: defaultQty,
-                      autoDefault: defaultQty,
-                    },
-                  ]);
-                } else {
-                  if (
-                    selectedGrants.some(
-                      (g) => g.itemType === "BUNDLE" && g.bundleId === next.id
-                    )
-                  )
-                    return;
-                  setSelectedGrants((prev) => [
-                    ...prev,
-                    {
-                      itemType: "BUNDLE",
-                      bundleId: next.id,
-                      qty: defaultQty,
-                      autoDefault: defaultQty,
-                    },
-                  ]);
-                }
-                setGrantAdd(null);
-                markDirty();
-              }}
-              fetchProducts={pickers?.fetchGrantProducts ?? (async () => [])}
-              fetchBundles={pickers?.fetchGrantBundles ?? (async () => [])}
-              placeholderProduct={
-                selectedGrants.length >= requiredGrantCount
-                  ? "Picker full"
-                  : "Add grant product…"
+        {/* Only show the picker when more selections are required */}
+        {!grantsReadOnly && (
+          <ItemPicker
+            value={grantAdd}
+            onChange={(next) => {
+              if (!next) return;
+              if (selectedGrants.length >= requiredGrantCount) return;
+              const defaultQty = (next.item?.payload as any)?.defaultQty ?? 1;
+              if (next.kind === "PRODUCT") {
+                if (selectedGrants.some((g) => g.itemType === "PRODUCT" && g.productId === next.id)) return;
+                setSelectedGrants((prev) => [
+                  ...prev,
+                  { itemType: "PRODUCT", productId: next.id, qty: defaultQty, autoDefault: defaultQty },
+                ]);
+              } else {
+                if (selectedGrants.some((g) => g.itemType === "BUNDLE" && g.bundleId === next.id)) return;
+                setSelectedGrants((prev) => [
+                  ...prev,
+                  { itemType: "BUNDLE", bundleId: next.id, qty: defaultQty, autoDefault: defaultQty },
+                ]);
               }
-              placeholderBundle={
-                selectedGrants.length >= requiredGrantCount
-                  ? "Picker full"
-                  : "Add grant bundle…"
-              }
-              variant="compact"
-            />
+              setGrantAdd(null);
+              markDirty();
+            }}
+            fetchProducts={pickers?.fetchGrantProducts ?? (async () => [])}
+            fetchBundles={pickers?.fetchGrantBundles ?? (async () => [])}
+            placeholderProduct={
+              selectedGrants.length >= requiredGrantCount ? "Picker full" : "Add grant product…"
+            }
+            placeholderBundle={
+              selectedGrants.length >= requiredGrantCount ? "Picker full" : "Add grant bundle…"
+            }
+            variant="compact"
+          />
+        )}
 
             <div className="mt-2 space-y-2">
               {selectedGrants.map((g) => {
@@ -501,13 +528,13 @@ const computeRedemptionValue = () => {
                         style={{ width: 64 }}
                         min={1}
                         value={g.qty}
-                        onChange={(e) =>
-                          changeGrantQty(g, Number(e.target.value || 1))
-                        }
+                        onChange={(e) => changeGrantQty(g, Number(e.target.value || 1))}
+                        disabled={grantsReadOnly}
                       />
                       <button
                         className="btn tiny ghost"
                         onClick={() => removeGrant(g)}
+                        disabled={grantsReadOnly}
                       >
                         Remove
                       </button>

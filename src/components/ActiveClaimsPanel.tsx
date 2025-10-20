@@ -387,9 +387,10 @@ const ActiveClaimsPanel: React.FC<Props> = ({
             expiresAt={manual.expiresAt || undefined}
             redemptionType={manual.redemptionType ?? "FIXED_DISCOUNT"}
             scopeKind={scopeKind}
-            approvalPickLimit={manual.grantPickLimit ?? 0}
+            approvalPickLimit={manual.grantPickLimit ?? (manual.grants?.length ?? 0)}
             defaultBillTotal={0}
             pickers={pickers}
+            initialGrants={manual.grants ?? []}
             onApproved={() => onUpdated?.()}
           />
         </div>
