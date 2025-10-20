@@ -34,9 +34,14 @@ interface Props {
 
   // picker fetchers (LIST + GRANT selection)
   pickers?: PickerFns; // NEW
+  initialGrants?: Array<
+    | { itemType?: "PRODUCT"; product?: { id: string }; quantity: number }
+    | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity: number }
+  >;
 
   // callbacks
   onApproved?: (claimId: string) => void;
+
 }
 
 const BusinessApproveClaim: React.FC<Props> = ({
@@ -51,6 +56,7 @@ const BusinessApproveClaim: React.FC<Props> = ({
   approvalPickLimit,
   defaultBillTotal = 0,
   pickers,
+  initialGrants,
   onApproved,
 }) => {
   const [busy, setBusy] = useState(false);
@@ -234,6 +240,7 @@ const BusinessApproveClaim: React.FC<Props> = ({
         defaultBillTotal={defaultBillTotal}
         // pass picker fetchers to the modal
         pickers={pickers}
+        initialGrants={initialGrants}
       />
     </>
   );
