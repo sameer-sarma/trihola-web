@@ -38,6 +38,11 @@ interface Props {
     | { itemType?: "PRODUCT"; product?: { id: string }; quantity: number }
     | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity: number }
   >;
+  // ✅ NEW: eligible list from snapshot
+  eligibleGrantItems?: Array<
+    | { itemType?: "PRODUCT"; product?: { id: string }; quantity?: number }
+    | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity?: number }
+  >;
 
   // callbacks
   onApproved?: (claimId: string) => void;
@@ -57,6 +62,7 @@ const BusinessApproveClaim: React.FC<Props> = ({
   defaultBillTotal = 0,
   pickers,
   initialGrants,
+  eligibleGrantItems,
   onApproved,
 }) => {
   const [busy, setBusy] = useState(false);
@@ -241,6 +247,7 @@ const BusinessApproveClaim: React.FC<Props> = ({
         // pass picker fetchers to the modal
         pickers={pickers}
         initialGrants={initialGrants}
+        eligibleGrantItems={eligibleGrantItems}
       />
     </>
   );

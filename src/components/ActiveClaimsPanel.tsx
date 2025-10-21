@@ -60,6 +60,10 @@ interface Props {
 
   scopeKind?: "ANY" | "LIST";
   pickers?: PickerFns;
+    eligibleGrantItems?: Array<
+    | { itemType?: "PRODUCT"; product?: { id: string }; quantity?: number }
+    | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity?: number }
+  >;
 }
 
 const ActiveClaimsPanel: React.FC<Props> = ({
@@ -75,6 +79,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
   redemptionsLeft,
   scopeKind = "ANY",
   pickers,
+  eligibleGrantItems,
 }) => {
   const [manual, setManual] = useState<ClaimView | null>(null);
   const [online, setOnline] = useState<ClaimView | null>(null);
@@ -391,6 +396,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
             defaultBillTotal={0}
             pickers={pickers}
             initialGrants={manual.grants ?? []}
+            eligibleGrantItems={eligibleGrantItems ?? []}
             onApproved={() => onUpdated?.()}
           />
         </div>

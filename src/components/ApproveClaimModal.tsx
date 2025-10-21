@@ -44,9 +44,15 @@ interface ApproveClaimModalProps {
 
   // pickers
   pickers?: PickerFns;
+   // This come from the claim 
     initialGrants?: Array<
     | { itemType?: "PRODUCT"; product?: { id: string }; quantity: number }
     | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity: number }
+  >;
+   // ✅ NEW: full eligible list from the snapshot (template)
+  eligibleGrantItems?: Array<
+    | { itemType?: "PRODUCT"; product?: { id: string }; quantity?: number }
+    | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity?: number }
   >;
 }
 
@@ -73,6 +79,7 @@ const ApproveClaimModal: React.FC<ApproveClaimModalProps> = ({
   defaultBillTotal = 0,
   pickers,
   initialGrants,
+  eligibleGrantItems,
 }) => {
 
   // -------------- state (unconditional hooks) --------------
@@ -228,6 +235,52 @@ const ApproveClaimModal: React.FC<ApproveClaimModalProps> = ({
     markDirty();
   };
 
+  // Type guards for eligibleGrantItems union
+function isEligibleProduct(
+  g:
+    | { itemType?: "PRODUCT"; product?: { id: string }; quantity?: number }
+    | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity?: number }
+): g is { itemType?: "PRODUCT"; product?: { id: string }; quantity?: number } {
+  return g.itemType === "PRODUCT" || ("product" in g && !!g.product);
+}
+
+function isEligibleBundle(
+  g:
+    | { itemType?: "PRODUCT"; product?: { id: string }; quantity?: number }
+    | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity?: number }
+): g is { itemType?: "BUNDLE"; bundle?: { id: string }; quantity?: number } {
+  return g.itemType === "BUNDLE" || ("bundle" in g && !!g.bundle);
+}
+
+  // ---- Eligible grant sets (ids) ----
+const eligibleProductIds = React.useMemo(() => {
+  return new Set(
+    (eligibleGrantItems ?? [])
+      .filter(isEligibleProduct)
+      .map((g) => String(g.product?.id))
+      .filter(Boolean)
+  );
+}, [eligibleGrantItems]);
+
+const eligibleBundleIds = React.useMemo(() => {
+  return new Set(
+    (eligibleGrantItems ?? [])
+      .filter(isEligibleBundle)
+      .map((g) => String(g.bundle?.id))
+      .filter(Boolean)
+  );
+}, [eligibleGrantItems]);
+
+  const fetchEligibleGrantProducts = async (q: string) => {
+  const list = (await (pickers?.fetchGrantProducts?.(q) ?? Promise.resolve([])));
+  return list.filter((p) => eligibleProductIds.size === 0 || eligibleProductIds.has(String(p.id)));
+};
+
+const fetchEligibleGrantBundles = async (q: string) => {
+  const list = (await (pickers?.fetchGrantBundles?.(q) ?? Promise.resolve([])));
+  return list.filter((b) => eligibleBundleIds.size === 0 || eligibleBundleIds.has(String(b.id)));
+};
+
   // -------------- validation --------------
   const hasValidAny = scopeKind === "ANY" ? billTotal > 0 : true;
   const hasValidList =
@@ -235,8 +288,19 @@ const ApproveClaimModal: React.FC<ApproveClaimModalProps> = ({
   const grantCountOk = needsGrantPicker
     ? selectedGrants.length === requiredGrantCount
     : true;
-  const inputsValid = hasValidAny && hasValidList && grantCountOk;
 
+  const allSelectedAreEligible = React.useMemo(() => {
+    if (!selectedGrants.length) return true;
+    // If an eligible list is provided, enforce it; if none supplied, allow all.
+    if ((eligibleGrantItems ?? []).length === 0) return true;
+    return selectedGrants.every((g) =>
+      g.itemType === "PRODUCT"
+        ? eligibleProductIds.has(String(g.productId))
+        : eligibleBundleIds.has(String(g.bundleId))
+    );
+  }, [selectedGrants, eligibleGrantItems, eligibleProductIds, eligibleBundleIds]);
+
+  const inputsValid = hasValidAny && hasValidList && grantCountOk && allSelectedAreEligible;
   // -------------- preview --------------
   const buildPreviewBody = (): ClaimPreviewRequest => {
     // Preview API supports PRODUCT grants right now
@@ -356,13 +420,35 @@ const computeRedemptionValue = () => {
               In-scope items • Purchase details
             </div>
 
+        {showGrantSection && (
+          <div className="text-xs text-muted" style={{ marginBottom: 6 }}>
+            <div><b>Eligible grant items</b> (from the offer snapshot):</div>
+            <ul style={{ marginTop: 4, paddingLeft: 16 }}>
+              {(eligibleGrantItems ?? []).map((g, i) => {
+                if (isEligibleBundle(g)) {
+                  const id = g.bundle?.id ?? "";
+                  const qty = g.quantity ?? 1;
+                  return <li key={`BUNDLE:${id}:${i}`}>Bundle {id} • default qty {qty}</li>;
+                }
+                if (isEligibleProduct(g)) {
+                  const id = g.product?.id ?? "";
+                  const qty = g.quantity ?? 1;
+                  return <li key={`PRODUCT:${id}:${i}`}>Product {id} • default qty {qty}</li>;
+                }
+                return <li key={`UNK:${i}`}>Unknown item</li>;
+              })}
+              {(eligibleGrantItems ?? []).length === 0 && <li>None provided</li>}
+            </ul>
+          </div>
+        )}
+
             {/* Single picker (adds to grid) */}
             <div className="row" style={{ gap: 8, marginBottom: 10 }}>
               <ItemPicker
                 value={topItemPicker}
                 onChange={(next) => addPickedItem(next)}
-                fetchProducts={pickers?.fetchScopeProducts ?? (async () => [])}
-                fetchBundles={pickers?.fetchScopeBundles ?? (async () => [])}
+                fetchProducts={fetchEligibleGrantProducts}
+                fetchBundles={fetchEligibleGrantBundles}
                 placeholderProduct="Pick product…"
                 placeholderBundle="Pick bundle…"
                 variant="compact"
@@ -462,7 +548,11 @@ const computeRedemptionValue = () => {
             </div>
           </div>
         )}
-
+        {isGrant && !allSelectedAreEligible && (
+          <div className="text-red-600 text-sm" style={{ marginTop: 6 }}>
+            One or more selected grants are not eligible for this offer. Please adjust your selection.
+          </div>
+        )}
         {/* Grants */}
         {showGrantSection &&  (
           <div className="card soft mb-3">

@@ -166,6 +166,14 @@ const ReferralThread: React.FC = () => {
   // decide who's viewing; if this is your business console you can force "BUSINESS"
   const viewer: "BUSINESS" | "USER" = "BUSINESS";
 
+  const toEligible = (grants?: any[]) =>
+    (grants ?? []).map((g) => ({
+      itemType: g.itemType,
+      product: g.itemType === "PRODUCT" ? g.product : undefined,
+      bundle:  g.itemType === "BUNDLE"  ? g.bundle  : undefined,
+      quantity: typeof g.quantity === "number" ? g.quantity : undefined,
+    }));
+
   if (loading || !currentUserId) return <p>Loading thread...</p>;
 
   return (
@@ -185,6 +193,8 @@ const ReferralThread: React.FC = () => {
                   onUpdated={undefined}
                   scopeKind={refAO.scopeKind === "LIST" ? "LIST" : "ANY"}
                   pickers={refPickers}
+                  eligibleGrantItems={toEligible(refAO.grants)}
+                  grantPickLimit={refAO.grantPickLimit}
                 />
               )}
 

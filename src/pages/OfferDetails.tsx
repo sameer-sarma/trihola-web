@@ -266,6 +266,12 @@ const OfferDetails: React.FC = () => {
           grantPickLimit={(offer as any).grantPickLimit}
           redemptionsLeft={(offer as any).redemptionsLeft}
           scopeKind={(offer as any)?.scopeKind ?? "ANY"}
+           eligibleGrantItems={(offer.grants ?? []).map((g: any) => ({
+            itemType: g.itemType,
+            product: g.itemType === "PRODUCT" ? g.product : undefined,
+            bundle:  g.itemType === "BUNDLE"  ? g.bundle  : undefined,
+            quantity: typeof g.quantity === "number" ? g.quantity : undefined,
+          }))}  // ✅ NEW: snapshot eligible list
           onUpdated={() => {}}
         />
       )}
