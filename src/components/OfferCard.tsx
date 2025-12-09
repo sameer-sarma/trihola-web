@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { whatYouGetSentence } from "../utils/offerWhatYouGet";
+import { Link } from "react-router-dom";
 import "../css/cards.css";
 import "../css/ui-forms.css";
 
@@ -30,6 +31,11 @@ type OfferLike = {
 
   /** NEW: drives the header badge (e.g., EXPIRED, COMPLETED, ACTIVE) */
   status?: "ACTIVE" | "INACTIVE" | "EXPIRED" | "COMPLETED" | string;
+
+  /** NEW: business + links (from AssignedOfferDetailsDTO) */
+  businessName?: string | null;
+  businessProfileSlug?: string | null;
+  referralSlug?: string | null;
 };
 
 interface Props {
@@ -99,6 +105,10 @@ const OfferCard: React.FC<Props> = ({
   const hasConcreteDates =
     mode === "offer" && (offer.validFrom != null || offer.validUntil != null);
 
+  const showBusinessMeta =
+    mode === "offer" &&
+    (!!offer.businessName || !!offer.businessProfileSlug || !!offer.referralSlug);
+
   return (
     <div className={rootClass}>
       {/* Header with status pill */}
@@ -115,6 +125,36 @@ const OfferCard: React.FC<Props> = ({
           </span>
         )}
       </div>
+
+      {/* NEW: Business / referral meta bar */}
+      {showBusinessMeta && (
+        <div className="th-kv th-offer-meta-links" style={{ marginTop: 4, marginBottom: 8 }}>
+          {offer.businessName && (
+            <span>
+              From{" "}
+              {offer.businessProfileSlug ? (
+                <Link to={`/profile/${offer.businessProfileSlug}`} className="inline-link">
+                  {offer.businessName}
+                </Link>
+              ) : (
+                <strong>{offer.businessName}</strong>
+              )}
+            </span>
+          )}
+
+          {offer.referralSlug && (
+            <span style={{ marginLeft: offer.businessName ? 12 : 0 }}>
+              ·{" "}
+              <Link
+                to={`/referral/${offer.referralSlug}/thread`}
+                className="inline-link"
+              >
+                View referral thread
+              </Link>
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Summary */}
       <div className="ot-summary">

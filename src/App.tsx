@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
+import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { NotificationsWSProvider } from "./context/NotificationsWSProvider";
 import Register from "./pages/Register";
 import EmailLogin from "./pages/EmailLogin";
 import PhoneOtpLogin from "./pages/PhoneOtpLogin";
@@ -31,13 +33,30 @@ import AddProduct from "./pages/AddProduct";
 import ProductDetails from "./pages/ProductDetails";
 import EditProduct from "./pages/EditProduct";
 import BundleDetails from "./pages/BundleDetails";
-
+import CampaignsList from "./pages/CampaignsList";
+import CampaignCreatePage from "./pages/CampaignCreatePage";
+import CampaignDetailsPage from "./pages/CampaignDetailsPage";
+import EditCampaign from "./pages/EditCampaign";
+import SendCampaignInvite from "./pages/SendCampaignInvite";
+import CampaignHubPage from "./pages/CampaignHubPage";
+import InviteLandingPage from "./pages/InviteLandingPage";
+import InviteThreadPage from "./pages/InviteThreadPage";
+import PublicCampaignInvitePage from "./pages/PublicCampaignInvitePage";
+import WalletPolicyEditor from "./pages/WalletPolicyEditor";
+import MyInvitesPage from './pages/MyInvitesPage';
+import WalletStorePage from "./pages/WalletStorePage";
+import MyOffers from "./pages/MyOffers";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { supabase } from "./supabaseClient";
 import axios from "axios";
 import "./css/base.css";
 import { getMyBusiness } from "./services/profileService";
+import {fetchMyContacts} from "./services/contactService";
+import type { Contact } from "./types/invites";
+import PublicReferralPage from './pages/PublicReferralPage';
+import OpenReferralLandingPage from "./pages/OpenReferralLandingPage";
+import { OpenCampaignInviteLandingPage } from "./pages/OpenCampaignInviteLandingPage";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
@@ -96,7 +115,14 @@ const AppInner: React.FC = () => {
     (async () => {
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession();
+    // If error OR if session exists but token is expired → treat as logged out
+    if (error || !session || (session.expires_at && session.expires_at * 1000 < Date.now())) {
+      setSession(null);
+    } else {
+      setSession(session);
+    }
       if (mounted) setSession(session);
     })();
 
@@ -188,6 +214,35 @@ const AppInner: React.FC = () => {
 
     // expose the business slug for children that need it
   const businessSlug = business?.businessSlug;
+  const businessId = userId;
+ 
+function SendCampaignInviteRoute({ token }: { token?: string }) {
+  const { id } = useParams<{ id: string }>(); // hook 1 (always)
+  const q = useQuery<Contact[]>({             // hook 2 (always)
+    queryKey: ["contacts", token],
+    queryFn: () => fetchMyContacts(token),
+    enabled: !!id,                            // don’t fetch until we have an id
+  });
+
+  if (!id) return <Navigate to="/campaigns" replace />;
+  if (q.status === "pending") return <div className="loading">Loading contacts…</div>;
+  if (q.status === "error") return <div className="error-banner">{(q.error as Error).message}</div>;
+
+  return (
+    <SendCampaignInvite
+      campaignId={id}
+      token={token}
+      contacts={q.data ?? []}
+      businessName={undefined}
+    />
+  );
+}
+
+function InviteLandingRoute({ token }: { token?: string }) {
+  const { inviteId } = useParams<{ inviteId: string }>();
+  if (!inviteId) return <Navigate to="/campaigns" replace />;
+  return <InviteLandingPage inviteId={inviteId} token={token} />;
+}
 
   return (
     <>
@@ -197,7 +252,11 @@ const AppInner: React.FC = () => {
         {/* ✅ Always expose reset route so recovery can land here even with a session */}
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} /> 
-
+        <Route path="/r/:slug" element={<PublicReferralPage />} />
+        <Route path="/open/:slug" element={<OpenReferralLandingPage />} />
+        <Route path="/campaign-invite/:inviteId" element={<PublicCampaignInvitePage />} />
+        <Route path="/campaign-open/:campaignSlug/:openInviteSlug" element={<OpenCampaignInviteLandingPage />} />
+        
         {/* Public routes if NOT logged in OR if we're in a recovery flow */}
         {!session || isRecoveryFlow ? (
           <>
@@ -244,9 +303,11 @@ const AppInner: React.FC = () => {
             <Route path="/:businessSlug/products" element={<ProductsList />} />
             <Route path="/:businessSlug/:productSlug" element={<ProductDetails />} />
             <Route path="/:businessSlug/bundle/:bundleSlug" element={<BundleDetails />} />
+            <Route path="/:businessSlug/wallet-store" element={<WalletStorePage />} />
             <Route path="/referrals" element={<ReferralFeed />} />
             <Route path="/referrals/new" element={<CreateReferralForm />} />
             <Route path="/referral/:slug/thread" element={<ReferralThread />} />
+            <Route path="/my-offers" element={<MyOffers />} />
             <Route path="/settings" element={<UserSettingsForm />} />
             <Route
               path="/offer-templates"
@@ -260,6 +321,18 @@ const AppInner: React.FC = () => {
             <Route path="/offer-template/:templateId/edit" element={<EditOfferTemplate token={session.access_token} businessSlug={businessSlug}/>} />
             <Route path="/offers/:assignedOfferId" element={<OfferDetailsPage />} />
             <Route path="/qrcode" element={<QRCodePage />} />
+            <Route path="/campaigns" element={<CampaignHubPage />} />
+            <Route path="/campaigns/my-invites" element={<MyInvitesPage token={session.access_token} />} />
+            <Route path="/campaigns/owned" element={<CampaignsList />} />
+            <Route path="/campaigns/new" element={<CampaignCreatePage token={session.access_token} businessSlug={businessSlug}/>} />
+            <Route path="/campaigns/:id" element={<CampaignDetailsPage token={session.access_token}/>} />
+            <Route path="/campaigns/:id/:section" element={<CampaignDetailsPage token={session.access_token} />} />
+            <Route path="/campaigns/:id/edit" element={<EditCampaign token={session.access_token} />} />
+            <Route path="/campaigns/:id/invites/send" element={<SendCampaignInviteRoute token={session.access_token} />} />
+            <Route path="/campaigns/:campaignId/invites/:inviteId/thread" element={<InviteThreadPage />} />
+            <Route path="/invites/:inviteId" element={<InviteLandingRoute token={session.access_token} />} />
+            <Route path="/wallet-policies" element={<WalletPolicyEditor businessId={businessId} token={session.access_token} />} />
+
             <Route path="/ecom" element={<EcomIntegrations token={session.access_token} profile={profile} userId={userId} />} />
             <Route path="/ecom/add" element={<AddEcomIntegration token={session.access_token} profile={profile} userId={userId} businessId={userId} />} />
             <Route path="/ecom/:integrationId/edit" element={<EditEcomIntegration token={session.access_token} profile={profile} />} />
@@ -278,11 +351,17 @@ const AppInner: React.FC = () => {
   );
 };
 
+const queryClient = new QueryClient();
+
 const App: React.FC = () => {
   return (
-    <Router>
-      <AppInner />
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <NotificationsWSProvider>
+        <Router>
+          <AppInner />
+        </Router>
+      </NotificationsWSProvider>
+    </QueryClientProvider>
   );
 };
 

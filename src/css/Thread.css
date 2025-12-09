@@ -1,105 +1,138 @@
-/* ====== 3-column layout ====== */
-.referral-layout{
+/* =========================================
+   TRIHola THREAD — Modern Messaging Layout
+   ========================================= */
+
+/* Layout shell */
+.referral-layout {
   display: grid;
-  grid-template-columns: 360px 1fr 320px;   /* left = details, center = chat, right = feed */
-  gap: 18px;
-  align-items: start;
+  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+  gap: 28px;
+  max-width: 1250px;
+  margin: 20px auto 40px;
+  padding: 0 20px;
 }
 
-@media (max-width: 1200px){
-  .referral-layout { 
-    grid-template-columns: 320px 1fr; 
+@media (max-width: 900px) {
+  .referral-layout {
+    grid-template-columns: 1fr;
   }
-  .thread-feed { display: none; } /* hide panel on smaller screens */
 }
 
-/* Right-side feed panel */
-.thread-feed {
+/* Sidebar structural styles */
+.thread-sidebar {
   position: sticky;
-  top: 84px;                              /* offset for header */
-  max-height: calc(100vh - 100px);
-  overflow: auto;
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 8px;
-}
-.feed-title { font-weight: 800; padding: 8px 10px; margin-bottom: 4px; }
-.feed-item {
-  display: grid; grid-template-columns: 1fr auto; gap: 8px;
-  padding: 10px; border-radius: 12px; cursor: pointer; align-items: center;
-  transition: background .15s ease, box-shadow .15s ease;
-}
-.feed-item:hover { background: #f6f8fc; }
-.feed-item.active {
-  background: #eef2ff; box-shadow: 0 0 0 2px rgba(37,99,235,.15) inset;
-}
-.feed-name { font-weight: 700; line-height: 1.2; }
-.feed-note { font-size: 12px; color: var(--text-muted); }
-.feed-chip { font-size: 11px; padding: 4px 8px; border-radius: 999px; background:#f1f5f9; color:#334155; justify-self:end; }
-.feed-chip.accepted { background:#ecfdf5; color:#065f46; }
-.feed-chip.pending  { background:#fff7ed; color:#9a3412; }
-
-/* Left column: keep details visible while scrolling the thread */
-.thread-sidebar{
-  position: sticky;
-  top: 84px;                          /* adjust to your header height */
+  top: 82px;
+  align-self: flex-start;
 }
 
-/* Center column: message panel with internal scroll */
-.thread-main{
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+/* Chat panel */
+.thread-main {
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
   display: flex;
   flex-direction: column;
-  min-height: 60vh;                   /* ensures a decent box height */
-  height: min(78vh, 900px);           /* cap for big screens */
+  height: min(80vh, 820px);
 }
 
-/* Scrollable messages area */
-.thread-scroll{
-  padding: 14px 14px 8px 14px;
-  overflow: auto;
-  flex: 1 1 auto;
-  background: #f7f9fc;
-  border-top-left-radius: var(--radius);
-  border-top-right-radius: var(--radius);
+/* Scrollable message area */
+.thread-scroll {
+  flex: 1;
+  padding: 20px 22px;
+  overflow-y: auto;
+  background: #f3f6fb;
+  border-top-left-radius: 22px;
+  border-top-right-radius: 22px;
 }
 
-/* Composer fixed to bottom of the chat panel */
-.composer-wrap{
-  border-top: 1px solid #e6edf7;
-  padding: 10px;
+/* Composer */
+.composer-wrap {
   background: #fff;
-  border-bottom-left-radius: var(--radius);
-  border-bottom-right-radius: var(--radius);
-  box-shadow: 0 -6px 14px rgba(2,8,23,.05);
+  border-top: 1px solid #e5e7eb;
+  padding: 12px;
+  border-radius: 0 0 22px 22px;
+  box-shadow: 0 -8px 18px rgba(0,0,0,0.05);
 }
 
-/* ====== Day separator ====== */
-.day-group{
-  display:flex; align-items:center; gap:10px;
-  margin: 8px 0 12px 0; color: var(--text-muted);
-  font-weight: 700; font-size: 12px; text-transform: uppercase;
+/* Day separator */
+.day-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 18px 0 14px;
+  text-transform: uppercase;
 }
-.day-group::before, .day-group::after{
-  content:""; height:1px; flex:1; background:#dbe3f0;
+.day-group::before,
+.day-group::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #d6dbe4;
 }
 
-/* ====== Alignment rules ====== */
-.event-row{ margin: 8px 0; display: flex; width: 100%; }
-.event-row > *{ flex: 0 1 auto; max-width: min(70ch, 85%); margin: 0 !important; }
-.msg-self  { justify-content: flex-end; }
-.msg-other { justify-content: flex-start; }
-.msg-system{ justify-content: center; }
-.msg-system > *{
-  max-width: 50ch; font-size: 12px; color: var(--text-muted);
-  background: #fff; border: 1px dashed #cbd5e1; border-radius: 14px; padding: 6px 10px;
+/* Activity / system messages (Slack-style) */
+.msg-system,
+.activity-center {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
 }
-.activity-center{ justify-content: center; }
-.activity-center > *{
-  width: min(900px, 96%);
-  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
-  padding: 12px 14px;
+
+.msg-system > *,
+.activity-center > * {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 12px;
+  color: #475569;
+  max-width: 420px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
 }
+
+/* ================================
+   FEED PANEL (right-side optional)
+   ================================ */
+
+.thread-feed {
+  position: sticky;
+  top: 82px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 8px 26px rgba(15,23,42,0.12);
+  padding: 10px;
+}
+
+/* Feed items */
+.feed-item {
+  padding: 12px 12px;
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.feed-item:hover {
+  background: #f1f5f9;
+}
+.feed-item.active {
+  background: #eef2ff;
+  box-shadow: 0 0 0 2px #c7d2fe inset;
+}
+.feed-name {
+  font-weight: 600;
+}
+.feed-chip {
+  padding: 4px 8px;
+  font-size: 11px;
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+.feed-chip.pending { background: #fff7ed; color: #c2410c; }
+.feed-chip.accepted { background: #ecfdf5; color: #15803d; }

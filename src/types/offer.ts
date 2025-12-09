@@ -6,8 +6,9 @@ export type OfferTypeEnum =
   | "FIXED_DISCOUNT"
   | "GRANT";
   
-export type ValidityTrigger = "ON_ACCEPTANCE" | "ON_ASSIGNMENT"| "ON_CLAIM_OF_LINKED_OFFER"; // adjust as per backend enum
-export type ValidityType = "RELATIVE" | "ABSOLUTE"; // adjust as per backend enum
+export type ValidityTrigger = "ON_ACCEPTANCE" | "ON_ASSIGNMENT"| "ON_CLAIM_OF_LINKED_OFFER";
+export type ValidityType = "RELATIVE" | "ABSOLUTE";
+export type AssignedVia = "USER_WP_PURCHASED" | "BUSINESS_ASSIGNED" | "REFERRAL" | "CAMPAIGN" | "NO_LONGER_ASSIGNED";
 
 export interface ProductMini {
   id: string;
@@ -15,6 +16,7 @@ export interface ProductMini {
   businessSlug?: string | null;
   name?: string | null;
   primaryImageUrl?: string | null;
+  sku?: string | null;
 }
 
 export interface BundleMini {
@@ -23,6 +25,12 @@ export interface BundleMini {
   businessSlug?: string | null;
   title?: string | null;
   primaryImageUrl?: string | null;
+  items?: BundleItemMini[];
+}
+
+export interface BundleItemMini{
+    product: ProductMini;
+    quantity: number;
 }
 
 export interface GrantItemSnapshot {
@@ -53,6 +61,7 @@ export type OfferTierRow = {
 export interface AssignOfferRequest {
   offerTemplateId: string;
   targetType: AssignmentTargetType;
+  assignedVia: AssignedVia;
 
   // required for REFERRAL / REFERRAL_CAMPAIGN
   recipientRole?: RecipientRole;
@@ -145,7 +154,10 @@ export interface OfferDetailsDTO {
 
   // Business / navigation
   businessSlug?: string | null;
-
+  businessName?: string | null;
+  businessProfileSlug?: string | null;
+  referralSlug?: string | null;
+  
   // Scope / Applies
   appliesToType?: OfferAppliesToType | null;
   appliesProduct?: ProductMini | null;
@@ -154,6 +166,9 @@ export interface OfferDetailsDTO {
 
   // Grants
   grants: GrantItemSnapshot[];
+  grantPickLimit?: number | null;
+  grantDiscountType?: GrantDiscountType | null;
+  grantDiscountValue?: number | null;
 
   // Redemptions
   redemptionsUsed?: number | null;
@@ -162,6 +177,7 @@ export interface OfferDetailsDTO {
 
   // Target (generic)
   targetType?: AssignmentTargetType | null;
+  assignedVia: AssignedVia;
   targetUserId?: string | null;
   referralCampaignId?: string | null;
 
@@ -174,6 +190,79 @@ export interface OfferDetailsDTO {
   assignedToName?: string | null;
 }
 
+export interface OfferTemplateSnapshot {
+  _schemaVersion: number;
+  capturedAt: string;
+  offerTemplateId: string;
+  businessSlug: string | null;
+  businessName: string | null;
+
+  offerTitle: string;
+  description: string | null;
+
+  offerType: OfferTypeEnum;
+  claimPolicy: string;
+
+  // Scope / Applies
+  appliesToType?: OfferAppliesToType | null;
+  appliesProduct?: ProductMini | null;
+  appliesBundle?: BundleMini | null;
+  minPurchaseAmount?: number | null;
+
+  discountPercentage: number | null;
+  maxDiscountAmount: number | null;
+  discountAmount: number | null;
+
+  validityType: "ABSOLUTE" | "RELATIVE";
+  durationDays: number | null;
+  trigger: ValidityTrigger | string | null;
+
+  templateMaxRedemptions: number | null;
+
+  purchasableWithPoints: boolean;
+  pointsPrice: number | null;
+  maxPurchasesPerUser: number | null;
+
+  // Optional/complex fields – keep as any or refine later
+  grants?: GrantItemSnapshot[];
+  tiers?: OfferTierRow[];      
+}
+
+export interface AssignedOfferDTO {
+  id: string;
+  targetType: AssignmentTargetType;
+  assignedVia: AssignedVia;
+  referralId?: string | null;
+  offerTemplateId: string;
+  recipientRole?: RecipientRole | null;
+  status: string;
+  activatedAt?: string | null;
+  expiresAt?: string | null;
+  claimedAt?: string | null;
+  notes?: string | null;
+  activationCondition?: ValidityTrigger | string | null;
+  relatedOfferId?: string | null;
+  redemptionsUsed?: number | null;
+  maxRedemptions?: number | null;
+  templateSnapshot?: OfferTemplateSnapshot | null;
+}
+
+export interface WalletStoreItemDTO {
+  offerTemplateId: string;
+  title: string;
+  description: string | null;
+  pointsPrice: number;
+  maxPurchasesPerUser: number | null;
+  alreadyPurchased: number;
+  canAfford: boolean;
+  canPurchase: boolean;
+  offerTemplateSnapshot: OfferTemplateSnapshot | null;
+}
+
+export interface WalletStoreResponse {
+  walletBalance: number;
+  items: WalletStoreItemDTO[];
+}
 
 export interface ClaimRequestDTO {
   redemptionType?: string;

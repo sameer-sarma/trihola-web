@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { Gift } from "lucide-react";
 
@@ -10,6 +10,7 @@ import type { OfferTemplateDTO } from "../types/offer";
 import { getOfferTemplates, assignOffer } from "../services/offerService";
 import { acceptReferral, rejectReferral, cancelReferral } from "../services/referralService";
 import { AvatarOrPlaceholder } from "../utils/uiHelper";
+import OfferTemplatePicker from "../components/OfferTemplatePicker";
 
 import "../css/Referral.css";
 
@@ -22,7 +23,8 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [templates, setTemplates] = useState<OfferTemplateDTO[] | null>(null);
   const [selected, setSelected] = useState<{ [k in "REFERRER" | "PROSPECT"]?: string }>({});
-
+  const navigate = useNavigate();
+  
   // Identify current user
   useEffect(() => {
     (async () => {
@@ -45,6 +47,10 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
     setTemplates(list);
   };
 
+  useEffect(() => {
+  ensureTemplates();
+}, []);
+
   // Mutations (no refetch—server will push WS updates)
   const handleAssign = async (role: "REFERRER" | "PROSPECT") => {
     const templateId = selected[role];
@@ -59,6 +65,7 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
       targetType: "REFERRAL",
       referralId: referral.id,
       recipientRole: role,
+      assignedVia: "REFERRAL"
     });
   };
 
@@ -148,6 +155,9 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
     },
   ];
 
+  const referrerOfferId = referral?.referrerOffer?.id ?? null;
+  const prospectOfferId = referral?.prospectOffer?.id ?? null;
+
   return (
     <div className="referral-card" style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
       {/* Left: Participants */}
@@ -234,7 +244,6 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
           {canCancel && <button onClick={handleCancel}>Cancel</button>}
         </div>
 
-        {/* Assign Offers — only the Business may assign */}
         {isYouBusiness && (
           <div
             style={{
@@ -247,29 +256,27 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
           >
             {/* Prospect */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
-              <select
-                onFocus={ensureTemplates}
-                onChange={(e) => setSelected((s) => ({ ...s, PROSPECT: e.target.value }))}
+              <OfferTemplatePicker
+                templates={templates ?? []}
+                persistedOffer={referral.prospectOffer ?? undefined}
                 value={selected.PROSPECT ?? ""}
-                style={{ padding: 8 }}
-              >
-                <option value="">{templates ? "Select prospect offer…" : "Load offers…"}</option>
-                {templates?.map((t) => (
-                  <option
-                    key={t.offerTemplateId}
-                    value={t.offerTemplateId}
-                    disabled={!t.isActive}
-                    title={t.description ?? t.templateTitle}
-                  >
-                    {t.templateTitle}
-                  </option>
-                ))}
-              </select>
+                title="Prospect offer"
+                onChange={(templateId) =>
+                  setSelected((s) => ({ ...s, PROSPECT: templateId ?? "" }))
+                }
+                allowNone={true}
+                showPreview={true}
+                disableCurrentTemplate={true}
+                onViewPersistedOffer={
+                  prospectOfferId
+                    ? () => navigate(`/offers/${prospectOfferId}`)
+                    : undefined
+                }
+                />
               <button
                 onClick={() => handleAssign("PROSPECT")}
                 disabled={!selected.PROSPECT}
-                title={!selected.PROSPECT ? "Choose an offer first" : "Assign to Prospect"}
-                style={{ padding: "8px 12px" }}
+                style={{ padding: "8px 12px", marginTop: 32 }}
               >
                 Assign to Prospect
               </button>
@@ -277,35 +284,34 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
 
             {/* Referrer */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
-              <select
-                onFocus={ensureTemplates}
-                onChange={(e) => setSelected((s) => ({ ...s, REFERRER: e.target.value }))}
+              <OfferTemplatePicker
+                templates={templates ?? []}
+                persistedOffer={referral.referrerOffer ?? undefined}
                 value={selected.REFERRER ?? ""}
-                style={{ padding: 8 }}
-              >
-                <option value="">{templates ? "Select referrer offer…" : "Load offers…"}</option>
-                {templates?.map((t) => (
-                  <option
-                    key={t.offerTemplateId}
-                    value={t.offerTemplateId}
-                    disabled={!t.isActive}
-                    title={t.description ?? t.templateTitle}
-                  >
-                    {t.templateTitle}
-                  </option>
-                ))}
-              </select>
+                title="Referrer offer"
+                onChange={(templateId) =>
+                  setSelected((s) => ({ ...s, REFERRER: templateId ?? "" }))
+                }
+                allowNone={true}
+                showPreview={true}
+                disableCurrentTemplate={true}
+                onViewPersistedOffer={
+                  referrerOfferId
+                    ? () => navigate(`/offers/${referrerOfferId}`)
+                    : undefined
+                }
+                />
               <button
                 onClick={() => handleAssign("REFERRER")}
                 disabled={!selected.REFERRER}
-                title={!selected.REFERRER ? "Choose an offer first" : "Assign to Referrer"}
-                style={{ padding: "8px 12px" }}
+                style={{ padding: "8px 12px", marginTop: 32 }}
               >
                 Assign to Referrer
               </button>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { OfferTemplateDTO, OfferDetailsDTO, OfferClaimDTO, ClaimSource, AssignOfferRequest, RecipientRole, ClaimRequestDTO, 
+import { OfferTemplateDTO, OfferDetailsDTO, WalletStoreResponse, AssignedOfferDTO, OfferClaimDTO, ClaimSource, AssignOfferRequest, RecipientRole, ClaimRequestDTO, 
 FetchGrantOptionsResponse, GrantItemSnapshot, GrantLine, OfferClaimView, ClaimPreviewRequest, ClaimPreviewResponse  } from "../types/offer";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
@@ -58,6 +58,7 @@ export async function assignOfferToReferral(
   return assignOffer(token, {
     offerTemplateId,
     targetType: "REFERRAL",
+    assignedVia: "REFERRAL",
     referralId,
     recipientRole,
     notes,
@@ -74,6 +75,7 @@ export async function assignOfferToReferralCampaign(
   return assignOffer(token, {
     offerTemplateId,
     targetType: "REFERRAL_CAMPAIGN",
+    assignedVia: "CAMPAIGN",
     referralCampaignId,
     recipientRole,
     notes,
@@ -89,6 +91,7 @@ export async function assignOfferToUser(
   return assignOffer(token, {
     offerTemplateId,
     targetType: "USER",
+    assignedVia: "USER_WP_PURCHASED",
     targetUserId,
     notes,
   });
@@ -307,4 +310,84 @@ export async function previewClaim(
   });
   if (!r.ok) throw new Error(await r.text());
   return r.json();
+}
+
+export async function fetchWalletStore(
+  businessSlug: string,
+  token?: string | null
+): Promise<WalletStoreResponse> {
+  const url = `${API_BASE}/wallet/${encodeURIComponent(businessSlug)}/store`;
+  const r = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function purchaseOfferWithPoints(
+  businessSlug: string,
+  offerTemplateId: string,
+  token?: string | null
+): Promise<{ assignedOfferId: string }> {
+  const url = `${API_BASE}/wallet/${encodeURIComponent(businessSlug)}/offers/${encodeURIComponent(offerTemplateId)}/purchase`;
+  
+  const r = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function fetchMyOffers( token?: string | null): Promise<AssignedOfferDTO[]> {
+  const url = `${API_BASE}/offers/me`;
+  
+  const r = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+
+}
+
+export async function refundOfferPurchase(
+  businessSlug: string,
+  assignedOfferId: string,
+  token: string | null
+): Promise<void> {
+  if (!token) {
+    throw new Error("Missing auth token");
+  }
+
+  const res = await fetch(
+    `${API_BASE}/wallet/${encodeURIComponent(
+      businessSlug
+    )}/offers/${encodeURIComponent(assignedOfferId)}/refund`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to refund offer");
+  }
 }

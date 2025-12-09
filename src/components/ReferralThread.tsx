@@ -13,7 +13,7 @@ import {
 } from "../utils/pickerHelper";
 import ReferralDetails from "../pages/ReferralDetails";
 import MessageBubble from "../components/MessageBubble";
-import ReferralFeedPanel from "../components/ReferralFeedPanel";
+//import ReferralFeedPanel from "../components/ReferralFeedPanel";
 import ReferralActivity from "./ReferralActivity";
 import OfferActivity from "./OfferActivity";
 import SystemActivity from "../components/SystemActivity";
@@ -46,30 +46,34 @@ const ReferralThread: React.FC = () => {
   }, []);
 
   // 1) initial load: events + enriched referral
-  const initialLoad = useCallback(async () => {
-    if (!slug) return;
-    setLoading(true);
-    try {
-      const thread = await fetchReferralThread(slug);
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const t = session?.access_token;
-      if (!t) return;
-      const ref = await fetchReferralBySlug(t, slug);
-      setEvents(thread);
-      setReferral(ref);
-    } finally {
-      setLoading(false);
-    }
-  }, [slug]);
+const initialLoad = useCallback(async () => {
+  if (!slug) return;
+  setLoading(true);
+  // reset state so you don't see previous referral while loading new one
+  setEvents([]);
+  setReferral(null);
 
-  const didInit = React.useRef(false);
-  useEffect(() => {
-    if (didInit.current) return;
-    didInit.current = true;
-    void initialLoad();
-  }, [initialLoad]);
+  try {
+    const thread = await fetchReferralThread(slug);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const t = session?.access_token;
+    if (!t) return;
+    const ref = await fetchReferralBySlug(t, slug);
+    setEvents(thread);
+    setReferral(ref);
+  } finally {
+    setLoading(false);
+  }
+}, [slug]);
+
+
+useEffect(() => {
+  if (!slug) return;
+  void initialLoad();
+}, [slug, initialLoad]);
+
 
   // 2) WebSocket: handle timeline events + REFERRAL_UPDATED side-panel updates
   useEffect(() => {
@@ -174,16 +178,39 @@ const ReferralThread: React.FC = () => {
       quantity: typeof g.quantity === "number" ? g.quantity : undefined,
     }));
 
+    const publicReferralUrl = useMemo(() => {
+    if (!slug) return "";
+    return `${window.location.origin}/r/${slug}`;
+  }, [slug]);
+
   if (loading || !currentUserId) return <p>Loading thread...</p>;
 
   return (
+    <div className="thread-page">
+      <div className="thread-hero">
+        <h1>Referral thread</h1>
+        <p>Real-time messages, activity, offers & claim workflow</p>
+      </div>
     <div className="container">
       <div className="referral-layout">
         <div className="thread-sidebar">
           {referral ? (
             <>
               <ReferralDetails referral={referral} setReferral={setReferral} />
-
+              {/* NEW: Copy public referral link */}
+              <div style={{ padding: "0 12px 12px" }}>
+                <button
+                  type="button"
+                  className="btn btn--sm btn--ghost"
+                  onClick={() => {
+                    const url = publicReferralUrl || window.location.href;
+                    navigator.clipboard.writeText(url).catch(() => {});
+                  }}
+                  disabled={!publicReferralUrl}
+                >
+                  Copy referral link
+                </button>
+              </div>
               {/* Active claims panel below the card */}
               {token && refAO?.id && (
                 <ActiveClaimsPanel
@@ -305,11 +332,8 @@ const ReferralThread: React.FC = () => {
           </div>
         </div>
 
-        {/* Right column: feed panel */}
-        <div className="thread-aside">
-          <ReferralFeedPanel />
-        </div>
       </div>
+    </div>
     </div>
   );
 };

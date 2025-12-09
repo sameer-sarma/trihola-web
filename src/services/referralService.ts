@@ -1,6 +1,7 @@
 import axios from "axios";
-import { CreateReferralReq, ReferralDTO, ReferralThreadEventDTO } from "../types/referral";
+import { CreateReferralReq, ReferralDTO, ReferralThreadEventDTO, ReferralPublicView } from "../types/referral";
 import { supabase } from "../supabaseClient";
+import type { SendReferralsRequest } from '../types/invites';
 
 const authHeader = (token: string) => ({
   headers: {
@@ -14,14 +15,6 @@ export const fetchMyReferrals = async (token: string): Promise<ReferralDTO[]> =>
   return response.data;
 };
 
-// ✅ Create a referral
-//interface CreateReferralPayload {
-//  prospectEmail?: string;
-//  prospectPhone?: string;
-//  businessEmail?: string;
-//  businessPhone?: string;
-//  note: string;
-//}
 
 export const createReferral = async (
   token: string,
@@ -108,3 +101,59 @@ export const postThreadMessage = async (slug: string, message: string): Promise<
     throw new Error("Failed to post message to thread");
   }
 };
+
+export async function sendCampaignReferrals(
+  campaignId: string,
+  payload: SendReferralsRequest,
+  token?: string
+): Promise<{ createdReferralIds: string[] }> {
+  const res = await fetch(
+    `${__API_BASE__}/campaigns/${campaignId}/referrals/send`,
+    {
+      method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload),
+  }
+);
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(
+      `Failed to send campaign referrals: ${res.status} ${text}`
+    );
+  }
+
+  return res.json();
+}
+
+export async function fetchPublicReferral(
+  slug: string
+): Promise<ReferralPublicView> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  // 🔹 Send bearer token if user is logged in
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
+  const res = await fetch(`${__API_BASE__}/public/referrals/${slug}`, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to load referral');
+  }
+
+  const json = (await res.json()) as ReferralPublicView;
+  return json;
+}

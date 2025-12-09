@@ -12,6 +12,7 @@ interface ReferralCardProps {
   onAccept?: (id: string) => void;
   onReject?: (id: string) => void;
   onCancel?: (id: string) => void;
+  onCopyReferralLink?: () => void;
 }
 
 /** Inline chip: show avatar ONLY when there is an image; otherwise just the link text */
@@ -46,6 +47,7 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
   onAccept,
   onReject,
   onCancel,
+  onCopyReferralLink,
 }) => {
   const navigate = useNavigate();
 
@@ -59,6 +61,14 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
 
   const attached = getAttachedInfo(referral);
 
+    const roleLabel = isYouReferrer
+    ? "You’re the referrer"
+    : isYouProspect
+    ? "You’re the prospect"
+    : isYouBusiness
+    ? "You’re the business"
+    : null;
+
   const canAcceptOrReject =
     (referral.status === "PENDING" || referral.status === "PARTIALLY_ACCEPTED") &&
     ((isYouProspect && referral.prospectAcceptanceStatus === "PENDING") ||
@@ -67,7 +77,7 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
   const canCancel =
     referral.referrerId === userId &&
     (referral.status === "PENDING" || referral.status === "PARTIALLY_ACCEPTED");
-
+    
   const userAcceptanceStatus = isYouProspect
     ? referral.prospectAcceptanceStatus
     : isYouBusiness
@@ -128,17 +138,28 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
       {referral.note && <div className="th-muted ref-card__note">{referral.note}</div>}
 
       {/* Meta: status (left) and timestamp (right) */}
-      <div className="ref-card__meta" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
-        <div>
+      <div className="ref-card__meta" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
+        <div className="ref-card__meta-left">
           <span className="th-muted">Referral Status:</span>{" "}
-          <span className="ref-card__status" style={{ fontWeight: 600, textTransform: "capitalize" }}>
+          <span
+            className="ref-card__status"
+            style={{ fontWeight: 600, textTransform: "capitalize" }}
+          >
             {referral.status.toLowerCase()}
           </span>
+
+          {roleLabel && (
+            <span className="ref-card__role-chip">
+              {roleLabel}
+            </span>
+          )}
         </div>
+
         <div className="meta-right" style={{ color: "#94a3b8" }}>
           {new Date(referral.createdAt).toLocaleString()}
         </div>
       </div>
+
 
       {/* Your response (if applicable) */}
       {userAcceptanceStatus && (
@@ -186,6 +207,20 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
             Cancel Referral
           </button>
         )}
+
+        {onCopyReferralLink && (
+          <button
+            type="button"
+            className="btn btn--sm btn--ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCopyReferralLink();
+            }}
+          >
+            Copy referral link
+          </button>
+        )}
+
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import "../css/Header.css";
 import type { Session } from "@supabase/supabase-js";
 import logo from "../assets/logo.png";
 import AppLauncher from "./AppLauncher";
+import { NotificationBell } from "./NotificationBell";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
@@ -95,11 +96,11 @@ const Header = () => {
               <NavLink to="/referrals" className={({ isActive }) => (isActive ? "active" : "")}>
                 Referrals
               </NavLink>
+              <NavLink to="/my-offers" className={({ isActive }) => (isActive ? "active" : "")}>
+                My Offers
+              </NavLink>
               <NavLink to="/contacts" className={({ isActive }) => (isActive ? "active" : "")}>
                 Contacts
-              </NavLink>
-              <NavLink to="/settings" className={({ isActive }) => (isActive ? "active" : "")}>
-                Settings
               </NavLink>
               {isBusiness && (
                 <>
@@ -133,6 +134,7 @@ const Header = () => {
             userLabel={session?.user?.email ?? null}
             avatarUrl={null /* plug your profile avatar URL if you have it */}
           />
+           <NotificationBell />
         </div>
       </div> {/* <-- close .header-container */}
     </header>

@@ -11,72 +11,130 @@ import {
 } from "../services/productBundleService";
 import { uiToServerTiers, type UiBand } from "../utils/tiersMapping";
 import {
-  OfferTemplateRequest,
   UiOfferKind,
+  OfferTemplateForm,
+  OfferTemplateResponse,
+  PickerItem,
+  ScopeItem,
+  OfferGrantLine,
 } from "../types/offerTemplateTypes";
-import type { PickerItem } from "../types/offerTemplateTypes";
 import GrantEditor from "../components/GrantEditor";
 import ProductPicker from "../components/ProductPicker";
 import BundlePicker from "../components/BundlePicker";
-import type { OfferGrantLine } from "../types/offerTemplateTypes";
+import "../css/ui-forms.css";
+import "../css/cards.css";
 
-type BandRow = {
-  discountType: "PERCENTAGE" | "FIXED";
-  discountValue: number;
-  maxDiscountAmount?: number | null;
-};
+type BandRow = UiBand;
 
 interface Props {
   token: string;
   userId: string;
   profile: { registeredAsBusiness?: boolean };
-  businessSlug?: string; // ← optional, non-breaking
+  businessSlug?: string; // optional, can also come from query
 }
 
-const AddOfferTemplate: React.FC<Props> = ({ token, userId, profile, businessSlug: propBusinessSlug }) => {
+const AddOfferTemplate: React.FC<Props> = ({
+  token,
+  userId,
+  profile,
+  businessSlug: propBusinessSlug,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Prefer the prop (from App) and fall back to URL: ?business=slug or ?slug=...
+  // Prefer the prop (from parent) and fall back to URL: ?business=slug or ?slug=...
   const businessSlug = useMemo(() => {
     if (propBusinessSlug) return propBusinessSlug;
-     const qs = new URLSearchParams(location.search);
-     return qs.get("business") ?? qs.get("slug") ?? undefined;
-
+    const qs = new URLSearchParams(location.search);
+    return qs.get("business") ?? qs.get("slug") ?? undefined;
   }, [propBusinessSlug, location.search]);
 
-// keep your existing loader creation (with the non-null assertion on businessSlug if you gate the page)
-const productPickerLoader = useMemo(
-  () => makeBusinessProductPickerLoader({ businessSlug: businessSlug!, active: true, limit: 100 }),
-  [businessSlug]
-);
-const bundlePickerLoader = useMemo(
-  () => makeBusinessBundlePickerLoader({ businessSlug: businessSlug!, active: true, limit: 100 }),
-  [businessSlug]
-);
+  // Loaders only when we have a business slug
+  const productPickerLoader = useMemo(
+    () =>
+      businessSlug
+        ? makeBusinessProductPickerLoader({
+            businessSlug,
+            active: true,
+            limit: 100,
+          })
+        : undefined,
+    [businessSlug]
+  );
 
-// 3) Adapt Loader → the precise function type GrantEditor wants
-const productPickerForGrant = useMemo<
-  ((q: string) => Promise<PickerItem[]>) | undefined
->(() => {
-  if (!productPickerLoader) return undefined;
-  // explicit cast to the imported PickerItem[] to align identities
-  return (q: string) => productPickerLoader(q) as Promise<PickerItem[]>;
-}, [productPickerLoader]);
+  const bundlePickerLoader = useMemo(
+    () =>
+      businessSlug
+        ? makeBusinessBundlePickerLoader({
+            businessSlug,
+            active: true,
+            limit: 100,
+          })
+        : undefined,
+    [businessSlug]
+  );
 
-const bundlePickerForGrant = useMemo<
-  ((q: string) => Promise<PickerItem[]>) | undefined
->(() => {
-  if (!bundlePickerLoader) return undefined;
-  return (q: string) => bundlePickerLoader(q) as Promise<PickerItem[]>;
-}, [bundlePickerLoader]);
+  // List pickers always get a function (fallback = empty list)
+  const productPickerForList = useMemo<(q: string) => Promise<PickerItem[]>>(
+    () => productPickerLoader ?? (async () => [] as PickerItem[]),
+    [productPickerLoader]
+  );
+
+  const bundlePickerForList = useMemo<(q: string) => Promise<PickerItem[]>>(
+    () => bundlePickerLoader ?? (async () => [] as PickerItem[]),
+    [bundlePickerLoader]
+  );
+
+  // Adapt loaders for GrantEditor (expects PickerItem[])
+  type RawItem = {
+    id: string;
+    title?: string;
+    name?: string;
+    label?: string;
+    subtitle?: string;
+    imageUrl?: string;
+    slug?: string;
+    businessSlug?: string;
+    sku?: string | null;
+  };
+
+  const productPickerForGrant = useMemo<
+    ((q: string) => Promise<PickerItem[]>) | undefined
+  >(() => {
+    if (!productPickerLoader) return undefined;
+    return async (q: string) => {
+      const items = (await productPickerLoader(q)) as unknown as RawItem[];
+      return items.map((it) => ({
+        id: it.id,
+        title: it.title ?? it.name ?? it.label ?? "",
+        subtitle: it.subtitle,
+        imageUrl: it.imageUrl,
+      })) as PickerItem[];
+    };
+  }, [productPickerLoader]);
+
+  const bundlePickerForGrant = useMemo<
+    ((q: string) => Promise<PickerItem[]>) | undefined
+  >(() => {
+    if (!bundlePickerLoader) return undefined;
+    return async (q: string) => {
+      const items = (await bundlePickerLoader(q)) as unknown as RawItem[];
+      return items.map((it) => ({
+        id: it.id,
+        title: it.title ?? it.name ?? it.label ?? "",
+        subtitle: it.subtitle,
+        imageUrl: it.imageUrl,
+      })) as PickerItem[];
+    };
+  }, [bundlePickerLoader]);
 
   // Kind selection
   const [uiOfferKind, setUiOfferKind] = useState<UiOfferKind>("PERCENTAGE");
 
-  // Base form state (new schema only)
-  const [form, setForm] = useState<OfferTemplateRequest>({
+  // Base form state (new schema)
+  const [form, setForm] = useState<OfferTemplateForm>({
     businessId: userId,
+    offerTemplateId: undefined,
 
     templateTitle: "",
     description: "",
@@ -95,14 +153,14 @@ const bundlePickerForGrant = useMemo<
     trigger: undefined,
 
     minPurchaseAmount: undefined,
+    minPurchaseQty: undefined,
+
+    offerType: "PERCENTAGE_DISCOUNT",
 
     scopeKind: "ANY",
-    grants: [] as OfferGrantLine[],
-    appliesProductIds: [],
-    appliesBundleIds: [],
+    scopeItems: [],
 
-    // discount fields (base when non-tiered)
-    offerType: "PERCENTAGE_DISCOUNT",
+    // discount (non-tiered)
     discountPercentage: undefined,
     maxDiscountAmount: undefined,
     discountAmount: undefined,
@@ -110,58 +168,24 @@ const bundlePickerForGrant = useMemo<
     // tiers
     tiers: [],
 
-    // grants (used only if uiOfferKind === "GRANTS")
+    // grants (for GRANTS mode)
+    grants: [] as OfferGrantLine[],
     grantPickLimit: 1,
     grantDiscountType: "FREE",
     grantDiscountValue: undefined,
+
+    // wallet purchase
+    purchasableWithPoints: false,
+    pointsPrice: undefined,
+    maxPurchasesPerUser: undefined,
   });
 
-  // Tiers UI state (Option A — breakpoints + bands)
+  // Tiers UI state
   const [useTiers, setUseTiers] = useState(false);
   const [breakpoints, setBreakpoints] = useState<number[]>([]);
   const [bands, setBands] = useState<BandRow[]>([
     { discountType: "PERCENTAGE", discountValue: 0, maxDiscountAmount: null },
   ]);
-
-  // Kind → normalize form + first band
-  useEffect(() => {
-    if (uiOfferKind === "GRANTS") {
-      setForm((p) => ({
-        ...p,
-        offerType: undefined,
-        discountPercentage: undefined,
-        maxDiscountAmount: undefined,
-        discountAmount: undefined,
-        tiers: [],
-      }));
-      setUseTiers(false);
-      return;
-    }
-    if (uiOfferKind === "PERCENTAGE") {
-      setForm((p) => ({
-        ...p,
-        offerType: "PERCENTAGE_DISCOUNT",
-        discountAmount: undefined,
-      }));
-      setBands((rows) => {
-        const copy = [...rows];
-        copy[0] = { ...copy[0], discountType: "PERCENTAGE" };
-        return copy;
-      });
-    } else {
-      setForm((p) => ({
-        ...p,
-        offerType: "FIXED_DISCOUNT",
-        discountPercentage: undefined,
-        maxDiscountAmount: undefined,
-      }));
-      setBands((rows) => {
-        const copy = [...rows];
-        copy[0] = { ...copy[0], discountType: "FIXED", maxDiscountAmount: null };
-        return copy;
-      });
-    }
-  }, [uiOfferKind]);
 
   // Keep bands length = breakpoints.length + 1
   useEffect(() => {
@@ -195,44 +219,47 @@ const bundlePickerForGrant = useMemo<
   if (!profile.registeredAsBusiness) {
     return (
       <div className="page-wrap">
-        <div className="form-card p-6 text-red-600 text-center">
-          Access denied. You must be registered as a business to create offer
-          templates.
+        <div className="form-card">
+          <p className="error-text" style={{ textAlign: "center" }}>
+            Access denied. You must be registered as a business to create offer
+            templates.
+          </p>
         </div>
       </div>
     );
   }
 
-  // helpers to map inputs → typed state
-  type NumericKeys =
-    | "discountPercentage"
-    | "maxDiscountAmount"
-    | "discountAmount"
-    | "minPurchaseAmount"
-    | "durationDays"
-    | "maxRedemptions";
-  type BooleanKeys = "isActive";
-  const NUMERIC_KEYS: ReadonlyArray<NumericKeys> = [
-    "discountPercentage",
-    "maxDiscountAmount",
-    "discountAmount",
-    "minPurchaseAmount",
-    "durationDays",
-    "maxRedemptions",
-  ];
-  const BOOLEAN_KEYS: ReadonlyArray<BooleanKeys> = ["isActive"];
-
-  function setField<K extends keyof OfferTemplateRequest>(
+  // Helpers to map inputs → typed state
+  function setField<K extends keyof OfferTemplateForm>(
     key: K,
     raw: string,
     checked: boolean
   ) {
     setForm((prev) => {
-      const next: OfferTemplateRequest = { ...prev };
-      if ((NUMERIC_KEYS as ReadonlyArray<string>).includes(key as string)) {
+      const next: OfferTemplateForm = { ...prev };
+
+      const numeric: (keyof OfferTemplateForm)[] = [
+        "discountPercentage",
+        "maxDiscountAmount",
+        "discountAmount",
+        "minPurchaseAmount",
+        "minPurchaseQty",
+        "durationDays",
+        "maxRedemptions",
+        "grantDiscountValue",
+        "grantPickLimit",
+        "pointsPrice",
+        "maxPurchasesPerUser",
+      ];
+      const boolean: (keyof OfferTemplateForm)[] = [
+        "isActive",
+        "purchasableWithPoints",
+      ];
+
+      if (numeric.includes(key)) {
         (next[key] as unknown as number | undefined) =
           raw === "" ? undefined : Number(raw);
-      } else if ((BOOLEAN_KEYS as ReadonlyArray<string>).includes(key as string)) {
+      } else if (boolean.includes(key)) {
         (next[key] as unknown as boolean) = checked;
       } else {
         (next[key] as unknown as string | undefined) =
@@ -242,78 +269,113 @@ const bundlePickerForGrant = useMemo<
     });
   }
 
+  const mapUiKindToOfferType = (
+    v: UiOfferKind
+  ): OfferTemplateForm["offerType"] =>
+    v === "GRANTS"
+      ? "GRANT"
+      : v === "ABSOLUTE"
+      ? "FIXED_DISCOUNT"
+      : "PERCENTAGE_DISCOUNT";
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value, checked } = e.target as HTMLInputElement;
+    const target = e.target as HTMLInputElement;
+    const { name, value, checked, type } = target;
+
     if (name === "uiOfferKind") {
-      setUiOfferKind(value as UiOfferKind);
+      const v = value as UiOfferKind;
+      setUiOfferKind(v);
+      if (v === "GRANTS") setUseTiers(false);
+
+      // keep offerType in sync + clear incompatible base fields
+      setForm((prev) => ({
+        ...prev,
+        offerType: mapUiKindToOfferType(v),
+        discountPercentage: undefined,
+        maxDiscountAmount: undefined,
+        discountAmount: undefined,
+      }));
       return;
     }
-    setField(name as keyof OfferTemplateRequest, value, checked);
+
+    setField(
+      name as keyof OfferTemplateForm,
+      type === "checkbox" ? (checked ? "1" : "") : value,
+      checked
+    );
   };
 
-  // submit
+  // Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // validations by mode
+    // Grants validation
     if (uiOfferKind === "GRANTS") {
       if ((form.grants?.length ?? 0) < 1) {
         alert("Please add at least one grant (free product or bundle).");
         return;
       }
+    } else if (!useTiers) {
+      if (uiOfferKind === "PERCENTAGE" && form.discountPercentage == null) {
+        alert("Please enter a discount percentage.");
+        return;
+      }
+      if (uiOfferKind === "ABSOLUTE" && form.discountAmount == null) {
+        alert("Please enter a flat discount amount.");
+        return;
+      }
     } else {
-      if (!useTiers) {
-        if (uiOfferKind === "PERCENTAGE" && form.discountPercentage == null) {
-          alert("Please enter a discount percentage.");
-          return;
-        }
-        if (uiOfferKind === "ABSOLUTE" && form.discountAmount == null) {
-          alert("Please enter a flat discount amount.");
-          return;
-        }
-      } else {
-        if (
-          bands.some(
-            (b) =>
-              b.discountType === "PERCENTAGE" &&
-              (b.discountValue < 0 || b.discountValue > 100)
-          )
-        ) {
-          alert("Percentage discount must be between 0–100.");
-          return;
-        }
+      if (
+        bands.some(
+          (b) =>
+            b.discountType === "PERCENTAGE" &&
+            (b.discountValue < 0 || b.discountValue > 100)
+        )
+      ) {
+        alert("Percentage discount must be between 0–100.");
+        return;
       }
     }
 
+    // Scope validation
     if (form.scopeKind === "LIST") {
-      const count =
-        (form.appliesProductIds?.length ?? 0) +
-        (form.appliesBundleIds?.length ?? 0);
+      const count = form.scopeItems?.length ?? 0;
       if (count === 0) {
         alert("Select at least one product or bundle in the scope list.");
         return;
       }
     }
 
+    // Validity validation
     if (form.validityType === "RELATIVE" && !form.trigger) {
       alert("Please pick an activation trigger for relative validity.");
       return;
     }
 
-    // shape tiers if enabled
-    let payloadForm: OfferTemplateRequest = { ...form };
+    // Purchase policy sanity check
+    if (
+      form.purchasableWithPoints &&
+      (form.pointsPrice == null || form.pointsPrice <= 0)
+    ) {
+      alert("Please set a positive points price for wallet purchases.");
+      return;
+    }
+
+    // Build tiers if enabled
+    let payloadForm: OfferTemplateForm = { ...form };
+
     if (uiOfferKind !== "GRANTS") {
       if (useTiers) {
         const sortedBps = [...breakpoints].sort((a, b) => a - b);
-        const serverTiers = uiToServerTiers(sortedBps, bands as UiBand[]);
+        const serverTiers = uiToServerTiers(sortedBps, bands);
 
         payloadForm = {
           ...payloadForm,
-          tiers: serverTiers,           // correct server shape
+          tiers: serverTiers,
           discountPercentage: undefined,
           maxDiscountAmount: undefined,
           discountAmount: undefined,
@@ -326,11 +388,16 @@ const bundlePickerForGrant = useMemo<
     }
 
     try {
-      const payload = buildOfferTemplatePayload(payloadForm, uiOfferKind);
-      const saved = await upsertOfferTemplate(payload, token);
+      const payload = buildOfferTemplatePayload(payloadForm);
+      const saved = (await upsertOfferTemplate(
+        payload,
+        token
+      )) as Partial<OfferTemplateResponse> | undefined;
+
       const id =
         saved?.offerTemplateId ??
-        (payload as any)?.offerTemplateId ??
+        payload.offerTemplateId ??
+        payloadForm.offerTemplateId ??
         null;
 
       if (id) {
@@ -400,7 +467,6 @@ const bundlePickerForGrant = useMemo<
             <div className="section-grid">
               {(uiOfferKind === "PERCENTAGE" || uiOfferKind === "ABSOLUTE") && (
                 <>
-                  {/* Base (non-tiered) */}
                   {uiOfferKind === "PERCENTAGE" ? (
                     <>
                       <div className="th-field">
@@ -421,7 +487,9 @@ const bundlePickerForGrant = useMemo<
                         />
                       </div>
                       <div className="th-field">
-                        <label className="th-label">Max cap (₹, optional)</label>
+                        <label className="th-label">
+                          Max cap (₹, optional)
+                        </label>
                         <input
                           className="th-input"
                           type="number"
@@ -429,7 +497,11 @@ const bundlePickerForGrant = useMemo<
                           placeholder="e.g., 1000"
                           value={form.maxDiscountAmount ?? ""}
                           onChange={(e) =>
-                            setField("maxDiscountAmount", e.target.value, false)
+                            setField(
+                              "maxDiscountAmount",
+                              e.target.value,
+                              false
+                            )
                           }
                         />
                       </div>
@@ -473,7 +545,11 @@ const bundlePickerForGrant = useMemo<
                       {/* Breakpoints */}
                       <div className="th-vlist" style={{ marginBottom: 6 }}>
                         {breakpoints.map((bp, idx) => (
-                          <div key={idx} className="th-pill" style={{ gap: 8 }}>
+                          <div
+                            key={idx}
+                            className="th-pill"
+                            style={{ gap: 8 }}
+                          >
                             <span>Breakpoint ₹</span>
                             <input
                               className="amount-input"
@@ -520,7 +596,11 @@ const bundlePickerForGrant = useMemo<
                       {/* Bands */}
                       <div className="th-vlist">
                         {bands.map((b, i) => (
-                          <div key={i} className="th-pill" style={{ gap: 8 }}>
+                          <div
+                            key={i}
+                            className="th-pill"
+                            style={{ gap: 8 }}
+                          >
                             <div
                               className="th-list-title"
                               style={{ minWidth: 180 }}
@@ -532,8 +612,8 @@ const bundlePickerForGrant = useMemo<
                               className="select discount-type"
                               value={b.discountType}
                               onChange={(e) => {
-                                const val = e.target
-                                  .value as BandRow["discountType"];
+                                const val =
+                                  e.target.value as BandRow["discountType"];
                                 setBands((rows) => {
                                   const copy = [...rows];
                                   copy[i] = {
@@ -696,12 +776,15 @@ const bundlePickerForGrant = useMemo<
                 <select
                   className="select"
                   name="scopeKind"
-                  value={form.scopeKind ?? "ANY_PURCHASE"}
+                  value={form.scopeKind ?? "ANY"}
                   onChange={(e) =>
-                    setForm((p) => ({ ...p, scopeKind: e.target.value as any }))
+                    setForm((p) => ({
+                      ...p,
+                      scopeKind: e.target.value as any,
+                    }))
                   }
                 >
-                  <option value="ANY_PURCHASE">Any purchase (global)</option>
+                  <option value="ANY">Any purchase (global)</option>
                   <option value="LIST">
                     Specific list (products and/or bundles)
                   </option>
@@ -710,91 +793,178 @@ const bundlePickerForGrant = useMemo<
 
               {form.scopeKind === "LIST" && (
                 <>
+                  {/* Add product */}
                   <div className="th-field">
                     <label className="th-label">Add product</label>
                     <div className="th-pill">
                       <ProductPicker
                         value={null}
-                        onChange={(id) => {
+                        onChange={(id, item) => {
                           if (!id) return;
-                          setForm((p) => ({
-                            ...p,
-                            appliesProductIds: Array.from(
-                              new Set([...(p.appliesProductIds ?? []), id])
-                            ),
-                          }));
+                          setForm((prev) => {
+                            const next = [...(prev.scopeItems ?? [])];
+
+                            const key = (it: ScopeItem) =>
+                              it.itemType === "PRODUCT"
+                                ? `P:${it.product.id}`
+                                : `B:${it.bundle.id}`;
+                            const exists = new Set(next.map(key));
+
+                            const prod = item
+                              ? {
+                                  id: item.id,
+                                  slug: (item as any).slug,
+                                  businessSlug: (item as any).businessSlug,
+                                  name: item.title,
+                                  primaryImageUrl: item.imageUrl ?? null,
+                                  sku: (item as any).sku ?? null,
+                                }
+                              : { id };
+
+                            const candidate: ScopeItem = {
+                              itemType: "PRODUCT",
+                              product: prod,
+                            };
+                            if (!exists.has(key(candidate))) next.push(candidate);
+
+                            return { ...prev, scopeItems: next };
+                          });
                         }}
-                        fetchItems={productPickerLoader}
+                        fetchItems={productPickerForList}
                         placeholder="Search and add product…"
                       />
                     </div>
                   </div>
 
+                  {/* Add bundle */}
                   <div className="th-field">
                     <label className="th-label">Add bundle</label>
                     <div className="th-pill">
                       <BundlePicker
                         value={null}
-                        onChange={(id) => {
+                        onChange={(id, item) => {
                           if (!id) return;
-                          setForm((p) => ({
-                            ...p,
-                            appliesBundleIds: Array.from(
-                              new Set([...(p.appliesBundleIds ?? []), id])
-                            ),
-                          }));
+                          setForm((prev) => {
+                            const next = [...(prev.scopeItems ?? [])];
+
+                            const key = (it: ScopeItem) =>
+                              it.itemType === "PRODUCT"
+                                ? `P:${it.product.id}`
+                                : `B:${it.bundle.id}`;
+                            const exists = new Set(next.map(key));
+
+                            const bund = item
+                              ? {
+                                  id: item.id,
+                                  slug: (item as any).slug,
+                                  businessSlug: (item as any).businessSlug,
+                                  name: item.title,
+                                  primaryImageUrl: item.imageUrl ?? null,
+                                }
+                              : { id };
+
+                            const candidate: ScopeItem = {
+                              itemType: "BUNDLE",
+                              bundle: bund,
+                            };
+                            if (!exists.has(key(candidate))) next.push(candidate);
+
+                            return { ...prev, scopeItems: next };
+                          });
                         }}
-                        fetchItems={bundlePickerLoader}
+                        fetchItems={bundlePickerForList}
                         placeholder="Search and add bundle…"
                       />
                     </div>
                   </div>
 
+                  {/* Selected items */}
                   <div className="th-field th-col-span-2">
                     <label className="th-label">Selected items</label>
                     <div className="th-vlist">
-                      {(form.appliesProductIds ?? []).map((id) => (
-                        <div key={`p-${id}`} className="th-list-row">
-                          <div className="th-list-title">Product: {id}</div>
-                          <button
-                            type="button"
-                            className="btn btn--ghost btn--sm"
-                            onClick={() =>
-                              setForm((p) => ({
-                                ...p,
-                                appliesProductIds: (p.appliesProductIds ?? []).filter(
-                                  (x) => x !== id
-                                ),
-                              }))
-                            }
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                      {(form.appliesBundleIds ?? []).map((id) => (
-                        <div key={`b-${id}`} className="th-list-row">
-                          <div className="th-list-title">Bundle: {id}</div>
-                          <button
-                            type="button"
-                            className="btn btn--ghost btn--sm"
-                            onClick={() =>
-                              setForm((p) => ({
-                                ...p,
-                                appliesBundleIds: (p.appliesBundleIds ?? []).filter(
-                                  (x) => x !== id
-                                ),
-                              }))
-                            }
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                      {((form.appliesProductIds ?? []).length +
-                        (form.appliesBundleIds ?? []).length === 0) && (
+                      {(form.scopeItems ?? []).length === 0 && (
                         <div className="help">No items selected yet.</div>
                       )}
+
+                      {(form.scopeItems ?? []).map((it, i) => {
+                        const isProduct = it.itemType === "PRODUCT";
+                        const data = isProduct ? it.product : it.bundle;
+                        const id = data.id;
+                        const title = (data as any).name ?? id;
+                        const subtitle =
+                          (data as any).slug ??
+                          (data as any).businessSlug ??
+                          "";
+                        const img =
+                          (data as any).primaryImageUrl ??
+                          (data as any).imageUrl ??
+                          null;
+
+                        return (
+                          <div
+                            key={`${isProduct ? "p" : "b"}-${id}-${i}`}
+                            className="th-list-row"
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                overflow: "hidden",
+                              }}
+                            >
+                              <img
+                                src={img || ""}
+                                alt=""
+                                className="img-cover"
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: 6,
+                                  objectFit: "cover",
+                                  background: "#eee",
+                                }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.visibility =
+                                    "hidden";
+                                }}
+                              />
+                              <div style={{ overflow: "hidden" }}>
+                                <div className="th-list-title" title={title}>
+                                  {isProduct ? "Product" : "Bundle"}: {title}
+                                </div>
+                                {subtitle && (
+                                  <div className="subtitle">{subtitle}</div>
+                                )}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="btn btn--ghost btn--sm"
+                              onClick={() =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  scopeItems: (prev.scopeItems ?? []).filter(
+                                    (x) => {
+                                      const xData =
+                                        x.itemType === "PRODUCT"
+                                          ? x.product
+                                          : x.bundle;
+                                      return !(
+                                        x.itemType === it.itemType &&
+                                        xData.id === id
+                                      );
+                                    }
+                                  ),
+                                }))
+                              }
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </>
@@ -802,9 +972,11 @@ const bundlePickerForGrant = useMemo<
             </div>
           </div>
 
-          {/* VALIDITY & RULES */}
+          {/* VALIDITY + RULES + PURCHASE POLICY */}
           <div className="section-block">
             <div className="section-header">⏳ Validity</div>
+
+            {/* Validity type + Claim policy */}
             <div className="section-grid">
               <div className="th-field">
                 <label className="th-label">Validity type</label>
@@ -819,6 +991,23 @@ const bundlePickerForGrant = useMemo<
                 </select>
               </div>
 
+              <div className="th-field">
+                <label className="th-label">Claim policy</label>
+                <select
+                  className="select"
+                  name="claimPolicy"
+                  value={form.claimPolicy || "BOTH"}
+                  onChange={handleChange}
+                >
+                  <option value="BOTH">Online & Offline</option>
+                  <option value="ONLINE">E-commerce only</option>
+                  <option value="MANUAL">Direct purchases</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Dates / relative config */}
+            <div className="section-grid">
               {form.validityType === "ABSOLUTE" ? (
                 <>
                   <div className="th-field">
@@ -874,6 +1063,7 @@ const bundlePickerForGrant = useMemo<
               )}
             </div>
 
+            {/* Rules & optional limits */}
             <details className="section-details">
               <summary>⚙️ Rules & optional limits</summary>
               <div className="section-grid">
@@ -896,19 +1086,6 @@ const bundlePickerForGrant = useMemo<
                     value={form.maxRedemptions ?? ""}
                     onChange={handleChange}
                   />
-                </div>
-                <div className="th-field th-col-span-2">
-                  <label className="th-label">Claim policy</label>
-                  <select
-                    className="select"
-                    name="claimPolicy"
-                    value={form.claimPolicy || "BOTH"}
-                    onChange={handleChange}
-                  >
-                    <option value="BOTH">Online & Offline</option>
-                    <option value="ONLINE">E-commerce only</option>
-                    <option value="MANUAL">Direct purchases</option>
-                  </select>
                 </div>
                 <div className="th-field th-col-span-2">
                   <label className="th-label">Eligibility</label>
@@ -939,6 +1116,62 @@ const bundlePickerForGrant = useMemo<
                     Active
                   </label>
                 </div>
+              </div>
+            </details>
+
+            {/* Purchase policy – ONLY wallet-related fields */}
+            <details className="section-details">
+              <summary>🛒 Purchase policy</summary>
+              <div className="section-grid">
+                <div className="th-field th-col-span-2">
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      name="purchasableWithPoints"
+                      checked={!!form.purchasableWithPoints}
+                      onChange={handleChange}
+                    />
+                    Allow purchase with wallet points
+                  </label>
+                  <div className="help">
+                    When enabled, customers can spend their points to buy this offer
+                    template.
+                  </div>
+                </div>
+
+                {form.purchasableWithPoints && (
+                  <>
+                    <div className="th-field">
+                      <label className="th-label">Points price</label>
+                      <input
+                        className="th-input"
+                        type="number"
+                        name="pointsPrice"
+                        value={form.pointsPrice ?? ""}
+                        onChange={(e) => setField("pointsPrice", e.target.value, false)}
+                      />
+                      <div className="help">
+                        Total points required for one purchase.
+                      </div>
+                    </div>
+
+                    <div className="th-field">
+                      <label className="th-label">
+                        Max purchases per user (optional)
+                      </label>
+                      <input
+                        className="th-input"
+                        type="number"
+                        name="maxPurchasesPerUser"
+                        value={form.maxPurchasesPerUser ?? ""}
+                        onChange={(e) =>
+                          setField("maxPurchasesPerUser", e.target.value, false)
+                        }
+                      />
+                      <div className="help">Leave blank for no per-user limit.</div>
+                    </div>
+                  </>
+                )}
               </div>
             </details>
           </div>

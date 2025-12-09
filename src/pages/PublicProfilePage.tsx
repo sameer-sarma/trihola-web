@@ -26,6 +26,7 @@ interface PublicProfile {
     businessName?: string;
     businessDescription?: string;
     businessWebsite?: string;
+    businessSlug?: string;
   } | null;
   isContact?: boolean;
 }
@@ -93,7 +94,7 @@ const PublicProfilePage: React.FC = () => {
   if (!displayProfile) return <p style={{ textAlign: "center", marginTop: 24, color: "var(--danger)" }}>Profile not found.</p>;
 
   const isOwnProfile = displayProfile.userId === userIdFromToken;
-
+    
   const handleAddContact = !isOwnProfile && !displayProfile.isContact
     ? async () => {
         try {

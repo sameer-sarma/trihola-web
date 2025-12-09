@@ -49,6 +49,38 @@ export interface ReferralDTO {
   updatedAt: string;
 }
 
+export type ReferralPublicView = {
+  id: string;
+  slug: string;
+  status: string; // or a ReferralStatus union if you already have one
+  createdAt: string;
+  note?: string | null;
+
+  referrerName?: string | null;
+  referrerProfileSlug?: string | null;
+  referrerProfileImageUrl?: string | null;
+
+  prospectName?: string | null;
+  prospectProfileSlug?: string | null;
+  prospectProfileImageUrl?: string | null;
+
+  businessName?: string | null;
+  businessProfileSlug?: string | null;
+  businessSlug?: string | null;
+  businessProfileImageUrl?: string | null;
+
+  productName?: string | null;
+  productImageUrl?: string | null;
+  productSlug?: string | null;
+
+  bundleTitle?: string | null;
+  bundleSlug?: string | null;
+
+  referrerOffer?: EmbeddedOfferDTO | null;
+  prospectOffer?: EmbeddedOfferDTO | null;
+  isParticipant: boolean;
+};
+
 export type CreateReferralReq = {
   prospectUserId: string;
   businessUserId: string;
@@ -122,7 +154,7 @@ export interface SystemAlertMetadata {
   message: string;
 }
 
-export type ParticipantRole = "REFERRER" | "PROSPECT" | "BUSINESS";
+export type ParticipantRole = "REFERRER" | "PROSPECT" | "BUSINESS"| "AFFILIATE";
 
 export interface EmbeddedOfferDTO {
   id: string;

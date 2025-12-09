@@ -1,82 +1,58 @@
+/* =========================================
+   TRIHola MESSAGE BUBBLES — Polished Look
+   ========================================= */
+
 .message-bubble {
   display: flex;
   margin-bottom: 12px;
-  max-width: 80%;
+  max-width: 78%;
+}
+
+.message-bubble.mine {
+  margin-left: auto;
+  justify-content: flex-end;
 }
 
 .message-bubble.theirs {
   justify-content: flex-start;
-  align-self: flex-start;
 }
 
-.message-bubble.mine {
-  justify-content: flex-end;
-  align-self: flex-end;
-  margin-left: auto;
-}
-
-.bubble-content {
-  background-color: #f1f5f9;
-  border-radius: 12px;
-  padding: 12px 16px;
-  position: relative;
-  font-size: 0.9rem;
-  color: #111827;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.message-bubble.mine .bubble-content {
-  background-color: #dcfce7; /* light green */
-  text-align: left;
-}
-
-.message-bubble.theirs .bubble-content {
-  background-color: #e0f2fe; /* light blue */
-  text-align: left;
-}
-
-.message-bubble-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-}
-
-.message-text {
-  flex: 1;
-  margin: 0;
-  font-size: 0.9rem;
-  color: #111827;
-  word-break: break-word;
-}
-
-.message-timestamp {
-  font-size: 0.7rem;
-  color: #6b7280;
-  white-space: nowrap;
-}
-
+/* Sender label */
 .sender-label {
+  font-size: 11px;
   font-weight: 600;
-  font-size: 0.75rem;
-  color: #6b7280;
   margin-bottom: 4px;
+  color: #64748b;
 }
 
-.bubble-content p {
-  margin: 4px 0;
+/* Bubble container */
+.bubble-content {
+  padding: 12px 16px;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(15,23,42,0.15);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #0f172a;
 }
 
-.bubble-content small {
-  display: block;
+/* Incoming */
+.message-bubble.theirs .bubble-content {
+  background: #e0f2fe;
+  border-color: #bae6fd;
+}
+
+/* Outgoing */
+.message-bubble.mine .bubble-content {
+  background: #dcfce7;
+  border-color: #bbf7d0;
+}
+
+/* Timestamp */
+.message-timestamp {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6b7280;
   text-align: right;
-  color: #9ca3af;
-  font-size: 0.7rem;
-  margin-top: 4px;
-}
-
-.attachment {
-  font-size: 0.85rem;
-  margin-top: 4px;
 }

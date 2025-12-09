@@ -60,9 +60,9 @@ interface Props {
 
   scopeKind?: "ANY" | "LIST";
   pickers?: PickerFns;
-    eligibleGrantItems?: Array<
+  eligibleGrantItems?: Array<
     | { itemType?: "PRODUCT"; product?: { id: string }; quantity?: number }
-    | { itemType?: "BUNDLE";  bundle?:  { id: string }; quantity?: number }
+    | { itemType?: "BUNDLE"; bundle?: { id: string }; quantity?: number }
   >;
 }
 
@@ -98,6 +98,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
     },
     [token]
   );
+
   const withAuthOrThrow = useCallback(
     async <T,>(fn: (t: string) => Promise<T>): Promise<T> => {
       const out = await withAuth(fn);
@@ -160,6 +161,90 @@ const ActiveClaimsPanel: React.FC<Props> = ({
   useEffect(() => {
     loadClaimsOnce();
   }, [loadClaimsOnce]);
+
+  // ===== Live updates via offer WebSocket
+  useEffect(() => {
+    if (!assignedOfferId || !token) return;
+
+    let url: URL;
+    try {
+      url = new URL(`/offers/${assignedOfferId}/ws`, __WS_BASE__);
+    } catch (err) {
+      console.error("ActiveClaimsPanel: Invalid __WS_BASE__:", err);
+      return;
+    }
+
+    url.searchParams.set("token", token);
+    const ws = new WebSocket(url.toString());
+
+    // Debounce so a burst of events results in a single reload
+    let debounceTimer: number | null = null;
+    const scheduleReload = (delay = 300) => {
+      if (debounceTimer !== null) return;
+      debounceTimer = window.setTimeout(() => {
+        debounceTimer = null;
+        console.log("ActiveClaimsPanel: reloading due to WS event");
+        loadClaimsOnce();
+      }, delay);
+    };
+
+    // Return eventType (string) for interesting events; null otherwise
+    const eventTypeFromMessage = (raw: any): string | null => {
+      if (raw == null) return null;
+      if (raw === "ping" || raw === "pong") return null;
+
+      let obj: any = null;
+      if (typeof raw === "string") {
+        try {
+          obj = JSON.parse(raw);
+        } catch {
+          /* not JSON */
+        }
+        if (!obj) {
+          const s = raw.toLowerCase();
+          if (s === "ok" || s === "ack" || s === "resynced") return null;
+          return null;
+        }
+      } else if (typeof raw === "object") {
+        obj = raw;
+      }
+
+      const type = String(obj?.kind ?? obj?.type ?? obj?.event ?? "").toLowerCase();
+      if (!type) return null;
+
+      // Backend sends kind = "claim.changed" and "offer.status.changed"
+      const meaningful = new Set(["claim.changed", "offer.status.changed"]);
+
+      return meaningful.has(type) ? type : null;
+    };
+
+    ws.onopen = () => {
+      try {
+        ws.send("resync");
+      } catch {
+        // ignore
+      }
+    };
+
+    ws.onmessage = (evt) => {
+      const payload = evt && "data" in evt ? (evt as any).data : undefined;
+      const type = eventTypeFromMessage(payload);
+      if (type) console.log("ActiveClaimsPanel: WS event received:", type);
+      if (type) scheduleReload(250);
+    };
+
+    ws.onerror = () => {
+      // optional: keep logs quiet here
+    };
+
+    return () => {
+      if (debounceTimer !== null) {
+        window.clearTimeout(debounceTimer);
+        debounceTimer = null;
+      }
+      ws.close();
+    };
+  }, [assignedOfferId, token, loadClaimsOnce]);
 
   // ===== Countdown ticker ONLY when a claim exists (avoid render churn otherwise)
   const hasAny =
@@ -244,13 +329,26 @@ const ActiveClaimsPanel: React.FC<Props> = ({
     (redemptionsLeft == null || redemptionsLeft > 0);
 
   const emptyStateReason =
-    viewer !== "USER" ? null
-    : !claimPolicyAllows ? "Claiming is disabled for this offer."
-    : redemptionsLeft === 0 ? "No redemptions left on this offer."
-    : canClaim === false ? "You are not eligible to claim this offer."
-    : null;
+    viewer !== "USER"
+      ? null
+      : !claimPolicyAllows
+      ? "Claiming is disabled for this offer."
+      : redemptionsLeft === 0
+      ? "No redemptions left on this offer."
+      : canClaim === false
+      ? "You are not eligible to claim this offer."
+      : null;
 
+  // --- Early exits for visibility ---------------------------------
+
+  // 1) While loading, don't flash anything
   if (loading && !showGrantModal) return null;
+
+  // 2) For BUSINESS viewers, if there is no active claim to approve,
+  //    do not render the panel at all (prevents empty "Claims" cards).
+  if (!loading && viewer === "BUSINESS" && !hasAny && !showGrantModal) {
+    return null;
+  }
 
   const topStatus = manual?.status ?? online?.status ?? "—";
   const topExpiryIso = manual?.expiresAt ?? online?.expiresAt;
@@ -268,7 +366,8 @@ const ActiveClaimsPanel: React.FC<Props> = ({
           <div className="kv-item span-2">
             <div className="kv-label">Expires</div>
             <div className="kv-value">
-              {fmtAbs(topExpiryIso)} <span style={{ color: "#6b7280" }}>({fmtRel(topExpiryIso)})</span>
+              {fmtAbs(topExpiryIso)}{" "}
+              <span style={{ color: "#6b7280" }}>({fmtRel(topExpiryIso)})</span>
             </div>
           </div>
         </div>
@@ -315,7 +414,9 @@ const ActiveClaimsPanel: React.FC<Props> = ({
               {!!online.discountCode && (
                 <button
                   className="btn btn--ghost btn--sm"
-                  onClick={() => online.discountCode && navigator.clipboard?.writeText(online.discountCode)}
+                  onClick={() =>
+                    online.discountCode && navigator.clipboard?.writeText(online.discountCode)
+                  }
                   title="Copy code"
                   style={{ marginLeft: 8 }}
                 >
@@ -336,7 +437,7 @@ const ActiveClaimsPanel: React.FC<Props> = ({
             )}
             <div style={{ marginTop: 12 }}>
               <button className="btn btn--sm" onClick={regenerateOnline} disabled={busy === "ONLINE"}>
-                {busy === "ONLINE" ? "Generating…" : "Regenerate code"}
+                {busy === "ONLINE" ? "Generating…" : "Generate online code"}
               </button>
             </div>
           </div>
@@ -366,14 +467,28 @@ const ActiveClaimsPanel: React.FC<Props> = ({
         <div className="kv-grid-4" style={{ marginTop: 12 }}>
           {(claimPolicy === "MANUAL" || claimPolicy === "BOTH") && (
             <div className="kv-item span-2">
-              <button type="button" className="btn btn--primary w-full" onClick={createManual} disabled={busy !== null}>
-                {busy === "MANUAL" ? "Generating…" : manualNeedsGrantFlow ? "Choose grant & get QR" : "Generate QR"}
+              <button
+                type="button"
+                className="btn btn--primary w-full"
+                onClick={createManual}
+                disabled={busy !== null}
+              >
+                {busy === "MANUAL"
+                  ? "Generating…"
+                  : manualNeedsGrantFlow
+                  ? "Choose grant & get QR"
+                  : "Generate QR"}
               </button>
             </div>
           )}
           {(claimPolicy === "ONLINE" || claimPolicy === "BOTH") && (
             <div className="kv-item span-2">
-              <button type="button" className="btn btn--primary w-full" onClick={createOnline} disabled={busy !== null}>
+              <button
+                type="button"
+                className="btn btn--primary w-full"
+                onClick={createOnline}
+                disabled={busy !== null}
+              >
                 {busy === "ONLINE" ? "Generating…" : "Generate online code"}
               </button>
             </div>
@@ -406,20 +521,29 @@ const ActiveClaimsPanel: React.FC<Props> = ({
       {viewer === "USER" && (
         <ClaimModal
           assignedOfferId={assignedOfferId}
-          isOpen={ manualNeedsGrantFlow && showGrantModal}
+          isOpen={manualNeedsGrantFlow && showGrantModal}
           onClose={() => setShowGrantModal(false)}
           onCreated={(c: any) => {
             const v = normalizeClaim(c);
-            if (v.claimSource === "MANUAL") { setManual(v); setOnline(null); }
-            else { setOnline(v); setManual(null); }
+            if (v.claimSource === "MANUAL") {
+              setManual(v);
+              setOnline(null);
+            } else {
+              setOnline(v);
+              setManual(null);
+            }
             setShowGrantModal(false);
             onUpdated?.();
           }}
           grantMode={true}
           claimSource={"MANUAL"}
           primaryCtaLabel={"Generate QR"}
-          fetchGrantOptions={(id) => withAuthOrThrow((t) => offerService.fetchGrantOptions(id, t))}
-          createClaim={(body) => withAuthOrThrow((t) => offerService.requestClaim(t, assignedOfferId, body))}
+          fetchGrantOptions={(id) =>
+            withAuthOrThrow((t) => offerService.fetchGrantOptions(id, t))
+          }
+          createClaim={(body) =>
+            withAuthOrThrow((t) => offerService.requestClaim(t, assignedOfferId, body))
+          }
         />
       )}
     </div>

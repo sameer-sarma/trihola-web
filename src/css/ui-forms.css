@@ -27,63 +27,59 @@
   box-shadow: var(--shadow);
   padding: 20px;
 }
-/* Make whole card feel interactive */
-/* Compact referral card */
 
-.card--clickable { cursor: pointer; transition: box-shadow .15s ease; }
-.card--clickable:hover { box-shadow: 0 4px 14px rgba(0,0,0,.06); }
+/* --- Referral card: upgraded look --- */
 
-/* Align sentence as tokens: avatar chips + tiny text chunks */
-.ref-card { padding: 12px 14px; }    
+/* Card shell: softer, more "product" than "admin" */
+.card.ref-card {
+  border-radius: 18px;
+  border: 1px solid #e2e8f0; /* slate-200 */
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  background: #ffffff;
+  transition: box-shadow 0.15s ease, transform 0.08s ease;
+}
 
-.ref-card__line { font-size: 13.5px; line-height: 1.3; margin-bottom: 4px; }
-.ref-card__line--tokens { gap: 6px; }  
-/* Small text chunks ("have referred", "to") align with chips */
-.inline-text {
+.card.ref-card.card--clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.10);
+}
+
+/* Align status + role chip nicely */
+.ref-card__meta-left {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-/* Inline avatar + name chip (already present, ensure these props) */
-.inline-person {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  vertical-align: middle;
+/* Role chip ("You’re the referrer / prospect / business") */
+.ref-card__role-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  background: #e0f2fe;   /* sky-100 */
+  color: #0369a1;        /* sky-700 */
+  border: 1px solid #bae6fd;
 }
 
-/* Keep the link text vertically centered with the chip */
-.inline-person .th-link {
-  display: inline-flex;
-  align-items: center;
-  line-height: 1.2;
+/* Action buttons inside referral cards */
+.ref-card__actions .btn--primary {
+  background: linear-gradient(90deg, #22c55e, #16a34a); /* green gradient */
+  border-color: transparent;
+  color: #0b1120;
 }
 
-/* Avatars inside the chip shouldn't stretch */
-.inline-person .profile-img,
-.inline-person .profile-noimg {
-  flex: 0 0 auto;
+.ref-card__actions .btn--ghost {
+  background: #ffffff;
+  color: #1f2933;
+  border-color: #e2e8f0;
 }
 
-/* Referral card text rhythm */
-.ref-card__note { margin-top: 4px; }
-
-/* Status + timestamp row */
-.ref-card__meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;              /* prevents overlap on narrow screens */
-  font-size: 12px;
-  margin-top: 6px;
+/* The copy-link button reads as secondary, not destructive */
+.ref-card__actions .btn--ghost:last-child {
+  background: #f9fafb;
 }
-
-.ref-card__status { font-weight: 600; text-transform: capitalize; }
-.ref-card__meta .meta-right { color: #94a3b8; } /* slate-400 */
-
-/* Actions */
-.ref-card__actions { margin-top: 8px; gap: 6px; }
 
 /* Small button utility (reusable) */
 .btn--sm {
@@ -1080,3 +1076,2870 @@
 
 /* Your existing narrow card class already exists; keep it */
 .ecom-card--narrow { max-width: 420px; }
+
+
+.page-wrap { max-width: 960px; margin: 0 auto; padding: 16px; }
+.form-card, .invite-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+.page-title { font-size: 20px; margin: 0 0 12px; }
+.card-section { margin-top: 16px; }
+.section-title { font-size: 14px; color: #374151; margin-bottom: 8px; }
+.th-form { display: block; }
+.th-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.th-field { display: flex; flex-direction: column; gap: 6px; }
+.th-label { font-size: 12px; color: #4b5563; }
+.th-input, .th-textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; font-size: 14px; }
+.btn { border: 1px solid #d1d5db; background: #fff; border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+.btn--primary { background: #111827; color: #fff; border-color: #111827; }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+.actions { display: flex; gap: 10px; margin-top: 16px; }
+.error-banner { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 8px 10px; border-radius: 8px; margin: 8px 0; }
+.success-banner { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 8px 10px; border-radius: 8px; margin: 8px 0; }
+.loading, .empty, .help-text { color: #6b7280; font-size: 13px; margin-top: 6px; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #e5e7eb; font-size: 12px; }
+.pill--accepted { background: #dcfce7; color: #166534; }
+.pill--declined { background: #fee2e2; color: #991b1b; }
+.pill--invited { background: #eef2ff; color: #3730a3; }
+.pill--viewed { background: #fef9c3; color: #854d0e; }
+.pill--expired { background: #e5e7eb; color: #374151; }
+
+
+.contact-multi {}
+.contact-multi__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.contact-multi__item { display: flex; align-items: center; gap: 8px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px; background: #fff; cursor: pointer; }
+.contact-multi__item.is-selected { outline: 2px solid #111827; }
+.contact-multi__avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #f3f4f6; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
+.contact-multi__avatar--placeholder { color: #111827; }
+.contact-multi__meta { flex: 1; min-width: 0; }
+.contact-multi__name { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contact-multi__sub { font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contact-multi__empty { margin-top: 8px; font-size: 12px; color: #6b7280; }
+
+
+.preview { border: 1px dashed #e5e7eb; border-radius: 10px; padding: 10px; margin-top: 10px; }
+.preview__title { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+.preview__item { font-size: 14px; }
+
+
+.th-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.th-table th, .th-table td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: 14px; }
+
+.pill { padding: 4px 8px; border-radius: 999px; background: #f3f4f6; font-size: 12px; }
+.pill--invited  { background: #e6f2ff; color: #0366d6; }
+.pill--accepted { background: #e7f7ed; color: #1f7a47; }
+.pill--declined { background: #fde8e8; color: #c81e1e; }
+.muted { color: #6b7280; font-size: 12px; }
+.link { color: #2563eb; text-decoration: none; }
+.link:hover { text-decoration: underline; }
+
+/* ---- Campaign Hub layout ---- */
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+
+.metric-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+.metric-box__label {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+.metric-box__value {
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* My Campaigns card grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.hub-card {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.thumb {
+  height: 180px;
+  background: #f3f4f6;
+}
+
+.hub-card__body {
+  padding: 12px 14px;
+}
+
+.hub-card__title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.hub-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.counter__value {
+  font-weight: 700;
+}
+.counter__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-mid);
+}
+
+.hub-card__actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Lists for affiliate & prospect lanes */
+
+.list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.invite-row,
+.prospect-row {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.invite-row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.invite-row__line1 .title,
+.prospect-row .title {
+  font-weight: 600;
+}
+
+.invite-row__rewards {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 12px;
+}
+
+.invite-row__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reward-chip {
+  font-size: 12px;
+}
+
+.section-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 18px 0 6px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ---- Campaign details tabs ---- */
+
+.campaign-tabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #f4f4f7;
+  margin-bottom: 16px;
+}
+
+.campaign-tab {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--ink-mid);
+}
+
+.campaign-tab.is-active {
+  background: #fff;
+  box-shadow: var(--shadow);
+  font-weight: 600;
+  color: var(--ink-strong);
+}
+
+.campaign-tab.is-disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- Campaign hero ---- */
+
+.campaign-hero {
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.campaign-hero__media {
+  height: 220px;
+  background: #f3f4f6;
+}
+
+.campaign-hero__placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--ink-mid);
+}
+
+.campaign-hero__overlay {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 18px;
+  align-items: center;
+}
+
+.campaign-hero__text {
+  max-width: 60%;
+}
+
+.campaign-hero__title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 4px 0;
+}
+
+.campaign-hero__subtitle {
+  font-size: 13px;
+  color: var(--ink-mid);
+  margin: 0;
+}
+
+.campaign-hero__status {
+  margin-bottom: 4px;
+}
+
+.campaign-hero__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---- Metrics (shared with hub) ---- */
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+
+.metric-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.metric-box__label {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+.metric-box__value {
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* ---- Rewards grid ---- */
+
+.campaign-rewards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.rewards-strip {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.reward-block {
+  flex: 1 1 260px;
+  border-radius: 18px;
+  border: 1px solid #eef0f3;
+  background: #fff;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reward-block__tag {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-mid);
+}
+
+.reward-block__title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.reward-block__body {
+  font-size: 13px;
+  color: var(--ink-mid);
+}
+
+.reward-block__meta {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reward-block--wallet {
+  background: #f9fafb;
+}
+
+.affiliate-rewards__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---- Campaign invites panel ---- */
+
+.invites-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.invites-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.invites-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* refine invite-row to support avatar + meta */
+.invite-row__primary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.invite-row__avatar {
+  flex: 0 0 auto;
+}
+
+.invite-row__title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.invite-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280; /* gray-500 */
+  margin-top: 4px;
+}
+
+.invite-pill-subject,
+.invite-pill-message {
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.invite-pill-message {
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* Empty state alignment inside section-block */
+.invites-empty {
+  border-radius: 12px;
+  border: 1px dashed #e5e7eb;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+/* Layout */
+.invite-thread-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.invite-thread-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.invite-thread-header--hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto 16px auto;
+  padding: 16px 24px 12px;
+}
+
+.invite-thread-header-left {
+  flex: 1 1 auto;
+}
+
+.invite-thread-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.invite-thread-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.invite-thread-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.invite-thread-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Summary card */
+.invite-summary-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.4fr) minmax(0, 1.1fr);
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.invite-summary-left {
+  display: flex;
+  gap: 12px;
+}
+
+.invite-summary-media img {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.invite-summary-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+.invite-summary-business {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.invite-summary-middle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+
+.reward-chip {
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.reward-chip--referrer {
+  background: #e7f7ed;
+}
+.reward-chip--prospect {
+  background: #e6f2ff;
+}
+.reward-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+.reward-text {
+  color: #111827;
+}
+
+.invite-summary-right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* Thread card */
+.invite-thread-card {
+  display: flex;
+  flex-direction: column;
+  height: 480px;
+  margin-top: 8px;
+}
+
+.invite-thread-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.invite-thread-loading,
+.invite-thread-empty,
+.invite-thread-error {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* System event row */
+.thread-event-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+.thread-event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #d1d5db;
+}
+
+/* Messages */
+.thread-message {
+  max-width: 70%;
+  align-self: flex-start;
+}
+.thread-message--mine {
+  align-self: flex-end;
+}
+.thread-message-meta {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-bottom: 2px;
+}
+.thread-message-meta .thread-message-time {
+  opacity: 0.9;
+}
+.thread-message-bubble {
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #f3f4f6;
+  font-size: 14px;
+}
+.thread-message--mine .thread-message-bubble {
+  background: #111827;
+  color: #ffffff;
+}
+
+/* Composer */
+.invite-thread-composer {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 8px;
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.composer-input {
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 8px 12px;
+  resize: none;
+  font-size: 14px;
+}
+
+.composer-btn--icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+}
+
+/* Footer meta */
+.invite-thread-footer-meta {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* Simple status pill colours (mirror hub style) */
+.status-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.status-pill--invited {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.status-pill--accepted {
+  background: #e7f7ed;
+  color: #15803d;
+}
+.status-pill--declined {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .invite-summary-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Campaign details layout (hub-style) ---- */
+
+.campaign-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.3fr);
+  gap: 16px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+.campaign-layout__main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.campaign-layout__side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Stack columns on small screens */
+@media (max-width: 900px) {
+  .campaign-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Invite thread layout tweaks */
+.invite-thread-page .card {
+  margin-bottom: 16px;
+}
+
+.invite-summary-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.6fr) minmax(0, 1.2fr);
+  gap: 16px;
+  align-items: stretch;
+}
+@media (max-width: 920px) {
+  .invite-summary-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+.invite-summary-left,
+.invite-summary-middle,
+.invite-summary-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.invite-offer-card .page-title {
+  /* slightly smaller title inside the summary */
+  font-size: 14px;
+}
+
+/* CTA card */
+.invite-cta-card .card-title {
+  margin-bottom: 4px;
+}
+.invite-cta-card .th-muted {
+  font-size: 14px;
+}
+
+/* ScopeCard layout */
+.scope-card {
+  margin-top: 16px;
+}
+
+.scope-card--column {
+  padding: 16px;
+}
+
+.scope-main-row {
+  margin-bottom: 4px;
+}
+
+.scope-bundle-block {
+  margin-top: 4px;
+}
+
+.scope-nested-list {
+  margin-top: 8px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scope-nested-item {
+  align-items: center;
+}
+
+.scope-toggle {
+  margin-top: 4px;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+/* multi list */
+.scope-multi-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scope-summary {
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* 48×48 thumb for column mode */
+.th-thumb-48 {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f6f6f6;
+}
+
+/* 40×40 used in nested bundle rows */
+.th-thumb-40 {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f6f6f6;
+}
+
+.th-placeholder-small {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.link--sm {
+  font-size: 12px;
+}
+
+/* ===== Invite Thread layout tweaks ===== */
+
+/* Slimmer CTA card */
+.invite-cta-card {
+  padding: 12px 16px;
+}
+
+.invite-cta-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.invite-cta-copy .card-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.invite-cta-copy .th-muted {
+  margin: 0;
+  font-size: 13px;
+}
+
+.invite-cta-actions {
+  flex-shrink: 0;
+}
+
+.invite-cta-actions .btn {
+  margin: 0;
+}
+
+/* Referrals card – compact list */
+.invite-referrals-card {
+  padding: 12px 16px;
+}
+
+.invite-referrals-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.invite-referrals-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.invite-referral-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+
+.invite-referral-row:first-child {
+  border-top: none;
+}
+
+.invite-referral-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.invite-referral-meta {
+  font-size: 12px;
+  color: var(--ink-mid);
+}
+
+/* Responsive: stack CTA actions on small screens */
+@media (max-width: 720px) {
+  .invite-cta-layout {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .invite-cta-actions {
+    width: 100%;
+  }
+
+  .invite-cta-actions .btn {
+    width: 100%;
+  }
+}
+
+.invite-referral-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.invite-referral-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.invite-referral-avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5e7eb;
+  font-weight: 600;
+}
+
+.invite-referral-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.invite-campaign-image-wrap {
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.invite-campaign-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.invite-campaign-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.invite-campaign-title {
+  font-weight: 600;
+}
+
+.invite-campaign-link {
+  font-size: 0.875rem;
+}
+
+/* Full-width CTA card */
+.invite-cta-card--fullwidth {
+  max-width: 1200px;
+  margin: 16px auto 32px auto;
+}
+
+.invite-referrals-card--fullwidth {
+  max-width: 1200px;
+  margin: 16px auto 32px auto;
+}
+
+/* Overall container */
+.th-stories.th-stories--wide {
+  position: relative;
+  width: 100%;
+  max-width: 1120px; /* tweak to match your page width */
+  margin: 0 auto 32px auto;
+}
+
+/* Card-style frame */
+.th-stories-frame--banner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Image / video inside the frame */
+.th-stories-media {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover; /* <— makes it a proper wide banner */
+  background: #0f172a;
+}
+
+/* Progress dots/bars at the top */
+.th-stories-progress {
+  position: absolute;
+  top: 14px;
+  left: 24px;
+  right: 24px;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+}
+
+.th-stories-progress-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.th-stories-progress-fill {
+  height: 100%;
+  background: #ffffff;
+  transition: width 0.2s linear;
+}
+
+/* Navigation arrows */
+.th-stories-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.25);
+  color: #0f172a;
+  padding: 0;
+}
+
+.th-stories-arrow--left {
+  left: 18px;
+}
+
+.th-stories-arrow--right {
+  right: 18px;
+}
+
+.th-stories-arrow:hover {
+  background: #ffffff;
+}
+
+.th-stories-arrow:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .th-stories.th-stories--wide {
+    height: 240px;
+    margin-bottom: 24px;
+  }
+
+  .th-stories-arrow {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+  }
+
+  .th-stories-progress {
+    top: 10px;
+    left: 16px;
+    right: 16px;
+  }
+}
+
+.tab-bar {
+  display: flex;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.tab {
+  border: none;
+  padding: 10px 18px;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #0f172a;
+  color: white;
+}
+
+/* Root container */
+
+.public-referral-page {
+  background: #f5f6fa;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* HERO */
+
+.public-referral-hero {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: 32vh;
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #5a117e, #7b379a);
+  color: #ffffff;
+}
+
+.public-referral-hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.public-referral-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.public-referral-breadcrumb {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+}
+
+.public-referral-title {
+  margin: 0.4rem 0;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+.public-referral-subtitle {
+  margin: 0;
+  font-size: 1.05rem;
+  opacity: 0.96;
+}
+
+.public-referral-meta {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* PARTICIPANT CLUSTER */
+
+.public-referral-profiles {
+  position: relative;
+  z-index: 2;      /* sit above hero + overlay */
+  margin-top: -40px;  /* adjusted in next step */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.public-referral-profile-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  padding: 14px 24px;
+  background: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
+}
+
+.public-referral-profile {
+  text-align: center;
+  min-width: 110px;
+}
+
+.public-referral-avatar-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 6px;
+  background: #e3e4ea;
+}
+
+.public-referral-avatar-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.public-referral-profile-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #777;
+}
+
+.public-referral-profile-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #222;
+}
+
+/* status pill from backend (uses existing .status-pill styles if you have them) */
+.public-referral-profiles .status-pill {
+  margin-top: 10px;
+}
+
+/* MAIN CONTENT */
+
+.public-referral-content {
+  padding: 36px 16px 56px;
+}
+
+.public-referral-grid {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+/* Card */
+
+.public-referral-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px 24px 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.public-referral-section-title {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.public-referral-body {
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+/* Product image */
+
+.public-referral-product-image-wrap {
+  margin: 0 -8px 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e7e9f2;
+}
+
+.public-referral-product-image-wrap img {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* Offer block */
+
+.public-referral-offer {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f6f0ff;
+}
+
+.public-referral-offer-title {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Note */
+
+.public-referral-note {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid #e3e6ec;
+}
+
+.public-referral-note-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #555;
+}
+
+/* Steps + CTA */
+
+.public-referral-steps {
+  margin: 0 0 18px;
+  padding-left: 20px;
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+.public-referral-steps li + li {
+  margin-top: 6px;
+}
+
+.public-referral-cta {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 11px 16px;
+  background: #6a1b9a;
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease-in-out, transform 0.08s ease-out;
+}
+
+.public-referral-cta:hover {
+  background: #55127d;
+  transform: translateY(-1px);
+}
+
+.public-referral-footnote {
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: #777;
+  line-height: 1.4;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+  .public-referral-hero {
+    height: auto;
+    padding: 28px 0 36px;
+  }
+
+  .public-referral-profile-cluster {
+    flex-direction: column;
+    border-radius: 24px;
+  }
+
+  .public-referral-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.public-invite-page {
+  width: 100%;
+  background: #f5f6fa;
+  font-family: system-ui, sans-serif;
+}
+
+/* HERO SECTION */
+.public-hero {
+  position: relative;
+  width: 100%;
+  height: 60vh;
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  color: white;
+}
+
+.public-hero-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.public-hero-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.public-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom right,
+    rgba(0,0,0,0.45),
+    rgba(0,0,0,0.2)
+  );
+}
+
+.public-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 650px;
+  margin-left: 5vw;
+}
+
+.public-hero-title {
+  font-size: 2.6rem;
+  font-weight: 700;
+  margin: 0.4rem 0 0.5rem;
+}
+
+.public-hero-subtitle {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin-bottom: 1.2rem;
+  line-height: 1.5;
+}
+
+.public-hero-chips .chip {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 4px 10px;
+  margin-right: 8px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+/* Primary CTA */
+.public-hero-button {
+  margin-top: 1.6rem;
+  background: #6a1b9a;
+  border: none;
+  color: white;
+  padding: 12px 22px;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+.public-hero-button:hover {
+  background: #501277;
+}
+
+/* CONTENT SECTION */
+.public-content {
+  margin-top: -40px; /* slightly float cards over image */
+  padding: 3rem 0 4rem;
+}
+
+.public-content-container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+/* Cards */
+.public-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0px 4px 14px rgba(0,0,0,0.08);
+}
+
+.public-card h2 {
+  margin-top: 0;
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.reward-block h3 {
+  margin-bottom: 0.4rem;
+}
+
+.public-secondary-button {
+  margin-top: 1.6rem;
+  background: #eee;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.public-secondary-button:hover {
+  background: #ddd;
+}
+
+/* Status Pill */
+.status-row {
+  margin-top: 1.2rem;
+}
+
+/* === Referrals page — public-site style shell === */
+
+.referrals-page {
+  max-width: 1100px;
+  margin: 24px auto 40px;
+  padding: 0 20px 32px;
+}
+
+/* Hero card with dark gradient, matching home page colors */
+.referrals-hero-card {
+  border-radius: 28px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  background: radial-gradient(circle at top left, #4f46e5 0, #0f172a 45%, #020617 100%);
+  color: #e5e7eb;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.65);
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .referrals-hero-card {
+    grid-template-columns: 1fr;
+    padding: 20px 18px;
+  }
+}
+
+.referrals-hero-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  font-weight: 600;
+  color: #a5b4fc; /* indigo-200 */
+}
+
+.referrals-hero-title {
+  font-size: 30px;
+  line-height: 1.1;
+  font-weight: 800;
+  margin: 8px 0 10px;
+}
+
+@media (max-width: 640px) {
+  .referrals-hero-title {
+    font-size: 24px;
+  }
+}
+
+.referrals-hero-copy {
+  font-size: 14px;
+  max-width: 46ch;
+  color: #e5e7eb;
+  opacity: 0.9;
+}
+
+.referrals-hero-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  align-items: center;
+}
+
+/* Gradient CTA that feels like the landing page buttons */
+.referrals-hero-actions .btn--primary {
+  background: linear-gradient(90deg, #38bdf8, #6366f1);
+  border-color: transparent;
+  color: #0b1220;
+}
+
+.referrals-hero-actions .hero-note {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* Right-hand panel (metrics) */
+.referrals-hero-panel {
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.referrals-hero-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.referrals-hero-footnote {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #cbd5f5;
+  opacity: 0.9;
+}
+
+/* Mini metrics pills */
+.referrals-hero-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.referrals-metric {
+  flex: 1 0 90px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(51, 65, 85, 0.9);
+}
+
+.referrals-metric-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+}
+
+.referrals-metric-value {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* List section */
+.referrals-list-section {
+  margin-top: 8px;
+}
+
+.referrals-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.referrals-list-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.referrals-list-subtitle {
+  font-size: 13px;
+  color: var(--ink-mid);
+}
+
+@media (max-width: 640px) {
+  .referrals-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Sidebar referral details refinement */
+
+.thread-sidebar .card,
+.thread-sidebar .referral-details-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 20px 22px;
+  box-shadow: 0 12px 30px rgba(15,23,42,0.08);
+}
+
+.referral-details-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.referral-details h3 {
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.referral-details small {
+  color: #64748b;
+}
+
+/* Offer assignment panel */
+.offer-assignment-box {
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  border-radius: 14px;
+  margin-top: 14px;
+  background: #f9fafb;
+}
+
+/* Activity / Offer / System cards */
+.activity-item > div,
+.offer-activity,
+.referral-activity,
+.system-activity {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+
+.thread-hero {
+  padding: 32px 20px 40px;
+  text-align: center;
+  border-radius: 0 0 28px 28px;
+  background: radial-gradient(circle at top left,#4f46e5 0,#0f172a 50%,#020617 100%);
+  color: #f8fafc;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+.thread-hero h1 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.thread-hero p {
+  opacity: 0.88;
+  font-size: 14px;
+}
+
+/* Shared layout name between open referral & open campaign pages */
+.referral-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+@media (max-width: 960px) {
+  .referral-layout { grid-template-columns: 1fr; }
+}
+
+/* Reuse card body shell for landing panels */
+.open-referral-body {
+  padding: 4px 4px 4px 4px;
+}
+
+.open-referral-header {
+  margin-bottom: 12px;
+}
+
+/* Simple chip row on the join / claim panels */
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Status badge variants re-used across pages */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  border: 1px solid rgba(0,0,0,0.06);
+  background: #eef2ff;
+  color: #374151;
+}
+
+.status-active {
+  background:#ecfdf5;
+  color:#065f46;
+  border-color:#a7f3d0;
+}
+
+.status-expired {
+  background:#fef2f2;
+  color:#991b1b;
+  border-color:#fecaca;
+}
+
+/* CTA row alignment */
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.public-hero-card {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  padding: 32px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  max-width: 1080px;
+  margin: 32px auto 24px auto;
+}
+
+.public-hero-card__content {
+  flex: 1 1 0;
+}
+
+.public-hero-card__image {
+  flex: 0 0 260px;
+  max-width: 260px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
+}
+
+.public-hero-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Reuse existing typography tokens where possible */
+.hero-title {
+  font-size: 2rem;
+  line-height: 1.2;
+  font-weight: 700;
+  margin: 4px 0 8px;
+}
+
+.hero-subtitle {
+  font-size: 1rem;
+  color: #4b5563;
+  margin-bottom: 16px;
+}
+
+.hero-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.meta-chip {
+  font-size: 0.875rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .public-hero-card {
+    flex-direction: column-reverse;
+    padding: 24px 20px;
+    margin-top: 20px;
+  }
+
+  .public-hero-card__image {
+    width: 100%;
+    max-width: none;
+  }
+
+  .hero-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* ========= Open Referral Landing (public page) ========= */
+
+.open-ref-page {
+  max-width: 1120px;
+  margin: 24px auto;
+  padding: 0 16px 32px;
+}
+
+/* Gradient hero: two-column layout */
+.open-ref-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr);
+  gap: 24px;
+  padding: 24px 24px 20px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 0% 0%, #f97316 0, transparent 45%),
+    radial-gradient(circle at 100% 0%, #4f46e5 0, transparent 50%),
+    linear-gradient(135deg, #020617, #111827);
+  color: #f9fafb;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.45);
+  margin-bottom: 24px;
+}
+
+@media (max-width: 920px) {
+  .open-ref-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Left hero column */
+.open-ref-hero__left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Chips row */
+.open-ref-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.open-ref-chip {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(248, 250, 252, 0.5);
+  background: rgba(15, 23, 42, 0.2);
+  color: #e5e7eb;
+}
+
+.open-ref-chip--soft {
+  background: rgba(239, 246, 255, 0.2);
+  color: #e0e7ff;
+}
+
+/* Status badge */
+.status-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(248, 250, 252, 0.2);
+  background: rgba(15, 23, 42, 0.75);
+  color: #e5e7eb;
+}
+
+.status-active {
+  background: rgba(22, 163, 74, 0.2);
+  border-color: rgba(22, 163, 74, 0.7);
+  color: #bbf7d0;
+}
+
+.status-expired {
+  background: rgba(220, 38, 38, 0.2);
+  border-color: rgba(220, 38, 38, 0.7);
+  color: #fecaca;
+}
+
+.status-completed {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(37, 99, 235, 0.7);
+  color: #bfdbfe;
+}
+
+/* Title + subtitle */
+.open-ref-title {
+  margin: 4px 0 4px;
+  font-size: 28px;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.open-ref-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+/* Referrer info */
+.open-ref-referrer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.open-ref-referrer-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.6);
+  border: 2px solid rgba(248, 250, 252, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.open-ref-referrer-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.open-ref-referrer-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.open-ref-referrer-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
+.open-ref-referrer-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.open-ref-referrer-tagline {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* CTA row */
+.open-ref-cta-row {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.open-ref-btn {
+  min-width: 180px;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-color: transparent;
+  color: #022c22;
+}
+
+.open-ref-btn:disabled {
+  opacity: 0.7;
+}
+
+.open-ref-cta-help {
+  font-size: 12px;
+  color: #e5e7eb;
+  max-width: 46ch;
+}
+
+/* Right hero column (image / placeholder) */
+.open-ref-hero__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.open-ref-hero__image {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(248, 250, 252, 0.2);
+}
+
+.open-ref-hero__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.open-ref-hero__placeholder {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 20px;
+  padding: 18px 16px;
+  background: radial-gradient(circle at 0 0, #f97316 0, transparent 55%),
+    radial-gradient(circle at 100% 100%, #22c55e 0, transparent 55%),
+    #020617;
+  color: #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.5);
+}
+
+.open-ref-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #bfdbfe;
+  border: 1px solid rgba(59, 130, 246, 0.7);
+}
+
+/* Body layout */
+.open-ref-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.1fr);
+  gap: 20px;
+}
+
+.open-ref-main,
+.open-ref-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (max-width: 920px) {
+  .open-ref-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cards within open referral page */
+.open-ref-card {
+  border-radius: 18px;
+}
+
+/* Accent info card */
+.open-ref-card--accent {
+  background: linear-gradient(135deg, #eff6ff, #fdf2ff);
+  border-color: #dbeafe;
+}
+
+/* "What you unlock" extra line */
+.open-ref-tagline {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.open-ref-tagline-label {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+/* Bullet list */
+.open-ref-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #1f2933;
+}
+
+.open-ref-list li + li {
+  margin-top: 4px;
+}
+
+
+/* Small pill next to "Attach & publish" heading */
+.badge-optional {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+/* Generic avatar + small variant (used in Open referrals cards) */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar--sm {
+  width: 32px;
+  height: 32px;
+}
+
+/* Little helper text under hero buttons */
+.hero-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  max-width: 360px;
+}
+
+/* src/pages/WalletStorePage.css */
+
+.page.wallet-store-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+/* Header */
+
+.wallet-store-header {
+  margin-bottom: 16px;
+}
+
+.page-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.page-subtitle {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Generic card */
+
+.card {
+  background-color: #ffffff;
+  border-radius: 14px;
+  padding: 16px 18px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+  margin-top: 16px;
+}
+
+.card-error {
+  border-color: #fecaca;
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+/* Empty state text */
+
+.muted {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+/* Grid of offers */
+
+.offer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+/* Offer card specifics */
+
+.offer-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.offer-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.offer-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.offer-points {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  white-space: nowrap;
+}
+
+.offer-description {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin: 4px 0 10px;
+}
+
+/* Meta rows */
+
+.offer-meta {
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 8px;
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+
+.offer-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.offer-meta-row .label {
+  color: #6b7280;
+}
+
+/* Footer actions */
+
+.offer-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.offer-limit {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.offer-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Buttons */
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease;
+}
+
+.btn-primary {
+  background-color: #111827;
+  color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #0f172a;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn.btn--refund {
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid #e25555;
+  background: #fff7f7;
+  color: #d13636;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* Responsive tweaks */
+
+@media (max-width: 640px) {
+  .page.wallet-store-page {
+    padding: 16px 12px 32px;
+  }
+
+  .offer-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .offer-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .offer-footer .btn {
+    width: 100%;
+    text-align: center;
+    border-radius: 999px;
+    padding: 0.45rem 1.1rem;
+    font-weight: 500;
+  }
+
+  .offer-footer .btn.btn-primary {
+    border-radius: 999px;
+    padding: 0.45rem 1.1rem;
+    font-weight: 500;
+  }
+
+  .offer-footer .btn.btn-primary:disabled,
+  .offer-footer .btn.btn-primary[disabled] {
+    opacity: 1;          /* remove fading */
+    cursor: default;     /* still non-clicky */
+  }
+}
+
+/* src/pages/MyOffers */
+
+/* MyOffers.css */
+
+/* ---------- Base layout ---------- */
+
+.page-wrap.my-offers-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2933;
+}
+
+/* Generic card (if you already have .card, this will just refine it) */
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+/* Error / info states */
+.card-error {
+  border-color: #fee2e2;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+/* Muted text */
+.muted {
+  color: #6b7280;
+  font-size: 0.92rem;
+}
+
+/* Section titles */
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+/* ---------- Hero section ---------- */
+
+.myoffers-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.myoffers-hero-left h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.myoffers-hero-left h2 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.9rem;
+}
+
+.myoffers-hero-left p {
+  font-size: 0.98rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Snapshot box on the right */
+.myoffers-hero-right {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.snapshot-box {
+  background: linear-gradient(135deg, #eef2ff, #e0f2fe);
+  border-radius: 18px;
+  padding: 1rem 1.2rem;
+  min-width: 260px;
+}
+
+.snapshot-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  margin-bottom: 0.75rem;
+}
+
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.snapshot-item {
+  text-align: left;
+}
+
+.snapshot-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.1;
+}
+
+.snapshot-label {
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+/* Larger layout for desktop */
+@media (min-width: 768px) {
+  .myoffers-hero {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .myoffers-hero-left {
+    flex: 1.1;
+  }
+
+  .myoffers-hero-right {
+    flex: 0.9;
+    justify-content: flex-end;
+  }
+}
+
+/* ---------- Body & intro text ---------- */
+
+.myoffers-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.myoffers-intro {
+  margin-bottom: 0.5rem;
+}
+
+/* ---------- Offer grid ---------- */
+
+.offer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* ---------- Offer card ---------- */
+
+.my-offer-card {
+  padding: 0; /* inner wrapper handles padding */
+}
+
+.my-offer-card-inner {
+  display: flex;
+  gap: 1rem;
+  padding: 1.2rem 1.3rem;
+}
+
+/* Two-column layout for cards that have an image */
+.my-offer-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.my-offer-side-image {
+  flex: 0 0 110px;
+  display: none; /* shown only when there is an image, via <img> */
+}
+
+.my-offer-side-image .offer-hero-image {
+  width: 100%;
+  height: 100%;
+  max-height: 130px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* Header row: business + title + pills */
+.my-offer-header-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.my-offer-header-text {
+  min-width: 0;
+}
+
+.offer-business-name {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: #2563eb;
+  margin-bottom: 0.1rem;
+}
+
+.offer-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+/* Right side with highlight & status pills */
+.my-offer-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+/* Highlight pill: 10% OFF, Free grant, etc. */
+.offer-highlight-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #f97316;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+/* Status pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-assigned {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.status-expired {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.status-claimed {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+/* Description text */
+.offer-description {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin: 0;
+}
+
+/* ---------- Offer meta rows ---------- */
+
+.offer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.offer-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.offer-meta-row .label {
+  color: #6b7280;
+}
+
+.offer-meta-row .value {
+  color: #111827;
+  font-weight: 500;
+  text-align: right;
+}
+
+.offer-meta-row-subtle .label {
+  color: #9ca3af;
+}
+
+.offer-meta-row-subtle .value {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+/* ---------- Footer: tags & button ---------- */
+
+.offer-footer {
+  margin-top: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.offer-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* Small pills used as tags */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+
+.pill-outline {
+  border: 1px solid #d1d5db;
+  color: #374151;
+  background: #ffffff;
+}
+
+.pill-muted {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.pill-link {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+/* Generic secondary button (if you don’t already have a .btn) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-secondary {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+}
+
+.btn-secondary:hover {
+  background: #f3f4f6;
+}
+
+/* ---------- Responsive tweaks ---------- */
+
+@media (max-width: 640px) {
+  .my-offer-card-inner {
+    flex-direction: column;
+  }
+
+  .my-offer-header-row {
+    align-items: flex-start;
+  }
+
+  .my-offer-header-right {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+/* Show side image only when present.
+   (You already conditionally render the <img>, this just ensures layout behaves) */
+.my-offer-side-image img {
+  display: block;
+}
+
+/* Optional subtle hover effect for cards */
+.my-offer-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}

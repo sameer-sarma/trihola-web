@@ -1,10 +1,8 @@
 import type {
-  OfferTemplateRequest as UiOfferTemplateRequest,
-  OfferTemplateResponse,
-  UiOfferKind,
-  ActivationCondition,
-   OfferGrantLine,
+  OfferTemplateRequest,
+  OfferTemplateResponse, OfferTemplateForm, ScopeItemSpec, OfferScopeSpec
 } from "../types/offerTemplateTypes";
+//import { authFetch } from "../utils/auth";
 
 
 
@@ -34,214 +32,155 @@ async function api<T>(
   return (await res.json()) as T;
 }
 
-/* --------------------------- payload builder (no legacy) --------------------------- */
-/**
- * Shapes the payload exactly as Ktor expects under the new schema.
- * - GRANTS: include only grants fields; strip discount/tier fields.
- * - DISCOUNT (PERCENTAGE/FIXED): include base or tiers; strip grants fields.
- * - Scope:
- *    - ANY_PURCHASE → omit appliesProductIds/appliesBundleIds entirely
- *    - LIST         → include appliesProductIds/appliesBundleIds (may be empty if UI allowed)
- * - Validity:
- *    - ABSOLUTE → send validFrom/validTo (yyyy-mm-dd), null duration/trigger
- *    - RELATIVE → send durationDays/trigger, null validFrom/validTo
- */
-// services/offerTemplateService.ts (or wherever your builder lives)
 
-// The Kotlin API expects OfferTemplateRequest (OfferModels.kt)
-type ScopeItemSpec = { itemType: "PRODUCT" | "BUNDLE"; id: string };
-type OfferScopeSpec = { kind: "ANY" | "LIST"; items: ScopeItemSpec[] };
+const toNumOrNull = (v: unknown): number | null =>
+  v === null || v === undefined || v === "" ? null : Number(v);
 
-type DiscountTierSpec = {
-  minAmount?: number | null;
-  minQty?: number | null;
-  discountPercentage?: number | null;
-  discountAmount?: number | null;
-  maxDiscountAmount?: number | null;
-};
+const asLocalDateTime = (d?: string | null) => (!d ? null : `${d}T00:00:00`);
 
-type OfferTemplateGrantSpec = {
-  itemType: "PRODUCT" | "BUNDLE";
-  productId?: string | null;
-  bundleId?: string | null;
-  quantity?: number;
-};
+export function responseToForm(t: OfferTemplateResponse): OfferTemplateForm {
+  return {
+    businessId: t.businessId,
+    offerTemplateId: t.offerTemplateId,
 
-type ServerOfferTemplateRequest = {
-  businessId: string;
-  offerTemplateId?: string | null;
+    templateTitle: t.templateTitle ?? "",
+    description: t.description ?? "",
+    imageUrls: t.imageUrls ?? [],
+    specialTerms: t.specialTerms ?? "",
+    maxRedemptions: t.maxRedemptions ?? undefined,
+    eligibility: t.eligibility ?? "",
 
-  // metadata
-  templateTitle: string;
-  description?: string | null;
-  imageUrls?: string[] | null;
-  specialTerms?: string | null;
-  maxRedemptions?: number | null;
-  eligibility?: string | null;
+    validityType: t.validityType,
+    validFrom: t.validFrom?.slice(0, 10) ?? "", // yyyy-mm-dd from yyyy-mm-ddTHH:MM:SS
+    validTo: t.validTo?.slice(0, 10) ?? "",
+    durationDays: t.durationDays ?? undefined,
+    trigger: t.trigger ?? undefined,
 
-  // floors / scope
-  minPurchaseAmount?: number | null;
-  minPurchaseQty?: number | null;
-  scope: OfferScopeSpec;
+    isActive: !!t.isActive,
+    claimPolicy: t.claimPolicy ?? "BOTH",
 
-  // type & core
-  offerType: "PERCENTAGE_DISCOUNT" | "FIXED_DISCOUNT" | "GRANT";
-  discountPercentage?: number | null;
-  maxDiscountAmount?: number | null;
-  discountAmount?: number | null;
+    minPurchaseAmount: t.minPurchaseAmount ?? undefined,
+    minPurchaseQty: t.minPurchaseQty ?? undefined,
 
-  // validity
-  validityType: "ABSOLUTE" | "RELATIVE";
-  validFrom?: string | null;
-  validTo?: string | null;
-  durationDays?: number | null;
-  trigger?: ActivationCondition | null;
+    // Use response-style fields if present, otherwise derive from scope
+    scopeKind: t.scopeKind ?? "ANY",
+    scopeItems:
+      t.scopeItems ?? [],
 
-  // state & policy
-  isActive: boolean;
-  claimPolicy?: "BOTH" | "ONLINE" | "MANUAL" | null;
+    offerType: t.offerType,
+    discountPercentage: t.discountPercentage ?? undefined,
+    maxDiscountAmount: t.maxDiscountAmount ?? undefined,
+    discountAmount: t.discountAmount ?? undefined,
 
-  // grants
-  grants: OfferTemplateGrantSpec[];
-  grantPickLimit: number;
-  grantDiscountType?: "FREE" | "PERCENTAGE" | "FIXED_AMOUNT" | "FIXED_PRICE" | null;
-  grantDiscountValue?: number | null;
+    tiers: t.tiers ?? [],
 
-  // tiers
-  tiers?: DiscountTierSpec[] | null;
-};
+    grants: t.grants ?? [],
+    grantPickLimit: t.grantPickLimit ?? 1,
+    grantDiscountType: t.grantDiscountType ?? "FREE",
+    grantDiscountValue: t.grantDiscountValue ?? undefined,
+    purchasableWithPoints: t.purchasableWithPoints ?? false,
+    pointsPrice: t.pointsPrice ?? null,
+    maxPurchasesPerUser: t.maxPurchasesPerUser ?? null,
+  };
+}
 
 // ensure we only send fields the server knows about
-export function buildOfferTemplatePayload(
-  form: UiOfferTemplateRequest,
-  uiOfferKind: UiOfferKind
-): ServerOfferTemplateRequest {
-  // ----- helpers -----
-  const asLocalDateTime = (d?: string | null) => (!d ? null : `${d}T00:00:00`);
-
-  const isServerTier = (t: any) =>
-    t && (typeof t.discountAmount !== "undefined" || typeof t.discountPercentage !== "undefined");
-
-  const isUiTierRow = (t: any) =>
-    t && typeof t.discountType !== "undefined" && typeof t.discountValue !== "undefined";
-
-  // ----- 1) scope transform -----
-  const scope: OfferScopeSpec =
-    form.scopeKind === "LIST"
-      ? {
-          kind: "LIST",
-          items: [
-            ...(form.appliesProductIds ?? []).map<ScopeItemSpec>((id) => ({ itemType: "PRODUCT", id })),
-            ...(form.appliesBundleIds ?? []).map<ScopeItemSpec>((id) => ({ itemType: "BUNDLE", id })),
-          ],
-        }
-      : { kind: "ANY", items: [] };
-
-  // ----- 2) offer type -----
-  const offerType: ServerOfferTemplateRequest["offerType"] =
-    uiOfferKind === "GRANTS" ? "GRANT" : (form.offerType as ServerOfferTemplateRequest["offerType"]);
-
-  // ----- 3) tiers transform (robust: pass-through if already server-shaped) -----
-  let tiers: DiscountTierSpec[] | null = null;
-
-  if (Array.isArray(form.tiers) && form.tiers.length > 0) {
-    if (isServerTier(form.tiers[0])) {
-      // Already server shape (e.g., from uiToServerTiers). Normalize nulls.
-      tiers = (form.tiers as any[]).map((t) => ({
-        minAmount: (t.minAmount ?? 0) as number,
-        minQty: t.minQty ?? null,
-        discountAmount: t.discountAmount ?? null,
-        discountPercentage: t.discountPercentage ?? null,
-        maxDiscountAmount: t.maxDiscountAmount ?? null,
-      }));
-    } else if (isUiTierRow(form.tiers[0])) {
-      // UI rows -> server shape
-      tiers = (form.tiers as any[]).map((t) => {
-        const isPct = t.discountType === "PERCENTAGE";
-        return {
-          minAmount: (t.minAmount ?? 0) as number,
-          minQty: null,
-          discountPercentage: isPct ? (t.discountValue ?? 0) : null,
-          discountAmount: !isPct ? (t.discountValue ?? 0) : null,
-          maxDiscountAmount: isPct ? (t.maxDiscountAmount ?? 0) : null,
-        } as DiscountTierSpec;
-      });
-    } else {
-      console.warn("[buildOfferTemplatePayload] Unknown tier shape; sending null tiers. First item:", form.tiers[0]);
-      tiers = null;
-    }
-  } else {
-    tiers = null;
+export function buildOfferTemplatePayload(form: OfferTemplateForm): OfferTemplateRequest {
+  // scope: IDs only for request
+const items: ScopeItemSpec[] = (form.scopeItems ?? []).flatMap<ScopeItemSpec>((it) => {
+  if (it?.itemType === "PRODUCT" && it.product?.id) {
+    return [{ itemType: "PRODUCT" as const, id: it.product.id }];
   }
+  if (it?.itemType === "BUNDLE" && it.bundle?.id) {
+    return [{ itemType: "BUNDLE" as const, id: it.bundle.id }];
+  }
+  return [];
+});
 
-  console.log("[buildOfferTemplatePayload] tiers BEFORE payload:", JSON.stringify(tiers, null, 2));
+const scope: OfferScopeSpec =
+  form.scopeKind === "LIST"
+    ? { kind: "LIST" as const, items }
+    : { kind: "ANY" as const, items: [] };
 
-  // ----- 4) grants transform -----
-  const grants: OfferTemplateGrantSpec[] = (form.grants ?? []).map((g: OfferGrantLine) => ({
-    itemType: g.itemType,
-    productId: g.itemType === "PRODUCT" ? g.productId ?? null : null,
-    bundleId: g.itemType === "BUNDLE" ? g.bundleId ?? null : null,
-    quantity: g.quantity ?? 1,
-  }));
+  // tiers toggle
+  const tiersOn = Array.isArray(form.tiers) && form.tiers.length > 0;
 
-  // ----- 5) validity -----
-  const payload: ServerOfferTemplateRequest = {
+  // base discount: include only when tiers are off and per offer type
+  const baseFields = tiersOn
+    ? { discountPercentage: null, maxDiscountAmount: null, discountAmount: null }
+    : form.offerType === "PERCENTAGE_DISCOUNT"
+    ? {
+        discountPercentage: toNumOrNull(form.discountPercentage),
+        maxDiscountAmount: toNumOrNull(form.maxDiscountAmount),
+        discountAmount: null,
+      }
+    : form.offerType === "FIXED_DISCOUNT"
+    ? {
+        discountAmount: toNumOrNull(form.discountAmount),
+        discountPercentage: null,
+        maxDiscountAmount: null,
+      }
+    : { discountPercentage: null, maxDiscountAmount: null, discountAmount: null };
+
+  // validity blocks
+  const validity =
+    form.validityType === "ABSOLUTE"
+      ? {
+          validityType: "ABSOLUTE" as const,
+          validFrom: asLocalDateTime(form.validFrom),
+          validTo: asLocalDateTime(form.validTo),
+          durationDays: null,
+          trigger: null,
+        }
+      : {
+          validityType: "RELATIVE" as const,
+          validFrom: null,
+          validTo: null,
+          durationDays: form.durationDays ?? null,
+          trigger: (form.trigger as OfferTemplateRequest["trigger"]) ?? "ON_ASSIGNMENT",
+        };
+
+  return {
     businessId: form.businessId,
-    offerTemplateId: (form as any).offerTemplateId ?? null,
+    offerTemplateId: form.offerTemplateId ?? null,
 
-    templateTitle: form.templateTitle,
-    description: form.description,
+    templateTitle: form.templateTitle.trim(),
+    description: form.description ?? "",
     imageUrls: form.imageUrls ?? null,
     specialTerms: form.specialTerms ?? null,
     maxRedemptions: form.maxRedemptions ?? null,
     eligibility: form.eligibility ?? null,
 
-    minPurchaseAmount: form.minPurchaseAmount ?? null,
-    minPurchaseQty: (form as any).minPurchaseQty ?? null,
+    minPurchaseAmount: toNumOrNull(form.minPurchaseAmount),
+    minPurchaseQty: toNumOrNull(form.minPurchaseQty),
     scope,
 
-    offerType,
-
-    // Top-level discount fields: only when NO tiers are used.
-    discountPercentage:
-      tiers && tiers.length > 0
-        ? null
-        : offerType === "PERCENTAGE_DISCOUNT"
-        ? form.discountPercentage ?? null
-        : null,
-    maxDiscountAmount:
-      tiers && tiers.length > 0
-        ? null
-        : offerType === "PERCENTAGE_DISCOUNT"
-        ? form.maxDiscountAmount ?? null
-        : null,
-    discountAmount:
-      tiers && tiers.length > 0
-        ? null
-        : offerType === "FIXED_DISCOUNT"
-        ? form.discountAmount ?? null
-        : null,
-
-    validityType: form.validityType,
-    validFrom: form.validityType === "ABSOLUTE" ? asLocalDateTime(form.validFrom) : null,
-    validTo: form.validityType === "ABSOLUTE" ? asLocalDateTime(form.validTo) : null,
-    durationDays: form.validityType === "RELATIVE" ? form.durationDays ?? null : null,
-    trigger: form.validityType === "RELATIVE" ? form.trigger ?? null : null,
+    offerType: (form.offerType ?? "PERCENTAGE_DISCOUNT") as OfferTemplateRequest["offerType"],
+    ...baseFields,
+    ...validity,
 
     isActive: !!form.isActive,
-    claimPolicy: (form.claimPolicy as any) ?? "BOTH",
+    claimPolicy: form.claimPolicy ?? "BOTH",
 
-    grants,
+    grants: form.grants ?? [],
     grantPickLimit: form.grantPickLimit ?? 1,
     grantDiscountType: form.grantDiscountType ?? "FREE",
     grantDiscountValue:
-      form.grantDiscountType && form.grantDiscountType !== "FREE" ? form.grantDiscountValue ?? null : null,
+      form.grantDiscountType && form.grantDiscountType !== "FREE"
+        ? toNumOrNull(form.grantDiscountValue)
+        : null,
 
-    tiers,
+    tiers: tiersOn ? form.tiers! : [],
+    purchasableWithPoints: !!form.purchasableWithPoints,
+    pointsPrice:
+      form.purchasableWithPoints && form.pointsPrice != null
+        ? Number(form.pointsPrice)
+        : null,
+    maxPurchasesPerUser:
+      form.purchasableWithPoints && form.maxPurchasesPerUser != null
+        ? Number(form.maxPurchasesPerUser)
+        : null,
   };
-
-  console.log("[buildOfferTemplatePayload] FINAL payload:", JSON.stringify(payload, null, 2));
-  return payload;
 }
 
 /* --------------------------- CRUD helpers (paths updated) --------------------------- */
@@ -263,12 +202,7 @@ export async function createOfferTemplate(
   payload: any,
   token?: string | null
 ): Promise<{ offerTemplateId: string }> {
-  return api<{ offerTemplateId: string }>(
-    "/offer-template",
-    "POST",
-    token,
-    payload
-  );
+  return api<{ offerTemplateId: string }>("/offer-template", "POST", token, payload);
 }
 
 export async function updateOfferTemplate(
@@ -276,12 +210,8 @@ export async function updateOfferTemplate(
   payload: any,
   token?: string | null
 ): Promise<{ offerTemplateId: string }> {
-  return api<{ offerTemplateId: string }>(
-    `/offer-template/${id}`,
-    "PUT",
-    token,
-    payload
-  );
+  // Note: rely on api() to auto-resolve token if not provided
+  return api<{ offerTemplateId: string }>(`/offer-template/${id}`, "PUT", token, payload);
 }
 
 export async function deleteOfferTemplate(
@@ -300,4 +230,3 @@ export async function upsertOfferTemplate(
   if (id) return updateOfferTemplate(id, payload, token);
   return createOfferTemplate(payload, token);
 }
-

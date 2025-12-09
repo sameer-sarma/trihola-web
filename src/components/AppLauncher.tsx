@@ -9,6 +9,7 @@ type Props = {
   onLogout?: () => void;
   avatarUrl?: string | null;
   userLabel?: string | null; // e.g., email or name (optional)
+  businessId?: string;           
 };
 
 export default function AppLauncher({
@@ -17,6 +18,7 @@ export default function AppLauncher({
   onLogout,
   avatarUrl,
   userLabel,
+  // note: businessId NOT destructured yet
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -99,6 +101,19 @@ export default function AppLauncher({
                 </div>
               </Link>
 
+              <Link
+                to="/my-offers"
+                className="al-item"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
+                <span className="al-icon">🎁</span>
+                <div>
+                  <div className="al-title">My Offers</div>
+                  <div className="al-sub">Rewards you've earned</div>
+                </div>
+              </Link>
+
               <Link to="/contacts" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
                 <span className="al-icon">👥</span>
                 <div>
@@ -106,6 +121,15 @@ export default function AppLauncher({
                   <div className="al-sub">Clients & leads</div>
                 </div>
               </Link>
+
+                  <Link to="/campaigns" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
+                    <span className="al-icon" aria-hidden="true">📣</span>
+                    <div>
+                      <div className="al-title">Campaigns</div>
+                      <div className="al-sub">Get Referrals</div>
+                    </div>
+                  </Link>
+
 
               {isBusiness && (
                 <>
@@ -115,6 +139,14 @@ export default function AppLauncher({
                       <div className="al-title">Offer Templates</div>
                       <div className="al-sub">Promos & bundles</div>
                     </div>
+                  </Link>
+
+                  <Link to="/wallet-policies" className="al-item" onClick={() => setOpen(false)}>
+                  <span className="al-icon">💳</span>
+                  <div>
+                    <div className="al-title">Wallet Policies</div>
+                    <div className="al-sub">Accrual & usage rules</div>
+                  </div>
                   </Link>
 
                   <Link to="/ecom" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
