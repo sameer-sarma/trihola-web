@@ -1,138 +1,258 @@
 /* =========================================
-   TRIHola THREAD — Modern Messaging Layout
+   TRIHOLA THREAD — Modern Messaging Layout
    ========================================= */
 
-/* Layout shell */
+/* -------------------------
+   Page shell
+   ------------------------- */
+
+.thread-page {
+  background: #f3f4f6;
+  padding: 24px 0 40px;
+}
+
+/* optional container if your app has a global .container */
+.thread-page .container {
+  max-width: 1250px;
+  margin: 0 auto;
+}
+
+/* -------------------------
+   Hero section
+   ------------------------- */
+
+.thread-hero {
+  max-width: 1250px;
+  margin: 0 auto 12px;
+  padding: 0 20px;
+}
+
+.thread-hero h1 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 650;
+  color: #ffffff;       /* ✅ white on dark gradient */
+}
+
+.thread-hero p {
+  margin: 0;
+  font-size: 14px;
+  color: #e5e7eb;       /* ✅ light grey on dark gradient */
+}
+
+/* -------------------------
+   Main layout
+   ------------------------- */
+
 .referral-layout {
   display: grid;
   grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
   gap: 28px;
   max-width: 1250px;
-  margin: 20px auto 40px;
+  margin: 8px auto 40px;
   padding: 0 20px;
 }
 
-@media (max-width: 900px) {
-  .referral-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Sidebar structural styles */
+/* Sidebar shows ReferralDetails + ActiveClaimsPanel */
 .thread-sidebar {
   position: sticky;
   top: 82px;
   align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* Chat panel */
+/* Message panel (thread) */
 .thread-main {
   background: #ffffff;
   border-radius: 22px;
   box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
   display: flex;
   flex-direction: column;
+  min-height: 480px;
   height: min(80vh, 820px);
 }
 
-/* Scrollable message area */
+/* Scrollable region for events */
 .thread-scroll {
-  flex: 1;
-  padding: 20px 22px;
+  flex: 1 1 auto;
   overflow-y: auto;
-  background: #f3f6fb;
-  border-top-left-radius: 22px;
-  border-top-right-radius: 22px;
+  padding: 20px 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* Composer */
-.composer-wrap {
-  background: #fff;
-  border-top: 1px solid #e5e7eb;
-  padding: 12px;
-  border-radius: 0 0 22px 22px;
-  box-shadow: 0 -8px 18px rgba(0,0,0,0.05);
-}
+/* -------------------------
+   Day grouping
+   ------------------------- */
 
-/* Day separator */
 .day-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #6b7280;
+  text-align: center;
   font-size: 11px;
-  font-weight: 600;
-  margin: 18px 0 14px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-.day-group::before,
-.day-group::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: #d6dbe4;
+  color: #94a3b8;
+  margin: 16px 0 8px;
 }
 
-/* Activity / system messages (Slack-style) */
-.msg-system,
-.activity-center {
+/* -------------------------
+   Events & message rows
+   ------------------------- */
+
+.event-row {
   display: flex;
+  margin: 4px 0;
+}
+
+.event-row.msg-self {
+  justify-content: flex-end;
+}
+
+.event-row.msg-other {
+  justify-content: flex-start;
+}
+
+.event-row.activity-center,
+.event-row.msg-system {
   justify-content: center;
-  margin: 12px 0;
 }
 
-.msg-system > *,
-.activity-center > * {
+.event-row.activity-center > * {
+  max-width: 80%;
+}
+
+/* -------------------------
+   Composer
+   ------------------------- */
+
+.composer-wrap {
+  border-top: 1px solid #e2e8f0;
+  padding: 12px 16px 16px;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
-  padding: 10px 14px;
-  border-radius: 14px;
-  font-size: 12px;
-  color: #475569;
-  max-width: 420px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
 }
 
-/* ================================
-   FEED PANEL (right-side optional)
-   ================================ */
-
-.thread-feed {
-  position: sticky;
-  top: 82px;
-  max-height: calc(100vh - 100px);
-  overflow-y: auto;
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 8px 26px rgba(15,23,42,0.12);
-  padding: 10px;
+.info-message {
+  padding: 16px 20px;
+  font-size: 14px;
+  color: #64748b;
 }
 
-/* Feed items */
+/* -------------------------
+   Optional feed styles
+   ------------------------- */
+
+.feed-list {
+  margin-top: 12px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+}
+
 .feed-item {
-  padding: 12px 12px;
-  border-radius: 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 13px;
   cursor: pointer;
-  transition: all .15s ease;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
+
+.feed-item + .feed-item {
+  margin-top: 4px;
+}
+
 .feed-item:hover {
-  background: #f1f5f9;
+  background: #f9fafb;
 }
+
 .feed-item.active {
   background: #eef2ff;
   box-shadow: 0 0 0 2px #c7d2fe inset;
 }
+
 .feed-name {
   font-weight: 600;
 }
+
 .feed-chip {
   padding: 4px 8px;
   font-size: 11px;
   background: #f1f5f9;
   border-radius: 999px;
 }
-.feed-chip.pending { background: #fff7ed; color: #c2410c; }
-.feed-chip.accepted { background: #ecfdf5; color: #15803d; }
+
+.feed-chip.pending {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.feed-chip.accepted {
+  background: #ecfdf5;
+  color: #15803d;
+}
+
+/* =========================================
+   RESPONSIVE — MOBILE & TABLET
+   ========================================= */
+
+@media (max-width: 900px) {
+  .thread-page {
+    padding-top: 20px;
+  }
+
+  .thread-hero {
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+
+  .thread-hero h1 {
+    font-size: 20px;
+  }
+
+  .thread-hero p {
+    font-size: 13px;
+  }
+
+  .referral-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin: 8px auto 24px;
+    padding: 0 12px;
+  }
+
+  .thread-sidebar {
+    position: static;
+    top: auto;
+    align-self: stretch;
+  }
+
+  .thread-main {
+    height: auto;
+    max-height: none;
+  }
+
+  .thread-scroll {
+    max-height: none;
+    padding: 16px 14px 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .thread-hero h1 {
+    font-size: 18px;
+  }
+
+  .thread-hero p {
+    font-size: 12px;
+  }
+
+  .day-group {
+    font-size: 10px;
+    margin: 12px 0 6px;
+  }
+}
