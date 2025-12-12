@@ -134,7 +134,7 @@ const Header = () => {
             userLabel={session?.user?.email ?? null}
             avatarUrl={null /* plug your profile avatar URL if you have it */}
           />
-           <NotificationBell />
+           {session && <NotificationBell />}
         </div>
       </div> {/* <-- close .header-container */}
     </header>

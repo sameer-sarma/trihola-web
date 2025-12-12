@@ -97,12 +97,20 @@ const handleSubmit = async (e: React.FormEvent) => {
               <p className="info-text" style={{ marginTop: 4 }}>
                 Your phone <strong>{profile.phone}</strong> isn’t verified. Verify to enable referrals & messaging.
               </p>
-              <VerifyPhoneInline
-                onVerified={async () => {
-                  setPhoneVerifiedLocal(true);           // instant UI update
-                  await onProfileRefresh?.();            // ✅ ask parent to refetch profile
-                }}
-              />
+
+                <p className="info-text muted" style={{ marginTop: 8, fontSize: "0.85rem" }}>
+                  ⚠️ SMS delivery is not enabled yet.  
+                  You may enter <strong>any random number</strong> as the OTP for now.
+                  Phone verification will be enforced once SMS integration is complete.
+                </p>
+
+                <VerifyPhoneInline
+                  onVerified={async () => {
+                    setPhoneVerifiedLocal(true);           // instant UI update
+                    await onProfileRefresh?.();            // refetch profile
+                  }}
+                />
+
             </section>
           )}
 
