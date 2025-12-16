@@ -2,12 +2,15 @@ import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NotificationsWSProvider } from "./context/NotificationsWSProvider";
+import { useBootstrap } from "./hooks/useBootstrap";
+import AppGate from "./components/AppGate";
 import Register from "./pages/Register";
 import EmailLogin from "./pages/EmailLogin";
 import PhoneOtpLogin from "./pages/PhoneOtpLogin";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AuthCallback from "./pages/AuthCallback";
+import StartWelcome from "./pages/StartWelcome";
 import RedirectToOwnProfile from "./pages/RedirectToOwnProfile";
 import PublicProfilePage from "./pages/PublicProfilePage";
 import VerifyPhone from "./pages/VerifyPhone";            // optional page (not forced)
@@ -101,14 +104,15 @@ const AppInner: React.FC = () => {
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
 
   const location = useLocation();
+  const boot = useBootstrap(session?.access_token);
 
   // 🔎 Detect recovery flow (Supabase verify -> redirect with type=recovery)
   const isRecoveryFlow =
     location.pathname === "/reset-password" ||
     location.search.includes("type=recovery") ||
     location.hash.includes("type=recovery");
-
-  // Keep session in sync
+      
+// Keep session in sync
   useEffect(() => {
     let mounted = true;
 
@@ -177,6 +181,24 @@ const AppInner: React.FC = () => {
       cancelled = true;
     };
   }, [session?.access_token, profile?.registeredAsBusiness]);
+
+useEffect(() => {
+  if (!boot.loading && boot.data) {
+    console.log("BOOTSTRAP:", {
+      completion: boot.data.profile.completionPercent,
+      referrals: boot.data.referrals.count,
+      rewards: boot.data.rewards.count,
+      affiliate: boot.data.affiliateCampaigns.count,
+      hasPriorActivity: boot.hasPriorActivity,
+      nextRoute: boot.nextRoute,
+    });
+  }
+}, [
+  boot.loading,
+  boot.data,
+  boot.hasPriorActivity,
+  boot.nextRoute,
+]);
 
   const userId = session?.user?.id ?? "";
 
@@ -276,6 +298,25 @@ function InviteLandingRoute({ token }: { token?: string }) {
           </>
         ) : (
           <>
+            {/* Gate */}
+            <Route path="/app" element={<AppGate boot={boot} />} />
+            
+            {/* Onboarding */}
+            <Route
+              path="/start"
+              element={
+                boot.loading ? (
+                  <div className="loading">Loading…</div>
+                ) : boot.error ? (
+                  <div className="error-banner">{boot.error}</div>
+                ) : boot.data ? (
+                  <StartWelcome bootstrap={boot.data} />
+                ) : (
+                  <div className="loading">Loading…</div>
+                )
+              }
+            />
+
             {/* Profile routes */}
             <Route path="/profile" element={<RedirectToOwnProfile />} />
             <Route path="/profile/:slug" element={<PublicProfilePage />} />
@@ -337,10 +378,10 @@ function InviteLandingRoute({ token }: { token?: string }) {
             <Route path="/ecom/add" element={<AddEcomIntegration token={session.access_token} profile={profile} userId={userId} businessId={userId} />} />
             <Route path="/ecom/:integrationId/edit" element={<EditEcomIntegration token={session.access_token} profile={profile} />} />
             {/* For authed users: / → /profile */}
-            <Route path="/" element={<Navigate to="/profile" replace />} />
+            <Route path="/" element={<Navigate to="/app" replace />} />
 
             {/* Default for authed users */}
-            <Route path="*" element={<Navigate to="/profile" replace />} />
+            <Route path="*" element={<Navigate to="/app" replace />} />
           </>
         )}
       </Routes>

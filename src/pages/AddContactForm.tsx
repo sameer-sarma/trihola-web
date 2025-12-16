@@ -1,10 +1,16 @@
 import React, { useState } from "react";
 import { supabase } from "../supabaseClient";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import {
+  addContactByContactRequestForm,
+  type ContactRequestForm,
+} from "../services/contactService";
+
+// reuse the same look as the modal
+import "../css/AddContactModal.css";
 
 const AddContactForm: React.FC = () => {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ContactRequestForm>({
     firstName: "",
     lastName: "",
     email: "",
@@ -12,14 +18,14 @@ const AddContactForm: React.FC = () => {
     businessName: "",
   });
 
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState<string>("");
+  const [error, setError] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,14 +45,17 @@ const AddContactForm: React.FC = () => {
         return;
       }
 
-      const res = await axios.post(`${__API_BASE__}/contacts/add/byContactRequestForm`, form, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const payload: ContactRequestForm = {
+        firstName: form.firstName.trim(),
+        lastName: (form.lastName ?? "").trim(),
+        email: (form.email ?? "").trim(),
+        phone: (form.phone ?? "").trim(),
+        businessName: (form.businessName ?? "").trim(),
+      };
 
-      setMessage(`Contact added: ${res.data.firstName}`);
-      setTimeout(() => navigate("/contacts"), 1000);
+      const created = await addContactByContactRequestForm(payload, token);
+      setMessage(`Contact added: ${created.firstName}`);
+      setTimeout(() => navigate("/contacts"), 800);
     } catch (err: unknown) {
       setError("Failed to add contact.");
       console.error(err);
@@ -56,72 +65,85 @@ const AddContactForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="profile-container">
-      <h2 className="text-xl font-semibold">Add a New Contact</h2>
+    <div className="th-pageCenter">
+      <div className="th-card">
+        <div className="th-modal__header">
+          <strong className="th-modal__title">Add a New Contact</strong>
+        </div>
 
-      <div className="form-group">
-      <label>First Name</label>
-      <input
-        name="firstName"
-        placeholder="First Name"
-        value={form.firstName}
-        onChange={handleChange}
-        required
-      />
+        <form onSubmit={handleSubmit} className="th-modal__form">
+          <div className="th-modal__body">
+            <div className="th-modal__grid">
+              <div className="form-group">
+                <label>First Name</label>
+                <input
+                  name="firstName"
+                  value={form.firstName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Last Name</label>
+                <input
+                  name="lastName"
+                  value={form.lastName ?? ""}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group th-modal__colspan">
+                <label>Email</label>
+                <input
+                  name="email"
+                  type="email"
+                  value={form.email ?? ""}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group th-modal__colspan">
+                <label>Phone</label>
+                <input
+                  name="phone"
+                  placeholder="+91XXXXXXXXXX"
+                  value={form.phone ?? ""}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group th-modal__colspan">
+                <label>Business Name</label>
+                <input
+                  name="businessName"
+                  value={form.businessName ?? ""}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            {message && <p className="crf-msg ok">{message}</p>}
+            {error && <p className="crf-msg err">{error}</p>}
+          </div>
+
+          <div className="th-modal__footer">
+            <button
+              type="button"
+              className="btn"
+              onClick={() => navigate("/contacts")}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+
+            <button type="submit" className="btn btn--primary" disabled={submitting}>
+              {submitting ? "Submitting..." : "Add Contact"}
+            </button>
+          </div>
+        </form>
       </div>
-
-      <div className="form-group">
-      <label>Last Name</label>
-      <input
-        name="lastName"
-        placeholder="Last Name"
-        value={form.lastName}
-        onChange={handleChange}
-      />
-      </div>
-      
-      <div className="form-group">
-      <label>Email</label>
-      <input
-        name="email"
-        placeholder="Email"
-        type="email"
-        value={form.email}
-        onChange={handleChange}
-      />
-      </div>
-
-      <div className="form-group">
-      <label>Phone</label>
-      <input
-        name="phone"
-        placeholder="+91XXXXXXXXXX"
-        value={form.phone}
-        onChange={handleChange}
-      />
-      </div>
-
-      <div className="form-group">
-      <label>Business Name</label>
-      <input
-        name="businessName"
-        placeholder="Business Name (optional)"
-        value={form.businessName}
-        onChange={handleChange}
-      />
-      </div>
-
-      <button
-        type="submit"
-        className="primary-btn"
-        disabled={submitting}
-      >
-        {submitting ? "Submitting..." : "Add Contact"}
-      </button>
-
-      {message && <p className="text-green-600">{message}</p>}
-      {error && <p className="text-red-600">{error}</p>}
-    </form>
+    </div>
   );
 };
 

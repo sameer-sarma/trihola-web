@@ -1,4 +1,6 @@
 import axios from "axios";
+import {PublicProfile} from "../hooks/useBootstrap";
+
 
 const authHeader = (token: string) => ({
   headers: {
@@ -31,4 +33,16 @@ export const getMyBusiness = async (token: string) => {
     businessSlug?: string;
     registeredAt?: string;
   };
+};
+
+// ✅ Fetch your own profile (used for /profile redirect)
+export const getFullProfileByBusinessSlug = async (
+  businessSlug: string,
+  token: string
+): Promise<PublicProfile> => {
+  const res = await axios.get(
+    `${__API_BASE__}/business/by-slug/${encodeURIComponent(businessSlug)}`,
+    authHeader(token)
+  );
+  return res.data as PublicProfile;
 };
