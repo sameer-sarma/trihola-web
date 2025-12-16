@@ -213,12 +213,14 @@ const rewardsTargetRoute = topReward?.route || rewardsCta?.route || "/my-offers"
               {topReward?.subtitle ? topReward.subtitle : rewardsCta.subtitle}
               {topReward?.subtitle?.includes("Expires") ? "" : topReward?.id ? "" : ""}
             </div>
-            {topReward?.createdAtUtc && (
-              <div className="start-cta-meta">
-                Latest: <span className="mono">{topReward.title}</span>
-                {topReward.subtitle ? ` · ${topReward.subtitle}` : ""}
-              </div>
-            )}
+              {topReward?.createdAtUtc && (
+                <div className="start-cta-meta">
+                  Latest: <span className="mono">{topReward.title}</span>
+                  {topReward.subtitle ? ` · ${topReward.subtitle}` : ""}
+                  {" · "}
+                  <span className="mono">{formatExpiry(topReward.createdAtUtc)}</span>
+                </div>
+              )}
           </div>
 
           <div className="start-cta-action">

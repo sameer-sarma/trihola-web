@@ -6,7 +6,7 @@ import {
   type ContactRequestForm,
   type ContactResponse,
 } from "../services/contactService";
-import "../css/AddContactForm.css";
+import "../css/AddContactModal.css";
 
 type Props = {
   open: boolean;

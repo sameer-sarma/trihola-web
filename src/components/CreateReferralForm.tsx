@@ -17,33 +17,6 @@ import type { ContactResponse as ServiceContactResponse } from "../services/cont
 // ✅ NEW: services you said you implemented
 import { addContactByUserSlug } from "../services/contactService";
 
-// If your PublicProfile interface lives elsewhere, import it instead of redeclaring.
-// (Keeping minimal here to avoid extra wiring.)
-type PublicProfile = {
-  userId: string;
-  slug: string;
-  profileImageUrl: string | null;
-  phone: string | null;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  role?: string | null;
-  address: string | null;
-  bio: string | null;
-  location?: string;
-  profession?: string;
-  birthday?: string;
-  linkedinUrl?: string;
-  registeredAsBusiness?: boolean;
-  businessProfile?: {
-    businessName?: string;
-    businessDescription?: string;
-    businessWebsite?: string;
-    businessSlug?: string;
-  } | null;
-  isContact?: boolean;
-};
-
 type TargetType = "none" | "product" | "bundle";
 
 interface ContactResponse {
@@ -741,6 +714,14 @@ const business =
                 )}
                 </div>
 
+                {/* ✅ Option B: show resolve error */}
+                {resolvedBusinessError && !resolvedBusiness && !resolvingBusiness && (
+                  <p className="crf-msg err" style={{ marginTop: 10 }}>
+                    {typeof resolvedBusinessError === "string"
+                      ? resolvedBusinessError
+                      : (resolvedBusinessError as any)?.message ?? "Failed to resolve business."}
+                  </p>
+                )}
 
               <div className="crf-search with-toggle">
                 <input
