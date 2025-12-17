@@ -163,27 +163,25 @@ const EditOfferTemplate: React.FC<Props> = ({ token, businessSlug: propBusinessS
   }, [templateId, token]);
 
   // keep bands length = breakpoints + 1
-  useEffect(() => {
-    setBands((rows) => {
-      const target = breakpoints.length + 1;
-      if (rows.length === target) return rows;
-      const base: BandRow = rows[0] ?? {
+useEffect(() => {
+  setBands((prev) => {
+    const next: BandRow[] = [];
+    for (let i = 0; i <= breakpoints.length; i++) {
+      next[i] = prev[i] ?? {
         discountType: uiOfferKind === "PERCENTAGE" ? "PERCENTAGE" : "FIXED",
         discountValue: 0,
-        maxDiscountAmount: uiOfferKind === "PERCENTAGE" ? null : undefined,
+        maxDiscountAmount: uiOfferKind === "PERCENTAGE" ? null : null,
       };
-      if (rows.length < target) {
-        const add = Array.from({ length: target - rows.length }, () => ({ ...base }));
-        return [...rows, ...add];
-      }
-      return rows.slice(0, target);
-    });
-  }, [breakpoints.length, uiOfferKind]);
+    }
+    return next;
+  });
+}, [breakpoints, uiOfferKind]);
+
 
   const breakpointLabels = useMemo(() => {
     const bps = [...breakpoints].sort((a, b) => a - b);
     return Array.from({ length: bps.length + 1 }).map((_, i) => {
-      if (i === 0) return `Below ₹${bps[0] || "—"}`;
+      if (i === 0) return bps.length ? `Below ₹${bps[0]}` : "All amounts";
       if (i === bps.length) return `Above ₹${bps[bps.length - 1] || "—"}`;
       return `₹${bps[i - 1]} – ₹${bps[i]}`;
     });
@@ -490,7 +488,7 @@ return (
                         type="button"
                         className="btn btn--ghost btn--sm"
                         onClick={() =>
-                          setBreakpoints((bps) => [...bps, 0].sort((a, b) => a - b))
+                          setBreakpoints((bps) => [...bps, (bps.at(-1) ?? 0) + 100])
                         }
                       >
                         + Add breakpoint
