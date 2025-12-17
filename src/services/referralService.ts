@@ -1,5 +1,5 @@
 import axios from "axios";
-import { CreateReferralReq, ReferralDTO, ReferralThreadEventDTO, ReferralPublicView } from "../types/referral";
+import { CreateReferralReq, ReferralDTO, ReferralThreadEventDTO, ReferralPublicView, SendCampaignReferralsResponse } from "../types/referral";
 import { supabase } from "../supabaseClient";
 import type { SendReferralsRequest } from '../types/invites';
 
@@ -106,7 +106,7 @@ export async function sendCampaignReferrals(
   campaignId: string,
   payload: SendReferralsRequest,
   token?: string
-): Promise<{ createdReferralIds: string[] }> {
+): Promise<SendCampaignReferralsResponse> {
   const res = await fetch(
     `${__API_BASE__}/campaigns/${campaignId}/referrals/send`,
     {

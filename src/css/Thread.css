@@ -256,3 +256,14 @@
     margin: 12px 0 6px;
   }
 }
+
+/* InviteThread: make the two “mini cards” shorter without changing global .card */
+.invite-thread .invite-mini-card {
+  padding: 14px 16px;     /* reduce from global card padding */
+  min-height: 0;          /* avoid any global min-height */
+}
+
+.invite-thread .invite-mini-card .card-title {
+  margin: 0;              /* remove extra vertical spacing */
+  line-height: 1.2;
+}

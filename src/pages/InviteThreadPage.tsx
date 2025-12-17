@@ -1,4 +1,4 @@
-import React, { useEffect, useState, FormEvent } from "react";
+import React, { useEffect, useState, useMemo, useCallback ,FormEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
@@ -19,8 +19,9 @@ import type {
 } from "../types/openReferrals";
 import type { InviteThreadEventDTO } from "../types/invites";
 import CampaignOfferCard from "../components/CampaignOfferCard";
+import Modal from "../components/Modal";
 import ScopeCard from "../components/ScopeCard";
-import SendReferralPanel from "../components/SendReferralPanel";
+import InviteSendReferralPanel from "../components/InviteSendReferralPanel";
 import MessageBubble from "../components/MessageBubble"; // same path as in ReferralThread
 import "../css/Thread.css";
 
@@ -51,6 +52,9 @@ const InviteThreadPage: React.FC = () => {
     null
   );
 
+  const [showScopeModal, setShowScopeModal] = useState(false);
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
+  
   useEffect(() => {
     supabase.auth
       .getSession()
@@ -84,6 +88,19 @@ const InviteThreadPage: React.FC = () => {
     ?.affiliateSubheading as string | undefined;
   const prospectDescriptionShort = (campaign as any)
     ?.prospectDescriptionShort as string | undefined;
+    const prospectDescriptionLong = (campaign as any)
+  ?.prospectDescriptionLong as string | undefined;
+
+const derivedDefaultNote = useMemo(() => {
+
+  const parts = [
+    "Hello, I thought that you should check this out",
+    prospectDescriptionShort?.trim(),
+    prospectDescriptionLong?.trim(),
+  ].filter((p) => !!p);
+
+  return parts.join("\n\n");
+}, [prospectDescriptionShort, prospectDescriptionLong]);
 
     // Role / permissions from backend
   const myRole = inviteDetail?.myParticipantRole; // "BUSINESS" | "AFFILIATE" | null
@@ -137,20 +154,26 @@ const affiliatePolicy =
   const hasProduct = !!product && !!product.slug;
 
   // --- Thread hook: events + send logic ---
-const {
+  const onInviteUpdated = useCallback(() => {
+    refetchInviteDetail();
+  }, [refetchInviteDetail]);
+
+  const threadOpts = useMemo(
+    () => ({
+      initialLimit: 50,
+      onInviteUpdated,
+    }),
+    [onInviteUpdated]
+  );
+
+  const {
   events,
   isLoading: threadLoading,
   wsConnected,
   isSending,
   sendMessage,
   sendTyping,
-} = useInviteThread(campaignId, inviteId, token, {
-  initialLimit: 50,
-  onInviteUpdated: () => {
-    // re-pull invite + snapshot + referrals + canSendReferrals
-    refetchInviteDetail();
-  },
-});
+} = useInviteThread(campaignId, inviteId, token, threadOpts);
 
   const [draft, setDraft] = useState("");
 
@@ -555,28 +578,30 @@ const publicInviteUrl = React.useMemo(() => {
             </section>
           )}
 
-          {/* 2. Scope section */}
-          {campaign && (hasBundle || hasProduct) && (
-            <ScopeCard
-              title="What this invite is for"
-              businessSlug={campaign.businessSlug}
-              product={campaign.product ?? undefined}
-              bundle={campaign.bundle ?? undefined}
-              appearance="flat"
-            />
+        {/* Scope → modal */}
+          {(hasBundle || hasProduct) && (
+            <div
+              className="card invite-mini-card"
+              role="button"
+              tabIndex={0}
+              onClick={() => setShowScopeModal(true)}
+              style={{ cursor: "pointer" }}
+            >
+              <h4>What this invite is for</h4>
+            </div>
           )}
 
-          {/* 3. Rewards (CampaignOfferCard) spanning full left panel */}
-          <section className="card invite-rewards-card">
-            <h3 className="card-title">Prospect &amp; affiliate rewards</h3>
-            <CampaignOfferCard
-              offers={offerLinks}
-              affiliatePolicy={affiliatePolicy}
-              token={token}
-              showDetailsInCard={true}
-              className="invite-offer-card"
-            />
-          </section>
+
+         {/* Rewards → modal */}
+          <div
+            className="card invite-mini-card"
+            role="button"
+            tabIndex={0}
+            onClick={() => setShowRewardsModal(true)}
+            style={{ cursor: "pointer" }}
+          >
+            <h4>Prospect &amp; affiliate rewards</h4>
+          </div>
         </div>
 
         {/* RIGHT: chat / thread column */}
@@ -638,6 +663,42 @@ const publicInviteUrl = React.useMemo(() => {
           </div>
         </div>
       </div>
+
+      {/* Scope modal */}
+      <Modal
+        open={showScopeModal}
+        title="What this invite is for"
+        onClose={() => setShowScopeModal(false)}
+        width={920}
+        footer={null}
+      >
+      {campaign && (
+        <ScopeCard
+          title="What this invite is for"
+          businessSlug={campaign.businessSlug}
+          product={campaign.product ?? undefined}
+          bundle={campaign.bundle ?? undefined}
+          appearance="flat"
+        />
+      )}
+      </Modal>
+
+      {/* Rewards modal */}
+      <Modal
+        open={showRewardsModal}
+        title="Prospect & affiliate rewards"
+        onClose={() => setShowRewardsModal(false)}
+        width={920}
+        footer={null}
+      >
+            <CampaignOfferCard
+              offers={offerLinks}
+              affiliatePolicy={affiliatePolicy}
+              token={token}
+              showDetailsInCard={true}
+              className="invite-offer-card"
+            />
+      </Modal>
 
       {/* ── Full-width referrals panel for both roles ── */}
       {referrals.length > 0 && (
@@ -767,25 +828,28 @@ const publicInviteUrl = React.useMemo(() => {
         </section>
       )}
 
-      {/* SendReferralPanel (unchanged) */}
+      {/* InviteSendReferralPanel */}
       {campaignId && inviteId && showSendReferralPanel && (
-        <SendReferralPanel
+        <Modal
           open={showSendReferralPanel}
+          title="Send a new referral"
           onClose={() => setShowSendReferralPanel(false)}
-          token={token}
-          campaignId={campaignId}
-          inviteId={inviteId}
-          defaultNote={
-            inviteDetail?.invite.personalMessage ??
-            `Hi {firstName}, I found this offer from ${
-              inviteDetail?.snapshot.campaign.title ?? "this campaign"
-            } and thought of you.`
-          }
-          onSent={() => {
-            setShowSendReferralPanel(false);
-          }}
-        />
+          width={920}
+          footer={null}
+        >
+          <InviteSendReferralPanel
+            token={token}
+            campaignId={campaignId}
+            inviteId={inviteId}
+            campaignTitle={campaign?.title ?? "Campaign"}
+            businessName={businessName}
+            themeColor={themeColor}
+            defaultNote={derivedDefaultNote}
+            onSent={() => setShowSendReferralPanel(false)}
+          />
+        </Modal>
       )}
+
 
       {/* Open referral edit/create modal */}
       {showOpenReferralEditor && (

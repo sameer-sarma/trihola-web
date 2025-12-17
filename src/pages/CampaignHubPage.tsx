@@ -47,6 +47,47 @@ export default function CampaignHubPage() {
 
   return (
     <div className="th-page">
+      {/* Campaign Hub Hero */}
+      <div className="hero hero--campaigns">
+        <div className="hero__content">
+          <div className="hero__left">
+            <div className="hero__eyebrow">CAMPAIGNS • AFFILIATES • REWARDS</div>
+
+            <h1 className="hero__title">
+              Campaigns that scale your referrals.
+            </h1>
+
+            <p className="hero__subtitle">
+              Create structured referral programs with rewards for referrers and
+              prospects. Invite affiliates once, then track referrals, accepts,
+              and redemptions automatically.
+            </p>
+
+            <div className="hero__actions">
+              <Link className="btn btn--primary" to="/campaigns/new">
+                + New Campaign
+              </Link>
+            </div>
+
+            <div className="hero__note muted">
+              Only businesses can create campaigns. Affiliates can join and refer
+              to campaigns they’re invited to.
+            </div>
+          </div>
+
+          <div className="hero__right">
+            <div className="hero-card">
+              <div className="hero-card__title">Campaign snapshot</div>
+              <ul className="hero-card__list">
+                <li>One campaign → many affiliates</li>
+                <li>Rewards defined once</li>
+                <li>Live referral threads & tracking</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="th-header">
         <div>
@@ -146,6 +187,14 @@ export default function CampaignHubPage() {
                     >
                       Invites
                     </Link>
+                      {String(c.status).toUpperCase() === "ACTIVE" && (
+                        <Link
+                          className="btn btn--sm btn--primary"
+                          to={`/campaigns/${c.id}/invites/send`}
+                        >
+                          Invite
+                        </Link>
+                      )}
                   </div>
                 </div>
               </article>

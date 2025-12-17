@@ -216,3 +216,8 @@ export function getAttachedInfo(r: RefLike) {
   }
   return null;
 }
+
+export type SendCampaignReferralsResponse = {
+  createdReferralIds: string[];
+  duplicateReferralIdsMessaged: string[];
+};
