@@ -2,7 +2,7 @@
 // FILE: src/api/campaignInvites.ts
 // (API layer – thin wrappers around fetch; supports cursor pagination)
 // =============================================
-import type { CampaignInvite, SendCampaignInvitesRequest, Paginated, InviteDetailResponse } from '../types/invites';
+import type { CampaignInvite, SendCampaignInvitesRequest, Paginated, InviteDetailResponse, MyInviteListItemDTO } from '../types/invites';
 import type { CampaignHubAffiliating } from '../types/campaign';
 import type { PublicCampaignInviteLandingView } from '../types/invites';
 
@@ -117,6 +117,20 @@ export async function listMyAffiliateInvites(
     throw new Error(
       text || `Failed to load my invites (${res.status})`
     );
+  }
+
+  return res.json();
+}
+
+export async function listMyInvites(token: string): Promise<MyInviteListItemDTO[]> {
+  const res = await fetch(`${API_BASE}/invites/me`, {
+    method: "GET",
+    headers: authHeaders(token),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || `Failed to load my invites (${res.status})`);
   }
 
   return res.json();

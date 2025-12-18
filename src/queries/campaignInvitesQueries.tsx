@@ -4,7 +4,7 @@
 // =============================================
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { acceptInvite, declineInvite, listCampaignInvites, sendCampaignInvites, getInviteDetail, getPublicCampaignInviteLanding,
-getOpenAffiliateCampaignLanding, joinCampaignViaOpenInvite } from '../api/campaigninvitesapi';
+getOpenAffiliateCampaignLanding, joinCampaignViaOpenInvite, listMyInvites } from '../api/campaigninvitesapi';
 import type { CampaignInvite, Paginated, SendCampaignInvitesRequest, InviteDetailResponse } from '../types/invites';
 import type { PublicCampaignInviteLandingView } from '../types/invites';
 import type { CampaignPublicDTO } from '../types/campaign';
@@ -32,7 +32,10 @@ export function useAcceptInviteMutation(inviteId: string, token?: string) {
 const qc = useQueryClient();
 return useMutation({
 mutationFn: () => acceptInvite(inviteId, token),
-onSuccess: () => { qc.invalidateQueries({ queryKey: ['campaignInvites'] }); },
+onSuccess: () => { 
+  qc.invalidateQueries({ queryKey: ['campaignInvites'] });
+  qc.invalidateQueries({ queryKey: ["myInvites"] });
+},
 });
 }
 
@@ -41,7 +44,10 @@ export function useDeclineInviteMutation(inviteId: string, token?: string) {
 const qc = useQueryClient();
 return useMutation({
 mutationFn: () => declineInvite(inviteId, token),
-onSuccess: () => { qc.invalidateQueries({ queryKey: ['campaignInvites'] }); },
+onSuccess: () => { 
+  qc.invalidateQueries({ queryKey: ['campaignInvites'] });
+  qc.invalidateQueries({ queryKey: ["myInvites"] });
+},
 });
 }
 
@@ -110,5 +116,13 @@ export function useJoinOpenAffiliateInviteMutation(
       // If you have a "my affiliate invites" key, you can also invalidate that here
       qc.invalidateQueries({ queryKey: ["myAffiliateInvites"] });
     },
+  });
+}
+
+export function useMyInvites(token?: string) {
+  return useQuery({
+    queryKey: ["myInvites", token],
+    enabled: !!token,
+    queryFn: () => listMyInvites(token!),
   });
 }

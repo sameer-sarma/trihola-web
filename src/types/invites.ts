@@ -145,3 +145,24 @@ export type PublicCampaignInviteLandingView = {
   prospectOfferSummary?: string | null;
   myParticipantRole?: ParticipantRole | null;
 };
+
+export type MyInviteListItemDTO = {
+  inviteId: string;
+  campaignId: string;
+  campaignTitle: string;
+  status: string;
+  createdAt: string;
+  inviteMessage?: string | null;
+  inviteSubject?: string | null;
+  campaignSlug?: string | null;
+  primaryImageUrl?: string | null;
+
+  businessUserId?: string | null;
+  businessSnapshot?: ProfileMiniDTO | null;
+  invitedBy?: string | null;
+
+  affiliateUserId?: string | null;
+  affiliateSnapshot?: ProfileMiniDTO | null;
+
+  myRole: "BUSINESS" | "AFFILIATE";
+};

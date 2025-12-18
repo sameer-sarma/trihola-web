@@ -42,6 +42,7 @@ import CampaignDetailsPage from "./pages/CampaignDetailsPage";
 import EditCampaign from "./pages/EditCampaign";
 import SendCampaignInvite from "./pages/SendCampaignInvite";
 import CampaignHubPage from "./pages/CampaignHubPage";
+import InviteFeed from "./pages/InviteFeed";
 import InviteLandingPage from "./pages/InviteLandingPage";
 import InviteThreadPage from "./pages/InviteThreadPage";
 import PublicCampaignInvitePage from "./pages/PublicCampaignInvitePage";
@@ -371,6 +372,7 @@ function InviteLandingRoute({ token }: { token?: string }) {
             <Route path="/campaigns/:id/edit" element={<EditCampaign token={session.access_token} />} />
             <Route path="/campaigns/:id/invites/send" element={<SendCampaignInviteRoute token={session.access_token} />} />
             <Route path="/campaigns/:campaignId/invites/:inviteId/thread" element={<InviteThreadPage />} />
+            <Route path="/invites" element={<InviteFeed />} />
             <Route path="/invites/:inviteId" element={<InviteLandingRoute token={session.access_token} />} />
             <Route path="/wallet-policies" element={<WalletPolicyEditor businessId={businessId} token={session.access_token} />} />
 
