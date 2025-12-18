@@ -90,28 +90,18 @@ const Header = () => {
         <nav className="nav-links" aria-label="Primary">
           {session ? (
             <>
-              <NavLink to="/profile" className={({ isActive }) => (isActive ? "active" : "")}>
-                Profile
-              </NavLink>
               <NavLink to="/referrals" className={({ isActive }) => (isActive ? "active" : "")}>
                 Referrals
               </NavLink>
+
+              {/* Placeholder for now */}
+              <NavLink to="/invites" className={({ isActive }) => (isActive ? "active" : "")}>
+                Invites
+              </NavLink>
+
               <NavLink to="/my-offers" className={({ isActive }) => (isActive ? "active" : "")}>
                 My Offers
               </NavLink>
-              <NavLink to="/contacts" className={({ isActive }) => (isActive ? "active" : "")}>
-                Contacts
-              </NavLink>
-              {isBusiness && (
-                <>
-                  <NavLink to="/offer-templates" className={({ isActive }) => (isActive ? "active" : "")}>
-                    Offer Templates
-                  </NavLink>
-                  <NavLink to="/ecom" className={({ isActive }) => (isActive ? "active" : "")}>
-                    E-commerce
-                  </NavLink>
-                </>
-              )}
             </>
           ) : (
             <>

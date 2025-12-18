@@ -85,32 +85,11 @@ export default function AppLauncher({
               <div className="al-sep" />
 
               {/* Apps */}
-              <Link to="/products" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
-                <span className="al-icon">📦</span>
+              <Link to="/profile" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
+                <span className="al-icon">👤</span>
                 <div>
-                  <div className="al-title">Products</div>
-                  <div className="al-sub">Manage catalog</div>
-                </div>
-              </Link>
-
-              <Link to="/referrals" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
-                <span className="al-icon">🔗</span>
-                <div>
-                  <div className="al-title">Referrals</div>
-                  <div className="al-sub">Share & track</div>
-                </div>
-              </Link>
-
-              <Link
-                to="/my-offers"
-                className="al-item"
-                role="menuitem"
-                onClick={() => setOpen(false)}
-              >
-                <span className="al-icon">🎁</span>
-                <div>
-                  <div className="al-title">My Offers</div>
-                  <div className="al-sub">Rewards you've earned</div>
+                  <div className="al-title">Profile</div>
+                  <div className="al-sub">Your account</div>
                 </div>
               </Link>
 
@@ -122,17 +101,24 @@ export default function AppLauncher({
                 </div>
               </Link>
 
-                  <Link to="/campaigns" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
-                    <span className="al-icon" aria-hidden="true">📣</span>
-                    <div>
-                      <div className="al-title">Campaigns</div>
-                      <div className="al-sub">Get Referrals</div>
-                    </div>
-                  </Link>
-
+              <Link to="/products" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
+                <span className="al-icon">📦</span>
+                <div>
+                  <div className="al-title">Products</div>
+                  <div className="al-sub">Manage catalog</div>
+                </div>
+              </Link>
 
               {isBusiness && (
                 <>
+                  <Link to="/campaigns" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
+                    <span className="al-icon" aria-hidden="true">📣</span>
+                      <div>
+                        <div className="al-title">Campaigns</div>
+                        <div className="al-sub">Get Referrals</div>
+                      </div>
+                  </Link>
+
                   <Link to="/offer-templates" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
                     <span className="al-icon">🏷️</span>
                     <div>
