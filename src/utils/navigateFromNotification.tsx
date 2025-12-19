@@ -15,22 +15,27 @@ export function navigateFromNotification(
       }
       break;
 
-    case "INVITE_THREAD": {
+    case "INVITE_THREAD":
+    case "INVITE":
+    case "CAMPAIGN_INVITE": 
+      {
       const campaignId = metadata?.campaignId;
       const inviteId = contextId || metadata?.inviteId;
       if (campaignId && inviteId) {
-        navigate(`/campaigns/${campaignId}/invites/${inviteId}`);
+        navigate(`/campaigns/${campaignId}/invites/${inviteId}/thread`);
       }
       break;
     }
 
     case "OFFER_DETAILS":
+    case "OFFER":
       if (contextId) {
         navigate(`/offers/${contextId}`);
       }
       break;
 
     case "WALLET_STORE":
+    case "WALLET":
       if (contextSlug) {
         navigate(`/wallet/${contextSlug}/store`);
       }
