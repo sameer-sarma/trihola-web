@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { markFirstLoginDone, type BootstrapDTO } from "../hooks/useBootstrap";
+import { supabase } from "../supabaseClient";
+import { addContactByUserSlug } from "../services/contactService";
 import "../css/StartWelcome.css";
 
 type Props = { bootstrap: BootstrapDTO };
@@ -33,6 +35,29 @@ export default function StartWelcome({ bootstrap }: Props) {
   const isProfileComplete = (profile?.completionPercent ?? 0) >= 100;
   const hasReferrals = (prior?.referralsCreated ?? 0) > 0 || (prior?.referralsAccepted ?? 0) > 0;
   const hasRewards = !!rewards?.hasActivity && (rewards?.count ?? 0) > 0;
+
+  const [addingContactSlug, setAddingContactSlug] = useState<string | null>(null);
+  const [addedContactSlugs, setAddedContactSlugs] = useState<Set<string>>(() => new Set());
+
+  const handleAddSuggestedContact = async (contactSlug?: string) => {
+    if (!contactSlug) return;
+    if (addedContactSlugs.has(contactSlug)) return;
+
+    try {
+      setAddingContactSlug(contactSlug);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+
+      await addContactByUserSlug(contactSlug, token);
+      setAddedContactSlugs((prev) => new Set(prev).add(contactSlug));
+    } catch (err) {
+      console.error("Failed to add contact", err);
+    } finally {
+      setAddingContactSlug(null);
+    }
+  };
 
   // helper
   const Mark = ({ ok, pulse }: { ok: boolean; pulse?: boolean }) => (
@@ -281,8 +306,21 @@ const rewardsTargetRoute = topReward?.route || rewardsCta?.route || "/my-offers"
               </div>
 
               <div className="start-row-actions">
-                <button className="btn" onClick={() => nav(`/contacts?prefill=${encodeURIComponent(c.slug)}`)}>
-                  Add contact
+                <button
+                  className="btn"
+                  disabled={!c.slug || addingContactSlug === c.slug || addedContactSlugs.has(c.slug)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAddSuggestedContact(c.slug);
+                  }}
+                  title={!c.slug ? "Missing profile slug" : undefined}
+                >
+                  {addedContactSlugs.has(c.slug)
+                    ? "Added"
+                    : addingContactSlug === c.slug
+                      ? "Adding…"
+                      : "Add contact"}
                 </button>
               </div>
             </div>
