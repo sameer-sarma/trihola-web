@@ -266,11 +266,14 @@ const InviteFeed: React.FC = () => {
 
               return (
                 <div
-                  key={it.inviteId}
-                  className="card"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openItem(it)}
+                key={it.inviteId}
+                className="card th-clickable-canvas"
+                role="button"
+                tabIndex={0}
+                onClick={() => openItem(it)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") openItem(it);
+                }}
                 >
                   <div className="th-row th-between" style={{ marginBottom: 6 }}>
                     <div className="th-row th-middle" style={{ gap: 12 }}>

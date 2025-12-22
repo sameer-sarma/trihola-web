@@ -4108,3 +4108,34 @@
     font-size: 28px;
   }
 }
+
+/* Clickable canvas hover affordance */
+.th-clickable-canvas {
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.th-clickable-canvas:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  border-color: rgba(0,0,0,0.12);
+}
+
+.th-clickable-canvas:active {
+  transform: translateY(0px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+/* Optional chevron affordance */
+.th-chevron {
+  opacity: 0.35;
+  font-size: 18px;
+  line-height: 1;
+  transform: translateX(0);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.th-clickable-canvas:hover .th-chevron {
+  opacity: 0.8;
+  transform: translateX(2px);
+}
