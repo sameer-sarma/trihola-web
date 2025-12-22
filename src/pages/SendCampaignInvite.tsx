@@ -7,6 +7,8 @@ import Modal from "../components/Modal";
 import { sendCampaignInvites } from "../api/campaigninvitesapi";
 import type { SendCampaignInvitesRequest, Contact } from "../types/invites";
 import { useCampaignById } from "../queries/campaignQueries";
+import AddContactModal from "../components/AddContactModal";
+import type { ContactResponse as ServiceContactResponse } from "../services/contactService";
 import "../css/SendCampaignInvite.css";
 
 type VarToken = "{firstName}" | "{lastName}" | "{fullName}" | "{businessName}";
@@ -80,6 +82,20 @@ export default function SendCampaignInvite({
   const subjectRef = useRef<HTMLInputElement | null>(null);
   const messageRef = useRef<HTMLTextAreaElement | null>(null);
 
+  const [localContacts, setLocalContacts] = useState<Contact[]>(contacts);
+  useEffect(() => setLocalContacts(contacts), [contacts]);
+
+  const [addContactOpen, setAddContactOpen] = useState(false);
+
+  const upsertLocalContactAndSelect = (c: ServiceContactResponse) => {
+    setLocalContacts((prev) => {
+      const exists = prev.some((x) => (x as any).userId === c.userId);
+      return exists ? prev : ([c as any, ...prev] as any);
+    });
+
+    setSelected((prev) => (prev.includes(c.userId) ? prev : [...prev, c.userId]));
+  };
+
   // Seed subject/message from campaign once it loads (only if user hasn’t edited)
   useEffect(() => {
     if (!campaign) return;
@@ -95,7 +111,7 @@ export default function SendCampaignInvite({
 
   // Local preview renderer (client-side only, mirrors server behavior)
   const preview = useMemo(() => {
-    const first = contacts.find((c) => c.userId === selected[0]);
+    const first = localContacts.find((c) => c.userId === selected[0]);
     if (!first) return null;
 
     const fn = first.firstName || "there";
@@ -403,37 +419,70 @@ export default function SendCampaignInvite({
         </form>
       </div>
 
-        <Modal
+      <Modal
         open={pickerOpen}
         title="Select recipients"
         onClose={() => !busy && setPickerOpen(false)}
         width={900}
         footer={
-            <>
+          <>
             <div className="muted" style={{ fontSize: 13 }}>
-                Tip: Search + “Select all filtered” works best for large lists.
+              Tip: Search + “Select all filtered” works best for large lists.
             </div>
             <button
-                type="button"
-                className="btn btn--primary"
-                onClick={() => setPickerOpen(false)}
-                disabled={busy}
+              type="button"
+              className="btn btn--primary"
+              onClick={() => setPickerOpen(false)}
+              disabled={busy}
             >
-                Done
+              Done
             </button>
-            </>
+          </>
         }
+      >
+        {/* top row inside modal */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            marginBottom: 10,
+            flexWrap: "nowrap",
+          }}
         >
-        <ContactMultiSelect
-            contacts={contacts}
-            value={selected}
+          <div className="muted" style={{ fontSize: 13 }}>
+            Selected: <b>{selected.length}</b>
+          </div>
+
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setAddContactOpen(true)}
             disabled={busy}
-            onChange={(v) => {
+            style={{ whiteSpace: "nowrap" }}
+          >
+            + Add contact
+          </button>
+        </div>
+
+        <ContactMultiSelect
+          contacts={localContacts}
+          value={selected}
+          disabled={busy}
+          onChange={(v) => {
             setDone(false);
             setSelected(v);
-            }}
+          }}
         />
-        </Modal>
+
+        <AddContactModal
+          open={addContactOpen}
+          title="Add contact"
+          onClose={() => setAddContactOpen(false)}
+          onAdded={(c) => upsertLocalContactAndSelect(c)}
+        />
+      </Modal>
 
     </div>
   );

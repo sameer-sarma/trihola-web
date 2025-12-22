@@ -81,6 +81,20 @@
   background: #f9fafb;
 }
 
+.ref-card--canvas {
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.ref-card--canvas:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.ref-card--canvas:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.6);
+  outline-offset: 2px;
+}
+
 /* Small button utility (reusable) */
 .btn--sm {
   padding: 6px 10px;                               /* tighter */

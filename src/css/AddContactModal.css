@@ -86,3 +86,39 @@
   border-top: 1px solid rgba(17, 24, 39, 0.08);
   background: #fff;
 }
+
+.th-card {
+  color: #111827;            /* slate-900-ish */
+  font-weight: 500;          /* was likely 400 */
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: optimizeLegibility;
+}
+
+/* 2) Labels: darker + 600 */
+.form-group label {
+  color: #0f172a;            /* slate-950-ish */
+  font-weight: 600;
+}
+
+/* 3) Helper/muted text: still muted, but readable */
+.th-muted,
+.muted {
+  color: #475569;            /* slate-600 */
+  font-weight: 500;
+}
+
+/* 4) Input text: ensure it’s not using a washed-out color */
+input,
+textarea,
+select {
+  color: #0f172a;
+  font-weight: 500;
+}
+
+/* 5) Placeholder: keep muted but not too faint */
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;            /* slate-400 */
+  opacity: 1;
+}

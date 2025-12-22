@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import "../css/ui-forms.css";
 
 import { AvatarOrPlaceholder } from "../utils/uiHelper";
-import  { getAttachedInfo } from "../types/referral";
+import { getAttachedInfo } from "../types/referral";
 
 interface ReferralCardProps {
   referral: ReferralDTO;
@@ -24,7 +24,6 @@ const InlinePerson: React.FC<{
 }> = ({ to, imageUrl, name, you }) => (
   <span
     className="inline-person"
-    // inline fallback so alignment works even if CSS didn’t load yet
     style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
   >
     {imageUrl ? (
@@ -61,7 +60,7 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
 
   const attached = getAttachedInfo(referral);
 
-    const roleLabel = isYouReferrer
+  const roleLabel = isYouReferrer
     ? "You’re the referrer"
     : isYouProspect
     ? "You’re the prospect"
@@ -77,22 +76,70 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
   const canCancel =
     referral.referrerId === userId &&
     (referral.status === "PENDING" || referral.status === "PARTIALLY_ACCEPTED");
-    
+
   const userAcceptanceStatus = isYouProspect
     ? referral.prospectAcceptanceStatus
     : isYouBusiness
     ? referral.businessAcceptanceStatus
     : undefined;
 
+  const threadUrl = `/referral/${referral.slug}/thread`;
+
+  const openThread = () => {
+    if (!referral.slug) return;
+    navigate(threadUrl);
+  };
+
+  const onCardKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+    // Support Enter/Space like an inbox row
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openThread();
+    }
+  };
+
   return (
     <div
-      onClick={() => navigate(`/referral/${referral.slug}/thread`)}
-      className="card ref-card card--clickable"
+      onClick={openThread}
+      onKeyDown={onCardKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label="Open referral thread"
+      className="card ref-card card--clickable ref-card--canvas"
+      style={{
+        position: "relative",
+        paddingRight: 44, // reserve gutter for chevron so it never crowds content
+      }}
     >
-      {/* Tokenized sentence — explicit inline flex fallback to guarantee spacing */}
+      {/* Chevron gutter (always visible, vertically centered) */}
+      <div
+        className="ref-card__chevron"
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: 14,
+          top: "50%",
+          transform: "translateY(-50%)",
+          color: "var(--muted, #94a3b8)",
+          fontSize: 22,
+          lineHeight: 1,
+          pointerEvents: "none", // ✅ important: chevron never steals clicks from canvas
+          userSelect: "none",
+        }}
+      >
+        ›
+      </div>
+
+      {/* Tokenized sentence */}
       <div
         className="ref-card__line ref-card__line--tokens"
-        style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, lineHeight: 1.35 }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 8,
+          lineHeight: 1.35,
+        }}
       >
         <InlinePerson
           to={refTo}
@@ -124,11 +171,7 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
       {attached && (
         <div className="referral-note" style={{ marginTop: 6 }}>
           on{" "}
-          <Link
-            to={attached.url}
-            className="th-link"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <Link to={attached.url} className="th-link" onClick={(e) => e.stopPropagation()}>
             {attached.title}
           </Link>
         </div>
@@ -138,40 +181,39 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
       {referral.note && <div className="th-muted ref-card__note">{referral.note}</div>}
 
       {/* Meta: status (left) and timestamp (right) */}
-      <div className="ref-card__meta" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
+      <div
+        className="ref-card__meta"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap",
+          marginTop: 8,
+        }}
+      >
         <div className="ref-card__meta-left">
           <span className="th-muted">Referral Status:</span>{" "}
-          <span
-            className="ref-card__status"
-            style={{ fontWeight: 600, textTransform: "capitalize" }}
-          >
+          <span className="ref-card__status" style={{ fontWeight: 600, textTransform: "capitalize" }}>
             {referral.status.toLowerCase()}
           </span>
 
-          {roleLabel && (
-            <span className="ref-card__role-chip">
-              {roleLabel}
-            </span>
-          )}
+          {roleLabel && <span className="ref-card__role-chip">{roleLabel}</span>}
         </div>
 
-        <div className="meta-right" style={{ color: "#94a3b8" }}>
+        <div className="meta-right" style={{ color: "var(--muted, #94a3b8)" }}>
           {new Date(referral.createdAt).toLocaleString()}
         </div>
       </div>
-
 
       {/* Your response (if applicable) */}
       {userAcceptanceStatus && (
         <div className="th-muted" style={{ marginTop: 6 }}>
           Your Response:{" "}
-          <span style={{ textTransform: "capitalize" }}>
-            {String(userAcceptanceStatus).toLowerCase()}
-          </span>
+          <span style={{ textTransform: "capitalize" }}>{String(userAcceptanceStatus).toLowerCase()}</span>
         </div>
       )}
 
-      {/* Actions (compact) */}
+      {/* Actions */}
       <div className="th-row th-right ref-card__actions" style={{ marginTop: 8, gap: 6 }}>
         {canAcceptOrReject && (
           <>
@@ -220,7 +262,6 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
             Copy referral link
           </button>
         )}
-
       </div>
     </div>
   );

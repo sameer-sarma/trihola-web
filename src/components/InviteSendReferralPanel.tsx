@@ -4,15 +4,15 @@ import { supabase } from "../supabaseClient";
 import { sendCampaignReferrals } from "../services/referralService";
 import type { SendReferralsRequest, Contact } from "../types/invites";
 import ContactMultiSelect from "./ContactMultiSelect";
+import AddContactModal from "../components/AddContactModal";
+import type { ContactResponse as ServiceContactResponse } from "../services/contactService";
 import "../css/ui-forms.css";
-
 
 function buildDefaultMessage(opts: {
   campaignTitle: string;
   businessName: string;
   defaultNote?: string;
 }) {
-  // Subject suggestion can be campaignTitle; message starts with greeting.
   const base = (opts.defaultNote || "").trim();
   if (base) return `Hi {fullName},\n\n${base}`;
   return `Hi {fullName},\n\nI’m inviting you to check out ${opts.campaignTitle} on Trihola.`;
@@ -43,6 +43,9 @@ export default function InviteSendReferralPanel(props: {
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
+  // ✅ NEW: AddContactModal state
+  const [addContactOpen, setAddContactOpen] = useState(false);
+
   // Fetch contacts (same as CreateReferralForm-style)
   useEffect(() => {
     let cancelled = false;
@@ -68,6 +71,16 @@ export default function InviteSendReferralPanel(props: {
     };
   }, [props.token]);
 
+  // ✅ NEW: when a contact is created, insert into local list and auto-select it
+  const upsertLocalContactAndSelect = (c: ServiceContactResponse) => {
+    setContacts((prev) => {
+      const exists = prev.some((x: any) => x.userId === c.userId);
+      // Cast is intentional: your contacts endpoint already returns compatible objects
+      return exists ? prev : ([c as any, ...prev] as any);
+    });
+
+    setSelectedIds((prev) => (prev.includes(c.userId) ? prev : [...prev, c.userId]));
+  };
 
   const handleSend = async () => {
     setErr(null);
@@ -99,17 +112,17 @@ export default function InviteSendReferralPanel(props: {
         prospects: selectedIds.map((id) => ({ prospectUserId: id })),
       };
 
-      const resp = await sendCampaignReferrals(
-        props.campaignId,
-        payload,
-        token
-      );
+      const resp = await sendCampaignReferrals(props.campaignId, payload, token);
 
       const created = resp.createdReferralIds?.length ?? 0;
-      const duped  = resp.duplicateReferralIdsMessaged?.length ?? 0;
+      const duped = resp.duplicateReferralIdsMessaged?.length ?? 0;
 
       if (created > 0 && duped > 0) {
-        setOk(`Sent ${created} new referral${created === 1 ? "" : "s"} and added your message to ${duped} existing referral${duped === 1 ? "" : "s"}.`);
+        setOk(
+          `Sent ${created} new referral${created === 1 ? "" : "s"} and added your message to ${duped} existing referral${
+            duped === 1 ? "" : "s"
+          }.`
+        );
       } else if (created > 0) {
         setOk(`Sent ${created} new referral${created === 1 ? "" : "s"}.`);
       } else if (duped > 0) {
@@ -127,13 +140,35 @@ export default function InviteSendReferralPanel(props: {
     }
   };
 
-
   return (
     <div className="crf" style={{ paddingTop: 4 }}>
       <div className="card" style={{ marginBottom: 14 }}>
-        <div className="th-row th-between" style={{ marginBottom: 8 }}>
-          <strong>Prospects</strong>
-          <span className="th-muted">{selectedIds.length} selected</span>
+
+        <div
+          style={{
+            marginBottom: 8,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "nowrap",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+            <strong>Prospects</strong>
+            <span className="th-muted">{selectedIds.length} selected</span>
+          </div>
+
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setAddContactOpen(true)}
+            disabled={sending || loadingContacts}
+            title="Add a new contact without leaving this flow"
+            style={{ marginLeft: "auto", whiteSpace: "nowrap" }}
+          >
+            + Add contact
+          </button>
         </div>
 
         <ContactMultiSelect
@@ -183,6 +218,14 @@ export default function InviteSendReferralPanel(props: {
         {ok && <p className="crf-msg ok">{ok}</p>}
         {err && <p className="crf-msg err">{err}</p>}
       </div>
+
+      {/* ✅ NEW: AddContactModal */}
+      <AddContactModal
+        open={addContactOpen}
+        title="Add contact"
+        onClose={() => setAddContactOpen(false)}
+        onAdded={(c) => upsertLocalContactAndSelect(c)}
+      />
     </div>
   );
 }
