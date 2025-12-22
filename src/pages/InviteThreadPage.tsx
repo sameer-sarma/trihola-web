@@ -100,7 +100,14 @@ const InviteThreadPage: React.FC = () => {
   const isAffiliate = myRole === "AFFILIATE";
   const isBusiness = myRole === "BUSINESS";
   const canSend = inviteDetail?.canSendReferrals === true;
-  const status = invite?.status;
+  const status = invite?.status; // "PENDING" | "ACCEPTED" | "DECLINED" | etc
+
+  const inviteStatus = String(invite?.status ?? "").toUpperCase();
+  const isAccepted = inviteStatus === "ACCEPTED";
+  //const isDeclined = inviteStatus === "DECLINED" || inviteStatus === "REJECTED";
+
+  const canRespondToInvite = isAffiliate && inviteStatus === "INVITED";
+  const canShowAffiliateCtas = isAffiliate && isAccepted;
 
   // Offer + policy for both roles
   const offerLinks = rewards?.offer ? [rewards.offer] : undefined;
@@ -131,7 +138,7 @@ const InviteThreadPage: React.FC = () => {
     invite?.recipient?.businessName ||
     "the affiliate";
 
-//  const referralsSent = inviteDetail?.referralsSent ?? 0;
+  // const referralsSent = inviteDetail?.referralsSent ?? 0;
   const referrals = inviteDetail?.referrals ?? [];
 
   const referralsSectionTitle =
@@ -371,11 +378,6 @@ const InviteThreadPage: React.FC = () => {
     }
   };
 
-  const publicInviteUrl = React.useMemo(() => {
-    if (!invite?.id) return "";
-    return `${window.location.origin}/campaign-invite/${invite.id}`;
-  }, [invite?.id]);
-
   return (
     <div className="th-page invite-thread-page">
       {/* ── Top header pane spanning full width ── */}
@@ -400,21 +402,58 @@ const InviteThreadPage: React.FC = () => {
 
         <div className="invite-thread-header-right">
           <div className="invite-header-actions-grid">
-            {/* Row 1, Col 2: Status pill */}
-            <div className="invite-header-pill">
+            {/* Row 1, Col 1: Status + Accept/Decline (affiliate, pending) */}
+            <div className="invite-header-respond">
+              {/* ✅ Status pill moved ABOVE Accept/Decline */}
               {status && (
-                <span
-                  className={`status-pill status-pill--${String(status).toLowerCase()}`}
-                  style={themeColor ? { borderColor: themeColor, color: themeColor } : undefined}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginBottom: 8,
+                  }}
                 >
-                  {status}
-                </span>
+                  <span
+                    className={`status-pill status-pill--${String(status).toLowerCase()}`}
+                    style={themeColor ? { borderColor: themeColor, color: themeColor } : undefined}
+                  >
+                    {status}
+                  </span>
+                </div>
+              )}
+
+              {canRespondToInvite && (
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    onClick={handleAccept}
+                    disabled={acceptMutation.isPending}
+                    title="Accept this invite and start referring prospects to this business."
+                    style={themeColor ? { backgroundColor: themeColor, borderColor: themeColor } : undefined}
+                  >
+                    {acceptMutation.isPending ? "Accepting…" : "Accept invite"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    onClick={handleDecline}
+                    disabled={declineMutation.isPending}
+                    title="Decline this invite. You won’t be able to send referrals unless you’re invited again."
+                  >
+                    {declineMutation.isPending ? "Declining…" : "Decline"}
+                  </button>
+                </div>
               )}
             </div>
 
+            {/* Row 1, Col 2: (kept for grid layout, pill moved above) */}
+            <div className="invite-header-pill" />
+
             {/* Row 2, Col 1: Share CTA (looks like Lets refer button) */}
             <div className="invite-header-share">
-              {isAffiliate && status === "ACCEPTED" && (
+              {canShowAffiliateCtas && (
                 <>
                   {openReferral ? (
                     <>
@@ -423,8 +462,9 @@ const InviteThreadPage: React.FC = () => {
                         className="btn btn--primary invite-cta-btn"
                         onClick={handleCopyAffiliateLink}
                         disabled={!affiliateLink}
-                        title={"Copy this public shareable link you can post anywhere (whatsapp, facebook etc). People who open it can sign in to Trihola and assign themselves as the prospect for a referral to this business."}
-
+                        title={
+                          "Copy this public shareable link you can post anywhere (whatsapp, facebook etc). People who open it can sign in to Trihola and assign themselves as the prospect for a referral to this business."
+                        }
                       >
                         {isLoadingOpenReferral ? "Loading link…" : "Copy shareable link"}
                       </button>
@@ -446,7 +486,9 @@ const InviteThreadPage: React.FC = () => {
                       className="btn btn--primary invite-cta-btn"
                       onClick={handleOpenReferralCreateClick}
                       disabled={isLoadingOpenReferral || !token}
-                      title={"Create a public shareable link you can post anywhere (whatsapp, facebook etc). People who open it can sign in to Trihola and assign themselves as the prospect for a referral to this business."}
+                      title={
+                        "Create a public shareable link you can post anywhere (whatsapp, facebook etc). People who open it can sign in to Trihola and assign themselves as the prospect for a referral to this business."
+                      }
                     >
                       {isLoadingOpenReferral ? "Loading link…" : "Create shareable link"}
                     </button>
@@ -457,7 +499,7 @@ const InviteThreadPage: React.FC = () => {
 
             {/* Row 2, Col 2: Refer CTA */}
             <div className="invite-header-refer">
-              {isAffiliate && canSend && (
+              {canShowAffiliateCtas && canSend && (
                 <button
                   type="button"
                   className="btn btn--primary invite-cta-btn"
@@ -471,7 +513,6 @@ const InviteThreadPage: React.FC = () => {
             </div>
           </div>
         </div>
-
       </div>
 
       {/* ── Second top-level panel: 2-column layout ── */}
