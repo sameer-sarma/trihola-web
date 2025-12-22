@@ -203,9 +203,12 @@ const ReferralDetails: React.FC<Props> = ({ referral }) => {
               <strong>Created:</strong> {new Date(referral.createdAt).toLocaleString()}
             </span>
           </div>
-          <div className="referral-note">
-            <strong>Note:</strong> {referral.note}
-          </div>
+          {referral.note && (
+            <div className="rd-note">
+              <div className="rd-note__label">Note:</div>
+              <div className="rd-note__text clamp-3">{referral.note}</div>
+            </div>
+          )}
         </div>
 
 {(() => {

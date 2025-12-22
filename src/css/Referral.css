@@ -225,3 +225,26 @@ button.assign-btn:disabled {
   transition: transform 120ms ease;
 }
 .offer-badge:hover { transform: scale(1.06); }
+
+/* ReferralDetails note (left panel) */
+.rd-note {
+  margin-top: 10px;
+}
+
+.rd-note__label {
+  font-size: 12px;
+  color: var(--muted, #94a3b8);
+  margin-bottom: 6px;
+}
+
+.rd-note__text {
+  white-space: pre-wrap; /* preserve line breaks but still clamp */
+}
+
+/* 2 or 3 line clamp utility */
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; /* change to 2 if you want tighter */
+  overflow: hidden;
+}
