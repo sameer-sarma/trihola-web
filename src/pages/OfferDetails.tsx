@@ -12,7 +12,7 @@ import OfferDetailsSection from "../components/OfferDetailsSection";
 import OfferGrantsSection from "../components/OfferGrantsSection";
 import OfferClaimsSection from "../components/OfferClaimsSection";
 import ActiveClaimsPanel from "../components/ActiveClaimsPanel";
-import { fetchOfferClaims, refundOfferPurchase } from "../services/offerService";
+import { cancelClaim, fetchOfferClaims, refundOfferPurchase } from "../services/offerService";
 import { OfferClaimView } from "../types/offer";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
@@ -35,13 +35,15 @@ const toClaimView = (v: any): OfferClaimView => {
     : Array.isArray(c?.grantItems)
     ? c.grantItems
     : [];
-
+  
   return {
     id: String(c.id),
     source: c.claimSource ?? c.source ?? "MANUAL",
     status: c.status,
     discountCode: c.discountCode ?? undefined,
     claimedAt: c.claimedAt,
+    expiresAt: c.expiresAt ?? v?.expiresAt ?? undefined,
+    isMine: c.isMine ?? v?.isMine ?? false,
     redeemedAt: c.redeemedAt ?? undefined,
     note: c.note ?? undefined,
     redemptionType: rt,
@@ -220,6 +222,17 @@ const OfferDetails: React.FC = () => {
     },
   });
 
+    const cancelMutation = useMutation({
+    mutationFn: async (vars: { claimId: string; note?: string }) => {
+      if (!token) throw new Error("Not authenticated");
+      await cancelClaim(vars.claimId, token, vars.note);
+    },
+    onSuccess: () => reload(),
+    onError: (err: any) => {
+      alert(err?.message || "Failed to cancel claim.");
+    },
+  });
+
   // Early returns are fine AFTER all hooks
   if (loading) return <p className="center-text">Loading offer...</p>;
 
@@ -350,6 +363,69 @@ const OfferDetails: React.FC = () => {
           onUpdated={reload}
         />
       )}
+
+      {/* ✅ Cancel your active claim (if any) */}
+      {(() => {
+        const now = Date.now();
+        const mine = (claims ?? [])
+          .filter((c: any) => {
+            const status = String(c?.status ?? "").toUpperCase();
+            const isMine = !!c?.isMine;
+            const expMs = c?.expiresAt ? Date.parse(String(c.expiresAt)) : NaN;
+            const notExpired = !Number.isFinite(expMs) || expMs > now;
+            const allowed = status === "PENDING" || status === "APPROVED";
+            return isMine && allowed && notExpired;
+          })
+          .sort((a: any, b: any) => {
+            const am = a?.claimedAt ? Date.parse(String(a.claimedAt)) : 0;
+            const bm = b?.claimedAt ? Date.parse(String(b.claimedAt)) : 0;
+            return bm - am;
+          });
+
+        const c: any = mine[0];
+        if (!c) return null;
+
+        const expTxt = c.expiresAt ? new Date(String(c.expiresAt)).toLocaleString() : null;
+
+        return (
+          <div className="card" style={{ marginTop: 12 }}>
+            <h3 style={{ marginTop: 0 }}>Your active redemption request</h3>
+
+            <p style={{ margin: "6px 0" }}>
+              <strong>Status:</strong> {String(c.status)}
+              {expTxt ? (
+                <>
+                  {" "}
+                  · <strong>Expires:</strong> {expTxt}
+                </>
+              ) : null}
+            </p>
+
+            {c.note ? (
+              <p style={{ margin: "6px 0" }}>
+                <strong>Note:</strong> {String(c.note)}
+              </p>
+            ) : null}
+
+            <button
+              className="btn"
+              disabled={cancelMutation.isPending}
+              onClick={() => {
+                const note = window.prompt("Optional: add a cancellation note (visible in thread)", "") ?? "";
+                const ok = window.confirm("Cancel this redemption request?");
+                if (!ok) return;
+                cancelMutation.mutate({ claimId: String(c.id), note });
+              }}
+            >
+              {cancelMutation.isPending ? "Cancelling…" : "Cancel redemption request"}
+            </button>
+
+            <div className="offer-details__hint" style={{ marginTop: 8 }}>
+              You can cancel only while the claim is still active and not yet redeemed.
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Details */}
       <OfferDetailsSection title="Details" text={offer.description} />

@@ -199,6 +199,24 @@ export async function rejectClaim(
   return response.json(); // -> updated claim
 }
 
+/** ✅ Cancel a claim you created (claimant only). Server enforces state + expiry rules. */
+export async function cancelClaim(claimId: string, token: string, note?: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/claims/${encodeURIComponent(claimId)}/cancel`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ note: note ?? "" }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || `Failed to cancel claim (${res.status})`);
+  }
+}
+
 export const markClaimExpired = async (
   token: string,
   claimId: string

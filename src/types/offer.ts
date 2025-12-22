@@ -335,6 +335,8 @@ export type OfferClaimView = {
   discountCode?: string | null;
   claimedAt: string;               // ISO
   redeemedAt?: string | null;      // ISO
+  expiresAt?: string | null;
+  isMine?: boolean;
   note?: string | null;
   redemptionType?: "DISCOUNT" | "GRANT" | string;
   redemptionValue?: string | number | null;
