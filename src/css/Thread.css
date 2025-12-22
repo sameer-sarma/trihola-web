@@ -267,3 +267,37 @@
   margin: 0;              /* remove extra vertical spacing */
   line-height: 1.2;
 }
+
+.invite-thread-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.invite-header-row--top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.invite-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.invite-header-row--cta {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.invite-send-referral-cta {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+  border-radius: 12px;
+  /* make it feel “primary” */
+  min-width: 160px;
+}

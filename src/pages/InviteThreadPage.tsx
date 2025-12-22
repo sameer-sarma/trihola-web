@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback ,FormEvent } from "react";
+import React, { useEffect, useState, useMemo, useCallback, FormEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
@@ -48,13 +48,11 @@ const InviteThreadPage: React.FC = () => {
   const [editMessage, setEditMessage] = useState("");
   const [editStatus, setEditStatus] = useState<string>("ACTIVE");
   const [isSavingOpenReferral, setIsSavingOpenReferral] = useState(false);
-  const [openReferralError, setOpenReferralError] = useState<string | null>(
-    null
-  );
+  const [openReferralError, setOpenReferralError] = useState<string | null>(null);
 
   const [showScopeModal, setShowScopeModal] = useState(false);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
-  
+
   useEffect(() => {
     supabase.auth
       .getSession()
@@ -80,50 +78,45 @@ const InviteThreadPage: React.FC = () => {
   const campaign = inviteDetail?.snapshot.campaign;
   const invite = inviteDetail?.invite;
   const rewards = inviteDetail?.snapshot.rewards;
-  
+
   const themeColor = (campaign as any)?.themeColor as string | undefined;
-  const affiliateHeadline = (campaign as any)
-    ?.affiliateHeadline as string | undefined;
-  const affiliateSubheading = (campaign as any)
-    ?.affiliateSubheading as string | undefined;
-  const prospectDescriptionShort = (campaign as any)
-    ?.prospectDescriptionShort as string | undefined;
-    const prospectDescriptionLong = (campaign as any)
-  ?.prospectDescriptionLong as string | undefined;
+  const affiliateHeadline = (campaign as any)?.affiliateHeadline as string | undefined;
+  const affiliateSubheading = (campaign as any)?.affiliateSubheading as string | undefined;
+  const prospectDescriptionShort = (campaign as any)?.prospectDescriptionShort as string | undefined;
+  const prospectDescriptionLong = (campaign as any)?.prospectDescriptionLong as string | undefined;
 
-const derivedDefaultNote = useMemo(() => {
+  const derivedDefaultNote = useMemo(() => {
+    const parts = [
+      "Hello, I thought that you should check this out",
+      prospectDescriptionShort?.trim(),
+      prospectDescriptionLong?.trim(),
+    ].filter((p) => !!p);
 
-  const parts = [
-    "Hello, I thought that you should check this out",
-    prospectDescriptionShort?.trim(),
-    prospectDescriptionLong?.trim(),
-  ].filter((p) => !!p);
+    return parts.join("\n\n");
+  }, [prospectDescriptionShort, prospectDescriptionLong]);
 
-  return parts.join("\n\n");
-}, [prospectDescriptionShort, prospectDescriptionLong]);
-
-    // Role / permissions from backend
+  // Role / permissions from backend
   const myRole = inviteDetail?.myParticipantRole; // "BUSINESS" | "AFFILIATE" | null
   const isAffiliate = myRole === "AFFILIATE";
   const isBusiness = myRole === "BUSINESS";
   const canSend = inviteDetail?.canSendReferrals === true;
   const status = invite?.status;
 
-// Offer + policy for both roles
-const offerLinks = rewards?.offer ? [rewards.offer] : undefined;
+  // Offer + policy for both roles
+  const offerLinks = rewards?.offer ? [rewards.offer] : undefined;
 
-// Normalise affiliate policy to the shape CampaignOfferCard expects
-const affiliatePolicy =
-  (rewards?.affiliatePolicy as
-    | {
-        pointsPerCampaignReferral?: number;
-        pointsPerCampaignReferralAcceptance?: number;
-        percentOfCampaignReferralProspectPurchase?: number;
-        maxPointsPerProspectPurchase?: number;
-        isActive?: boolean;
-      }
-    | null
-    | undefined) ?? undefined;
+  // Normalise affiliate policy to the shape CampaignOfferCard expects
+  const affiliatePolicy =
+    (rewards?.affiliatePolicy as
+      | {
+          pointsPerCampaignReferral?: number;
+          pointsPerCampaignReferralAcceptance?: number;
+          percentOfCampaignReferralProspectPurchase?: number;
+          maxPointsPerProspectPurchase?: number;
+          isActive?: boolean;
+        }
+      | null
+      | undefined) ?? undefined;
 
   // Invitee / business names
   const inviteeName =
@@ -138,7 +131,7 @@ const affiliatePolicy =
     invite?.recipient?.businessName ||
     "the affiliate";
 
-  const referralsSent = inviteDetail?.referralsSent ?? 0;
+//  const referralsSent = inviteDetail?.referralsSent ?? 0;
   const referrals = inviteDetail?.referrals ?? [];
 
   const referralsSectionTitle =
@@ -167,25 +160,19 @@ const affiliatePolicy =
   );
 
   const {
-  events,
-  isLoading: threadLoading,
-  wsConnected,
-  isSending,
-  sendMessage,
-  sendTyping,
-} = useInviteThread(campaignId, inviteId, token, threadOpts);
+    events,
+    isLoading: threadLoading,
+    wsConnected,
+    isSending,
+    sendMessage,
+    sendTyping,
+  } = useInviteThread(campaignId, inviteId, token, threadOpts);
 
   const [draft, setDraft] = useState("");
 
   // Load the already-created open referral for this invite (affiliate side)
   useEffect(() => {
-    if (
-      !token ||
-      !campaignId ||
-      !inviteId ||
-      !isAffiliate ||
-      status !== "ACCEPTED"
-    ) {
+    if (!token || !campaignId || !inviteId || !isAffiliate || status !== "ACCEPTED") {
       setOpenReferral(null);
       setAffiliateLink(null);
       return;
@@ -224,11 +211,9 @@ const affiliatePolicy =
 
   const handleCopyAffiliateLink = () => {
     if (!affiliateLink) return;
-    navigator.clipboard
-      .writeText(affiliateLink)
-      .catch((err) =>
-        console.error("Failed to copy open referral link", err)
-      );
+    navigator.clipboard.writeText(affiliateLink).catch((err) =>
+      console.error("Failed to copy open referral link", err)
+    );
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -281,7 +266,6 @@ const affiliatePolicy =
     if (!inviteId) return;
     acceptMutation.mutate(undefined, {
       onSuccess: () => {
-        // refresh invite details so status, canSendReferrals, etc. update
         refetchInviteDetail();
       },
     });
@@ -297,19 +281,18 @@ const affiliatePolicy =
   };
 
   // --- Open referral editor (create or edit) ---
+  const openEditorWithDefaults = () => {
+    const businessNameLocal = invite?.business?.businessName;
+    const firstName = invite?.recipient?.firstName;
 
-const openEditorWithDefaults = () => {
-const businessName = invite?.business?.businessName;
-const firstName = invite?.recipient?.firstName;
+    const defaultTitle = businessNameLocal
+      ? `Discover ${businessNameLocal} with Trihola`
+      : "Discover something I love on Trihola";
 
-const defaultTitle = businessName
-  ? `Discover ${businessName} with Trihola`
-  : "Discover something I love on Trihola";
-
-const defaultMessage =
-  businessName && firstName
-    ? `Hi, ${firstName} here 👋 I’m inviting you to check out ${businessName} through Trihola, a referral and rewards platform. Sign in to Trihola, accept this referral, and chat directly with the business to explore what they offer and the rewards or special offers you can unlock.`
-    : `Hi 👋 I’m sharing something I love with you through Trihola, a referral and rewards platform. Sign in to Trihola, accept this referral, and chat directly with the business to explore what they offer and the rewards you can unlock.`;
+    const defaultMessage =
+      businessNameLocal && firstName
+        ? `Hi, ${firstName} here 👋 I’m inviting you to check out ${businessNameLocal} through Trihola, a referral and rewards platform. Sign in to Trihola, accept this referral, and chat directly with the business to explore what they offer and the rewards or special offers you can unlock.`
+        : `Hi 👋 I’m sharing something I love with you through Trihola, a referral and rewards platform. Sign in to Trihola, accept this referral, and chat directly with the business to explore what they offer and the rewards you can unlock.`;
 
     setEditTitle(openReferral?.title ?? defaultTitle);
     setEditMessage(openReferral?.message ?? defaultMessage);
@@ -319,12 +302,10 @@ const defaultMessage =
   };
 
   const handleOpenReferralCreateClick = () => {
-    // create flow uses same editor, but openReferral is null
     openEditorWithDefaults();
   };
 
   const handleOpenReferralEditClick = () => {
-    // edit flow uses existing openReferral values
     openEditorWithDefaults();
   };
 
@@ -332,12 +313,12 @@ const defaultMessage =
     e.preventDefault();
     if (!token || !campaignId || !inviteId) return;
 
-  // 1) Prefer the businessId from the affiliate policy snapshot
-  // 2) Fallback to the business.userId from the invite
-  const businessId =
-    (rewards as any)?.affiliatePolicy?.businessId ||
-    (invite as any)?.business?.businessId ||
-    (invite as any)?.business?.userId;
+    // 1) Prefer the businessId from the affiliate policy snapshot
+    // 2) Fallback to the business.userId from the invite
+    const businessId =
+      (rewards as any)?.affiliatePolicy?.businessId ||
+      (invite as any)?.business?.businessId ||
+      (invite as any)?.business?.userId;
 
     if (!businessId) {
       setOpenReferralError(
@@ -354,7 +335,6 @@ const defaultMessage =
       const trimmedMessage = editMessage.trim();
 
       if (openReferral) {
-        // UPDATE existing
         const updated = await updateOpenReferral(
           openReferral.id,
           {
@@ -368,7 +348,6 @@ const defaultMessage =
         const url = `${window.location.origin}/open/${updated.slug}`;
         setAffiliateLink(url);
       } else {
-        // CREATE new (fallback when one wasn't auto-created)
         const payload: CreateOpenReferralRequest = {
           businessId,
           campaignId,
@@ -386,34 +365,26 @@ const defaultMessage =
       setShowOpenReferralEditor(false);
     } catch (err: any) {
       console.error("Failed to save open referral", err);
-      setOpenReferralError(
-        err?.message || "Failed to save open referral changes."
-      );
+      setOpenReferralError(err?.message || "Failed to save open referral changes.");
     } finally {
       setIsSavingOpenReferral(false);
     }
   };
 
-const publicInviteUrl = React.useMemo(() => {
-  if (!invite?.id) return "";
-  return `${window.location.origin}/campaign-invite/${invite.id}`;
-}, [invite?.id]);
+  const publicInviteUrl = React.useMemo(() => {
+    if (!invite?.id) return "";
+    return `${window.location.origin}/campaign-invite/${invite.id}`;
+  }, [invite?.id]);
 
   return (
     <div className="th-page invite-thread-page">
       {/* ── Top header pane spanning full width ── */}
-      <div className="invite-thread-header invite-thread-header--hero"
-              style={
-          themeColor
-            ? { borderBottom: `2px solid ${themeColor}` }
-            : undefined
-        }
+      <div
+        className="invite-thread-header invite-thread-header--hero"
+        style={themeColor ? { borderBottom: `2px solid ${themeColor}` } : undefined}
       >
         <div className="invite-thread-header-left">
-          <div className="breadcrumb">Invite → Invite</div>
-          <h1 className="page-title">
-            Invite — {campaign?.title ?? "Campaign"}
-          </h1>
+          <h1 className="page-title">{campaign?.title ?? "Campaign"}</h1>
           <div className="page-subtitle">
             {isBusiness ? (
               <>
@@ -428,117 +399,125 @@ const publicInviteUrl = React.useMemo(() => {
         </div>
 
         <div className="invite-thread-header-right">
-          {invite?.createdAt && (
-            <div className="header-meta-item">
-              Invited on{" "}
-              <span className="header-meta-strong">
-                {formatDateTime(invite.createdAt)}
-              </span>
-            </div>
-          )}
+          {/* Row 1: meta + share link + status */}
+          <div className="invite-header-row invite-header-row--top">
+            {invite?.createdAt && (
+              <div className="header-meta-item">
+                Invited on{" "}
+                <span className="header-meta-strong">{formatDateTime(invite.createdAt)}</span>
+              </div>
+            )}
 
-          {/* Link buttons: affiliate gets share link when ACCEPTED; others get plain invite link */}
-          {isAffiliate ? (
-            status === "ACCEPTED" ? (
-              <>
-                {openReferral ? (
+            <div className="invite-header-actions">
+              {/* Link buttons: affiliate gets share link when ACCEPTED; others get plain invite link */}
+              {isAffiliate ? (
+                status === "ACCEPTED" ? (
                   <>
-                    <button
-                      type="button"
-                      className="btn btn--sm btn--ghost"
-                      onClick={handleCopyAffiliateLink}
-                      disabled={!affiliateLink}
-                    >
-                      {isLoadingOpenReferral
-                        ? "Loading link…"
-                        : "Copy shareable link"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn--sm btn--ghost"
-                      onClick={handleOpenReferralEditClick}
-                      disabled={isLoadingOpenReferral || !token}
-                    >
-                      Edit link details
-                    </button>
+                    {openReferral ? (
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn--sm btn--ghost"
+                          onClick={handleCopyAffiliateLink}
+                          disabled={!affiliateLink}
+                        >
+                          {isLoadingOpenReferral ? "Loading link…" : "Copy shareable link"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--sm btn--ghost"
+                          onClick={handleOpenReferralEditClick}
+                          disabled={isLoadingOpenReferral || !token}
+                        >
+                          Edit link details
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn--sm btn--ghost"
+                        onClick={handleOpenReferralCreateClick}
+                        disabled={isLoadingOpenReferral || !token}
+                      >
+                        {isLoadingOpenReferral ? "Loading link…" : "Create shareable link"}
+                      </button>
+                    )}
                   </>
                 ) : (
                   <button
                     type="button"
                     className="btn btn--sm btn--ghost"
-                    onClick={handleOpenReferralCreateClick}
-                    disabled={isLoadingOpenReferral || !token}
+                    onClick={() => {
+                      const url = publicInviteUrl || window.location.href;
+                      navigator.clipboard.writeText(url).catch(() => {});
+                    }}
+                    disabled={!publicInviteUrl}
                   >
-                    {isLoadingOpenReferral
-                      ? "Loading link…"
-                      : "Create shareable link"}
+                    Copy invite link
                   </button>
-                )}
-              </>
-            ) : (
-              <button
-                type="button"
-                className="btn btn--sm btn--ghost"
-                onClick={() => {
-                  const url = publicInviteUrl || window.location.href;
-                  navigator.clipboard.writeText(url).catch(() => {});
-                }}
-                disabled={!publicInviteUrl}
-              >
-                Copy invite link
-              </button>
-            )
-          ) : (
-            <button
-              type="button"
-              className="btn btn--sm btn--ghost"
-              onClick={() => {
-                const url = publicInviteUrl || window.location.href;
-                navigator.clipboard.writeText(url).catch(() => {});
-              }}
-              disabled={!publicInviteUrl}
-            >
-              Copy invite link
-            </button>
-          )}
+                )
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn--sm btn--ghost"
+                  onClick={() => {
+                    const url = publicInviteUrl || window.location.href;
+                    navigator.clipboard.writeText(url).catch(() => {});
+                  }}
+                  disabled={!publicInviteUrl}
+                >
+                  Copy invite link
+                </button>
+              )}
 
-          {status && (
-            <span
-              className={`status-pill status-pill--${String(
-                status
-              ).toLowerCase()}`}
-              style={
-                themeColor
-                  ? { borderColor: themeColor, color: themeColor }
-                  : undefined
-              }
-            >
-              {status}
-            </span>
-          )}
+              {status && (
+                <span
+                  className={`status-pill status-pill--${String(status).toLowerCase()}`}
+                  style={themeColor ? { borderColor: themeColor, color: themeColor } : undefined}
+                >
+                  {status}
+                </span>
+              )}
+            </div>
 
-          {/* Only the affiliate can accept / decline when still invited */}
-          {isAffiliate && status === "INVITED" && (
-            <div className="invite-thread-header-actions">
+            {/* Only the affiliate can accept / decline when still invited */}
+            {isAffiliate && status === "INVITED" && (
+              <div className="invite-thread-header-actions">
+                <button
+                  type="button"
+                  className="btn btn--primary btn--sm"
+                  onClick={handleAccept}
+                  disabled={acceptMutation.isPending}
+                >
+                  {acceptMutation.isPending ? "Accepting…" : "Accept invite"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={handleDecline}
+                  disabled={declineMutation.isPending}
+                >
+                  {declineMutation.isPending ? "Declining…" : "Decline"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Row 2: Primary CTA */}
+          {isAffiliate && canSend && (
+            <div className="invite-header-row invite-header-row--cta">
               <button
                 type="button"
-                className="btn btn--primary btn--sm"
-                onClick={handleAccept}
-                disabled={acceptMutation.isPending}
+                className="btn btn--primary invite-send-referral-cta"
+                onClick={() => setShowSendReferralPanel(true)}
+                style={themeColor ? { backgroundColor: themeColor, borderColor: themeColor } : undefined}
               >
-                {acceptMutation.isPending ? "Accepting…" : "Accept invite"}
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost btn--sm"
-                onClick={handleDecline}
-                disabled={declineMutation.isPending}
-              >
-                {declineMutation.isPending ? "Declining…" : "Decline"}
+                Lets refer {businessName}
               </button>
             </div>
           )}
         </div>
+
       </div>
 
       {/* ── Second top-level panel: 2-column layout ── */}
@@ -562,15 +541,10 @@ const publicInviteUrl = React.useMemo(() => {
                   {affiliateHeadline || campaign.title || "Campaign"}
                 </div>
                 {affiliateSubheading && (
-                  <div className="invite-campaign-subtitle">
-                    {affiliateSubheading}
-                  </div>
+                  <div className="invite-campaign-subtitle">{affiliateSubheading}</div>
                 )}
                 {campaign.id && (
-                  <Link
-                    to={`/campaigns/${campaign.id}`}
-                    className="link invite-campaign-link"
-                  >
+                  <Link to={`/campaigns/${campaign.id}`} className="link invite-campaign-link">
                     View campaign details
                   </Link>
                 )}
@@ -578,7 +552,7 @@ const publicInviteUrl = React.useMemo(() => {
             </section>
           )}
 
-        {/* Scope → modal */}
+          {/* Scope → modal */}
           {(hasBundle || hasProduct) && (
             <div
               className="card invite-mini-card"
@@ -591,8 +565,7 @@ const publicInviteUrl = React.useMemo(() => {
             </div>
           )}
 
-
-         {/* Rewards → modal */}
+          {/* Rewards → modal */}
           <div
             className="card invite-mini-card"
             role="button"
@@ -607,19 +580,13 @@ const publicInviteUrl = React.useMemo(() => {
         {/* RIGHT: chat / thread column */}
         <div className="thread-main card">
           <div className="thread-scroll">
-            {(headerLoading || threadLoading) && (
-              <div className="invite-thread-loading">Loading…</div>
-            )}
+            {(headerLoading || threadLoading) && <div className="invite-thread-loading">Loading…</div>}
             {headerError && (
-              <div className="invite-thread-error">
-                Failed to load invite details
-              </div>
+              <div className="invite-thread-error">Failed to load invite details</div>
             )}
 
             {events && events.length === 0 && !threadLoading && (
-              <div className="invite-thread-empty">
-                No messages yet. Start the conversation!
-              </div>
+              <div className="invite-thread-empty">No messages yet. Start the conversation!</div>
             )}
 
             {events?.map((ev) => (
@@ -635,10 +602,7 @@ const publicInviteUrl = React.useMemo(() => {
 
           <div className="composer-wrap">
             <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8 }}>
-              <button
-                className="composer-btn composer-btn--icon"
-                type="button"
-              >
+              <button className="composer-btn composer-btn--icon" type="button">
                 +
               </button>
               <textarea
@@ -649,11 +613,7 @@ const publicInviteUrl = React.useMemo(() => {
                 onChange={handleDraftChange}
                 style={{ flex: 1 }}
               />
-              <button
-                className="btn btn--primary"
-                type="submit"
-                disabled={isSending || !draft.trim()}
-              >
+              <button className="btn btn--primary" type="submit" disabled={isSending || !draft.trim()}>
                 {isSending ? "Sending…" : "Send"}
               </button>
             </form>
@@ -672,15 +632,15 @@ const publicInviteUrl = React.useMemo(() => {
         width={920}
         footer={null}
       >
-      {campaign && (
-        <ScopeCard
-          title="What this invite is for"
-          businessSlug={campaign.businessSlug}
-          product={campaign.product ?? undefined}
-          bundle={campaign.bundle ?? undefined}
-          appearance="flat"
-        />
-      )}
+        {campaign && (
+          <ScopeCard
+            title="What this invite is for"
+            businessSlug={campaign.businessSlug}
+            product={campaign.product ?? undefined}
+            bundle={campaign.bundle ?? undefined}
+            appearance="flat"
+          />
+        )}
       </Modal>
 
       {/* Rewards modal */}
@@ -691,13 +651,13 @@ const publicInviteUrl = React.useMemo(() => {
         width={920}
         footer={null}
       >
-            <CampaignOfferCard
-              offers={offerLinks}
-              affiliatePolicy={affiliatePolicy}
-              token={token}
-              showDetailsInCard={true}
-              className="invite-offer-card"
-            />
+        <CampaignOfferCard
+          offers={offerLinks}
+          affiliatePolicy={affiliatePolicy}
+          token={token}
+          showDetailsInCard={true}
+          className="invite-offer-card"
+        />
       </Modal>
 
       {/* ── Full-width referrals panel for both roles ── */}
@@ -710,9 +670,7 @@ const publicInviteUrl = React.useMemo(() => {
               className="btn btn--sm btn--ghost"
               onClick={() => setShowReferrals((open) => !open)}
             >
-              {showReferrals
-                ? "Hide referrals"
-                : `Show referrals (${referrals.length})`}
+              {showReferrals ? "Hide referrals" : `Show referrals (${referrals.length})`}
             </button>
           </div>
 
@@ -738,15 +696,11 @@ const publicInviteUrl = React.useMemo(() => {
                         )}
 
                         <div className="invite-referral-text">
-                          <div className="invite-referral-title">
-                            {displayName}
-                          </div>
+                          <div className="invite-referral-title">{displayName}</div>
 
                           <div className="invite-referral-meta">
                             {r.status && (
-                              <span
-                                className={`status-pill status-pill--${r.status.toLowerCase()}`}
-                              >
+                              <span className={`status-pill status-pill--${r.status.toLowerCase()}`}>
                                 {r.status.toLowerCase()}
                               </span>
                             )}
@@ -760,10 +714,7 @@ const publicInviteUrl = React.useMemo(() => {
                       </div>
                     </div>
 
-                    <Link
-                      className="btn btn--sm btn--ghost"
-                      to={`/referral/${r.slug}/thread`}
-                    >
+                    <Link className="btn btn--sm btn--ghost" to={`/referral/${r.slug}/thread`}>
                       Open referral thread
                     </Link>
                   </li>
@@ -771,60 +722,6 @@ const publicInviteUrl = React.useMemo(() => {
               })}
             </ul>
           )}
-        </section>
-      )}
-
-      {isAffiliate && (
-        <section className="card invite-cta-card invite-cta-card--fullwidth">
-          <div className="invite-cta-layout">
-            <div className="invite-cta-copy">
-              {canSend ? (
-                <>
-                  <h3 className="card-title">Start sending referrals</h3>
-                  <p className="th-muted">
-                    {prospectDescriptionShort
-                      ? prospectDescriptionShort
-                      : `You’ve sent ${referralsSent} referral${
-                          referralsSent === 1 ? "" : "s"
-                        } so far for this campaign.`}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h3 className="card-title">
-                    Accept invite to start referring
-                  </h3>
-                  <p className="th-muted">
-                    Once you accept this invite, you’ll be able to send
-                    referrals to <strong>{businessName}</strong>{" "}
-                    {prospectDescriptionShort
-                      ? `and help people discover this: ${prospectDescriptionShort}`
-                      : "and earn rewards."}
-                  </p>
-                </>
-              )}
-            </div>
-
-            {canSend && (
-              <div className="invite-cta-actions">
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  onClick={() => setShowSendReferralPanel(true)}
-                  style={
-                    themeColor
-                      ? {
-                          backgroundColor: themeColor,
-                          borderColor: themeColor,
-                        }
-                      : undefined
-                  }
-                >
-                  Send a new referral
-                </button>
-              </div>
-            )}
-          </div>
         </section>
       )}
 
@@ -850,18 +747,13 @@ const publicInviteUrl = React.useMemo(() => {
         </Modal>
       )}
 
-
       {/* Open referral edit/create modal */}
       {showOpenReferralEditor && (
         <div className="th-modal-backdrop">
           <div className="th-modal">
             <div className="card open-referral-edit-card">
               <div className="card-header">
-                <h2 className="card-title">
-                  {openReferral
-                    ? "Edit shareable link"
-                    : "Create shareable link"}
-                </h2>
+                <h2 className="card-title">{openReferral ? "Edit shareable link" : "Create shareable link"}</h2>
                 <button
                   type="button"
                   className="btn btn--ghost tiny"
@@ -906,14 +798,11 @@ const publicInviteUrl = React.useMemo(() => {
                     <option value="EXHAUSTED">Exhausted</option>
                   </select>
                   <p className="help">
-                    Active links can be used immediately. Draft/paused links
-                    won’t accept new referrals.
+                    Active links can be used immediately. Draft/paused links won’t accept new referrals.
                   </p>
                 </div>
 
-                {openReferralError && (
-                  <p className="crf-msg err">{openReferralError}</p>
-                )}
+                {openReferralError && <p className="crf-msg err">{openReferralError}</p>}
 
                 <div className="actions">
                   <button
@@ -924,11 +813,7 @@ const publicInviteUrl = React.useMemo(() => {
                   >
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    className="btn btn--primary"
-                    disabled={isSavingOpenReferral}
-                  >
+                  <button type="submit" className="btn btn--primary" disabled={isSavingOpenReferral}>
                     {isSavingOpenReferral ? "Saving…" : "Save"}
                   </button>
                 </div>
@@ -954,12 +839,11 @@ const InviteThreadRow: React.FC<InviteThreadRowProps> = ({
   event,
   isMine,
   formatDate,
-  //formatTime,
+  // formatTime,
 }) => {
   const isSystem = event.eventType !== "USER_MESSAGE";
 
   if (isSystem) {
-    // System / timeline event – center it like other system messages
     return (
       <div className="event-row msg-system">
         <span className="thread-event-text">
