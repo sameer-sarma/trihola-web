@@ -399,77 +399,9 @@ const InviteThreadPage: React.FC = () => {
         </div>
 
         <div className="invite-thread-header-right">
-          {/* Row 1: meta + share link + status */}
-          <div className="invite-header-row invite-header-row--top">
-            {invite?.createdAt && (
-              <div className="header-meta-item">
-                Invited on{" "}
-                <span className="header-meta-strong">{formatDateTime(invite.createdAt)}</span>
-              </div>
-            )}
-
-            <div className="invite-header-actions">
-              {/* Link buttons: affiliate gets share link when ACCEPTED; others get plain invite link */}
-              {isAffiliate ? (
-                status === "ACCEPTED" ? (
-                  <>
-                    {openReferral ? (
-                      <>
-                        <button
-                          type="button"
-                          className="btn btn--sm btn--ghost"
-                          onClick={handleCopyAffiliateLink}
-                          disabled={!affiliateLink}
-                        >
-                          {isLoadingOpenReferral ? "Loading link…" : "Copy shareable link"}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn--sm btn--ghost"
-                          onClick={handleOpenReferralEditClick}
-                          disabled={isLoadingOpenReferral || !token}
-                        >
-                          Edit link details
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn btn--sm btn--ghost"
-                        onClick={handleOpenReferralCreateClick}
-                        disabled={isLoadingOpenReferral || !token}
-                      >
-                        {isLoadingOpenReferral ? "Loading link…" : "Create shareable link"}
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn btn--sm btn--ghost"
-                    onClick={() => {
-                      const url = publicInviteUrl || window.location.href;
-                      navigator.clipboard.writeText(url).catch(() => {});
-                    }}
-                    disabled={!publicInviteUrl}
-                  >
-                    Copy invite link
-                  </button>
-                )
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn--sm btn--ghost"
-                  onClick={() => {
-                    const url = publicInviteUrl || window.location.href;
-                    navigator.clipboard.writeText(url).catch(() => {});
-                  }}
-                  disabled={!publicInviteUrl}
-                >
-                  Copy invite link
-                </button>
-              )}
-
+          <div className="invite-header-actions-grid">
+            {/* Row 1, Col 2: Status pill */}
+            <div className="invite-header-pill">
               {status && (
                 <span
                   className={`status-pill status-pill--${String(status).toLowerCase()}`}
@@ -480,42 +412,64 @@ const InviteThreadPage: React.FC = () => {
               )}
             </div>
 
-            {/* Only the affiliate can accept / decline when still invited */}
-            {isAffiliate && status === "INVITED" && (
-              <div className="invite-thread-header-actions">
-                <button
-                  type="button"
-                  className="btn btn--primary btn--sm"
-                  onClick={handleAccept}
-                  disabled={acceptMutation.isPending}
-                >
-                  {acceptMutation.isPending ? "Accepting…" : "Accept invite"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--ghost btn--sm"
-                  onClick={handleDecline}
-                  disabled={declineMutation.isPending}
-                >
-                  {declineMutation.isPending ? "Declining…" : "Decline"}
-                </button>
-              </div>
-            )}
-          </div>
+            {/* Row 2, Col 1: Share CTA (looks like Lets refer button) */}
+            <div className="invite-header-share">
+              {isAffiliate && status === "ACCEPTED" && (
+                <>
+                  {openReferral ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn--primary invite-cta-btn"
+                        onClick={handleCopyAffiliateLink}
+                        disabled={!affiliateLink}
+                        title={"Copy this public shareable link you can post anywhere (whatsapp, facebook etc). People who open it can sign in to Trihola and assign themselves as the prospect for a referral to this business."}
 
-          {/* Row 2: Primary CTA */}
-          {isAffiliate && canSend && (
-            <div className="invite-header-row invite-header-row--cta">
-              <button
-                type="button"
-                className="btn btn--primary invite-send-referral-cta"
-                onClick={() => setShowSendReferralPanel(true)}
-                style={themeColor ? { backgroundColor: themeColor, borderColor: themeColor } : undefined}
-              >
-                Lets refer {businessName}
-              </button>
+                      >
+                        {isLoadingOpenReferral ? "Loading link…" : "Copy shareable link"}
+                      </button>
+
+                      {/* Edit goes UNDER the copy button (only when link exists) */}
+                      <button
+                        type="button"
+                        className="btn btn--sm btn--ghost invite-share-secondary"
+                        onClick={handleOpenReferralEditClick}
+                        disabled={isLoadingOpenReferral || !token}
+                        title={"Use this to edit the message in your public shareable link"}
+                      >
+                        Edit link details
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn--primary invite-cta-btn"
+                      onClick={handleOpenReferralCreateClick}
+                      disabled={isLoadingOpenReferral || !token}
+                      title={"Create a public shareable link you can post anywhere (whatsapp, facebook etc). People who open it can sign in to Trihola and assign themselves as the prospect for a referral to this business."}
+                    >
+                      {isLoadingOpenReferral ? "Loading link…" : "Create shareable link"}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
-          )}
+
+            {/* Row 2, Col 2: Refer CTA */}
+            <div className="invite-header-refer">
+              {isAffiliate && canSend && (
+                <button
+                  type="button"
+                  className="btn btn--primary invite-cta-btn"
+                  onClick={() => setShowSendReferralPanel(true)}
+                  style={themeColor ? { backgroundColor: themeColor, borderColor: themeColor } : undefined}
+                  title={`Refer ${businessName} to your contacts in Trihola. You can add a note and track the referral in this thread.`}
+                >
+                  Lets refer {businessName}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
       </div>
