@@ -1,6 +1,7 @@
 import axios from "axios";
 import { OfferTemplateDTO, OfferDetailsDTO, WalletStoreResponse, AssignedOfferDTO, OfferClaimDTO, ClaimSource, AssignOfferRequest, RecipientRole, ClaimRequestDTO, 
-FetchGrantOptionsResponse, GrantItemSnapshot, GrantLine, OfferClaimView, ClaimPreviewRequest, ClaimPreviewResponse  } from "../types/offer";
+FetchGrantOptionsResponse, GrantItemSnapshot, GrantLine, OfferClaimView, ClaimPreviewRequest, ClaimPreviewResponse, 
+EligibleOffersMultiResponseDTO, WalletOfferResponseDTO } from "../types/offer";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
@@ -390,4 +391,47 @@ export async function refundOfferPurchase(
     const text = await res.text().catch(() => "");
     throw new Error(text || "Failed to refund offer");
   }
+}
+
+export async function fetchEligibleWalletOffers(
+  authToken: string | null,
+  businessId?: string
+): Promise<EligibleOffersMultiResponseDTO> {
+  const qs = businessId ? `?businessId=${encodeURIComponent(businessId)}` : "";
+  const res = await fetch(`${API_BASE}/wallet/eligible${qs}`, {
+    headers: {
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(txt || "Failed to load eligible offers");
+  }
+  return res.json();
+}
+
+export async function fetchWalletOffer(
+  businessSlug: string,
+  offerTemplateId: string,
+  token?: string | null
+): Promise<WalletOfferResponseDTO> {
+  const url = `${API_BASE}/wallet/${encodeURIComponent(
+    businessSlug
+  )}/offers/${encodeURIComponent(offerTemplateId)}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => "");
+    throw new Error(msg || `Failed to fetch wallet offer (${res.status})`);
+  }
+
+  return (await res.json()) as WalletOfferResponseDTO;
 }

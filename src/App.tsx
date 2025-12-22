@@ -49,6 +49,7 @@ import PublicCampaignInvitePage from "./pages/PublicCampaignInvitePage";
 import WalletPolicyEditor from "./pages/WalletPolicyEditor";
 import MyInvitesPage from './pages/MyInvitesPage';
 import WalletStorePage from "./pages/WalletStorePage";
+import WalletOfferPage from "./pages/WalletOfferPage";
 import MyOffers from "./pages/MyOffers";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -346,6 +347,7 @@ function InviteLandingRoute({ token }: { token?: string }) {
             <Route path="/:businessSlug/:productSlug" element={<ProductDetails />} />
             <Route path="/:businessSlug/bundle/:bundleSlug" element={<BundleDetails />} />
             <Route path="/:businessSlug/wallet-store" element={<WalletStorePage />} />
+            <Route path="/wallet/:businessSlug/offers/:offerTemplateId" element={<WalletOfferPage />} />
             <Route path="/referrals" element={<ReferralFeed />} />
             <Route path="/referrals/new" element={<CreateReferralForm />} />
             <Route path="/referral/:slug/thread" element={<ReferralThread />} />

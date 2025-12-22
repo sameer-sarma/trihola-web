@@ -366,3 +366,18 @@ export type ClaimPreviewResponse = {
   nextTierHint?: { spendMore: number; nextPercent: number } | null;
   canApprove: boolean;
 };
+
+export type EligibleOffersResponseDTO = {
+  businessId: string;
+  walletBalance: number;
+  items: WalletStoreItemDTO[];
+};
+
+export type EligibleOffersMultiResponseDTO = {
+  items: EligibleOffersResponseDTO[];
+};
+
+export type WalletOfferResponseDTO = {
+  walletBalance: number;
+  item: WalletStoreItemDTO;
+};

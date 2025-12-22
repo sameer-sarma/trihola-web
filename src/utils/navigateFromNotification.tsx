@@ -41,7 +41,28 @@ export function navigateFromNotification(
       }
       break;
 
-    case "OPEN_CAMPAIGN": {
+    case "MY_OFFERS":
+      if (contextSlug) {
+        navigate(`/my-offers`);
+      }
+      break;
+
+    case "WALLET_OFFER": {
+      const businessSlug = contextSlug || metadata?.businessSlug;
+      const offerTemplateId = metadata?.offerTemplateId;
+      if (businessSlug && offerTemplateId) {
+        navigate(`/wallet/${businessSlug}/offers/${offerTemplateId}`);
+      } else if (businessSlug) {
+        // fallback: open store
+        navigate(`/wallet/${businessSlug}/store`);
+      } else {
+        // last fallback
+        navigate(`/my-offers`);
+      }
+      break;
+    }
+
+      case "OPEN_CAMPAIGN": {
       const campaignSlug = contextSlug || metadata?.campaignSlug;
       const openInviteSlug = metadata?.openInviteSlug;
       if (campaignSlug && openInviteSlug) {
