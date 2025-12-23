@@ -463,7 +463,7 @@ const InviteThreadPage: React.FC = () => {
                         onClick={handleCopyAffiliateLink}
                         disabled={!affiliateLink}
                         title={
-                          "Copy this public shareable link you can post anywhere (whatsapp, facebook etc). People who open it can sign in to Trihola and assign themselves as the prospect for a referral to this business."
+                          "Copy this public shareable link you can post anywhere (whatsapp, facebook etc). People who open it can sign in to Trihola and assign themselves as the prospect for a referral from you to this business."
                         }
                       >
                         {isLoadingOpenReferral ? "Loading link…" : "Copy shareable link"}
