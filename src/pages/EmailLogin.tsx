@@ -44,27 +44,30 @@ const EmailLogin: React.FC = () => {
       }
     };
 
-  useEffect(() => {
-    const checkSession = async () => {
-      // don’t redirect during password-recovery flow
-      const isRecoveryFlow =
-        location.pathname === "/reset-password" ||
-        location.search.includes("type=recovery") ||
-        location.hash.includes("type=recovery");
+    useEffect(() => {
+      let mounted = true;
 
-      if (isRecoveryFlow) return;
+      const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted && session?.user?.id) {
+          handlePostLoginRedirect(session);
+        }
+      };
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      checkSession();
 
-      if (session?.user?.id) {
-        handlePostLoginRedirect(session);
-      }
-    };
+      const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (mounted && session?.user?.id) {
+          handlePostLoginRedirect(session);
+        }
+      });
 
-    checkSession();
-  }, [location, openSlug, nextPath]); // handlePostLoginRedirect closes over navigate/openSlug
+      return () => {
+        mounted = false;
+        sub.subscription.unsubscribe();
+      };
+    }, [location.search]); // only needs search, not full location
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -18,12 +18,31 @@ const Header = () => {
 
   // Build "next" (current URL) for login redirects
   const next = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const forwardedNext = params.get("next");
+
+    const isAuthRoute =
+      location.pathname.startsWith("/email-login") ||
+      location.pathname.startsWith("/register");
+
+    // ✅ If we are already on login/register and a next exists, preserve it
+    if (
+      isAuthRoute &&
+      forwardedNext &&
+      forwardedNext.startsWith("/") &&
+      !forwardedNext.startsWith("//")
+    ) {
+      return decodeURIComponent(forwardedNext);
+    }
+
+    // Otherwise, derive next from current location
     const current = location.pathname + location.search + location.hash;
 
-    // Avoid redirect loops back into login/register routes
+    // Avoid redirect loops
     if (current.startsWith("/email-login") || current.startsWith("/register")) {
       return "/start";
     }
+
     return current;
   }, [location.pathname, location.search, location.hash]);
 
@@ -123,7 +142,10 @@ const Header = () => {
             </>
           ) : (
             <>
-              <NavLink to="/register" className={({ isActive }) => (isActive ? "active" : "")}>
+              <NavLink
+                to={`/register?next=${encodeURIComponent(next)}`}
+                className={({ isActive }) => (isActive ? "active" : "")}
+              >
                 Register
               </NavLink>
 

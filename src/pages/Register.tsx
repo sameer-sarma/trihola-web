@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { supabase } from "../supabaseClient";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -10,6 +10,19 @@ export default function Register() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  
+  const [searchParams] = useSearchParams();
+
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext ? decodeURIComponent(rawNext) : null;
+
+  const safeNext =
+    nextPath &&
+    nextPath.startsWith("/") &&
+    !nextPath.startsWith("//") &&
+    !nextPath.startsWith("/register")
+      ? nextPath
+      : "/start";
 
   const handleRegister = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -19,12 +32,18 @@ export default function Register() {
       const res = await axios.post(`${__API_BASE__}/register`, { email, password, phone });
       switch (res.data.status) {
         case "await_email_verification":
-          await supabase.auth.signInWithOtp({ email });
+          await supabase.auth.signInWithOtp({
+            email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/email-login?next=${encodeURIComponent(safeNext)}`
+            }
+          });
           setMessage("Check your email for a verification link.");
+          navigate(`/email-login?next=${encodeURIComponent(safeNext)}`, { replace: true });
           break;
         case "redirect_login":
           setMessage("You already have an account. Please login.");
-          navigate("/email-login");
+          navigate(`/email-login?next=${encodeURIComponent(safeNext)}`, { replace: true });
           break;
         case "update_credentials":
           setMessage("Phone exists. Please set your email/password.");
@@ -95,7 +114,13 @@ export default function Register() {
             </div>
 
             <div className="form-help">
-              Already have an account? <Link to="/email-login" className="th-link">Login</Link>
+              Already have an account? 
+              <Link
+                to={`/email-login?next=${encodeURIComponent(safeNext)}`}
+                className="th-link"
+              >
+                Login
+              </Link>
             </div>
           </form>
 
