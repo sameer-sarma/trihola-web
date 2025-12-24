@@ -20,20 +20,27 @@ const EmailLogin: React.FC = () => {
 
   // optional: decode in case you encodeURIComponent() on the way in
   const nextPath = rawNext ? decodeURIComponent(rawNext) : null;
+  const safeNext =
+    nextPath &&
+    nextPath.startsWith("/") &&
+    !nextPath.startsWith("//") &&
+    !nextPath.startsWith("/email-login")
+      ? nextPath
+      : null;
 
   // single function to decide where to send the user after login
   const handlePostLoginRedirect = (session: any) => {
     if (!session?.user?.id) return;
 
-    if (openSlug) {
-        // highest priority: open referral claim
+    if (safeNext) {
+        navigate(safeNext, { replace: true });
+        // highest priority: explicit "safe next" path from URL
+      } else if (openSlug) {
+        // next: open referral claim
         navigate(`/open/${openSlug}`, { replace: true });
-      } else if (nextPath) {
-        // next: explicit "next" path from URL
-        navigate(nextPath, { replace: true });
       } else {
         // fallback: profile
-        navigate("/profile", { replace: true });
+        navigate("/start", { replace: true });
       }
     };
 

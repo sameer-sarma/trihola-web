@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import axios from "axios";
@@ -16,12 +16,29 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Build "next" (current URL) for login redirects
+  const next = useMemo(() => {
+    const current = location.pathname + location.search + location.hash;
+
+    // Avoid redirect loops back into login/register routes
+    if (current.startsWith("/email-login") || current.startsWith("/register")) {
+      return "/start";
+    }
+    return current;
+  }, [location.pathname, location.search, location.hash]);
+
+  const emailLoginHref = useMemo(() => {
+    return `/email-login?next=${encodeURIComponent(next)}`;
+  }, [next]);
+
   // Keep session in sync and clear cached slug when signed out
   useEffect(() => {
     let mounted = true;
 
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (mounted) setSession(session);
       if (!session) {
         sessionStorage.removeItem("profileSlug");
@@ -75,7 +92,9 @@ const Header = () => {
   const handleLogout = async () => {
     sessionStorage.removeItem("profileSlug");
     await supabase.auth.signOut();
-    navigate("/email-login", { replace: true });
+
+    // After logout, go to login and keep user on the same page after re-login
+    navigate(`/email-login?next=${encodeURIComponent(next)}`, { replace: true });
   };
 
   return (
@@ -86,7 +105,7 @@ const Header = () => {
           <span className="logo-text">TriHola</span>
         </Link>
 
-        {/* Primary nav (unchanged) */}
+        {/* Primary nav */}
         <nav className="nav-links" aria-label="Primary">
           {session ? (
             <>
@@ -94,7 +113,6 @@ const Header = () => {
                 Referrals
               </NavLink>
 
-              {/* Placeholder for now */}
               <NavLink to="/invites" className={({ isActive }) => (isActive ? "active" : "")}>
                 Invites
               </NavLink>
@@ -108,14 +126,19 @@ const Header = () => {
               <NavLink to="/register" className={({ isActive }) => (isActive ? "active" : "")}>
                 Register
               </NavLink>
-              <NavLink to="/email-login" className={({ isActive }) => (isActive ? "active" : "")}>
+
+              {/* ✅ Login preserves current location */}
+              <NavLink
+                to={emailLoginHref}
+                className={({ isActive }) => (isActive ? "active" : "")}
+              >
                 Login with Email
               </NavLink>
             </>
           )}
         </nav>
 
-{/* Right-side tools: App Launcher (always visible; adapts to auth) */}
+        {/* Right-side tools: App Launcher (always visible; adapts to auth) */}
         <div className="header-tools">
           <AppLauncher
             isLoggedIn={!!session}
@@ -124,9 +147,9 @@ const Header = () => {
             userLabel={session?.user?.email ?? null}
             avatarUrl={null /* plug your profile avatar URL if you have it */}
           />
-           {session && <NotificationBell />}
+          {session && <NotificationBell />}
         </div>
-      </div> {/* <-- close .header-container */}
+      </div>
     </header>
   );
 };

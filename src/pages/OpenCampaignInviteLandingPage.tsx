@@ -56,11 +56,8 @@ export const OpenCampaignInviteLandingPage: React.FC = () => {
 
   const handleJoin = useCallback(() => {
     if (!token) {
-      navigate(
-        `/email-login?openCampaign=${encodeURIComponent(
-          campaignSlug!
-        )}&openInvite=${encodeURIComponent(openInviteSlug!)}`
-      );
+      const nextPath = `/campaign-open/${campaignSlug!}/${openInviteSlug!}`;
+      navigate(`/email-login?next=${encodeURIComponent(nextPath)}`);
       return;
     }
 
@@ -227,10 +224,7 @@ export const OpenCampaignInviteLandingPage: React.FC = () => {
             {!isLoggedIn && mode !== "OFF" && !expired && (
               <Link
                 className="btn btn--primary open-ref-btn"
-                to={`/email-login?openCampaign=${encodeURIComponent(
-                  campaignSlug!
-                )}&openInvite=${encodeURIComponent(openInviteSlug!)}`
-                }
+                to={`/email-login?next=${encodeURIComponent(`/campaign-open/${campaignSlug!}/${openInviteSlug!}`)}`}
               >
                 Sign in and join
               </Link>

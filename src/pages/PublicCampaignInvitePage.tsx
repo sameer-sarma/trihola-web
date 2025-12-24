@@ -143,7 +143,8 @@ const PublicCampaignInvitePage: React.FC = () => {
       navigate(threadPath);
     } else {
       // keep simple: user logs in, then re-click email link
-      navigate("/email-login");
+      const nextPath = `/campaigns/${campaignId}/invites/${inviteIdLocal}/thread`;
+      navigate(`/email-login?next=${encodeURIComponent(nextPath)}`);
     }
   };
 

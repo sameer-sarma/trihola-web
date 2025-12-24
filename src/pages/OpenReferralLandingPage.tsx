@@ -48,10 +48,10 @@ const OpenReferralLandingPage: React.FC = () => {
 
   const handleClaim = async () => {
     if (!slug) return;
-
+    const nextPath = `/open/${slug}`;
     // If not logged in, send to email login preserving openSlug
     if (!token) {
-      navigate(`/email-login?openSlug=${slug}`);
+      navigate(`/email-login?next=${encodeURIComponent(nextPath)}`);
       return;
     }
 
@@ -225,7 +225,7 @@ const OpenReferralLandingPage: React.FC = () => {
             {!isLoggedIn && (
               <Link
                 className="btn btn--primary open-ref-btn"
-                to={`/email-login?openSlug=${slug}`}
+                to={`/email-login?next=${encodeURIComponent(`/open/${slug}`)}`}
               >
                 Sign in and claim
               </Link>

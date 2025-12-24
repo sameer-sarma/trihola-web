@@ -129,7 +129,7 @@ const AppInner: React.FC = () => {
     } else {
       setSession(session);
     }
-      if (mounted) setSession(session);
+      //if (mounted) setSession(session);
     })();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
@@ -300,6 +300,9 @@ function InviteLandingRoute({ token }: { token?: string }) {
           </>
         ) : (
           <>
+            {/*Keeping email-login inside auth so that redirect post login is allowed */}
+            <Route path="/email-login" element={<EmailLogin />} />
+            
             {/* Gate */}
             <Route path="/app" element={<AppGate boot={boot} />} />
             
