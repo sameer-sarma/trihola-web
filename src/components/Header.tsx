@@ -14,7 +14,7 @@ function isSafeInternalPath(p?: string | null) {
   return !!p && p.startsWith("/") && !p.startsWith("//");
 }
 
-function makeAuthHref(base: string, next: string) {
+function makeAuthHref(base: string, next?: string | null) {
   // Avoid noisy URLs like ?next=%2F and meaningless roots
   if (!next || next === "/" || next === "/app") return base;
   return `${base}?next=${encodeURIComponent(next)}`;
@@ -34,20 +34,17 @@ const Header = () => {
       location.pathname.startsWith("/email-login") ||
       location.pathname.startsWith("/register");
 
-    // If already on auth pages and next exists, preserve it.
-    if (isAuthRoute && isSafeInternalPath(forwardedNext)) {
-      return decodeURIComponent(forwardedNext!);
+    // ✅ On auth routes: ONLY use forwardedNext (if present & safe). Otherwise: no next.
+    if (isAuthRoute) {
+      if (isSafeInternalPath(forwardedNext)) return decodeURIComponent(forwardedNext!);
+      return null;
     }
 
+    // ✅ On all other routes: use current location
     const current = location.pathname + location.search + location.hash;
 
-    // Avoid auth loops; if someone is already on auth page without forwarded next.
-    if (current.startsWith("/email-login") || current.startsWith("/register")) {
-      return "/start";
-    }
-
-    // Root isn't a meaningful target—treat it as "no next"
-    if (current === "/") return "/start";
+    // Root isn't a meaningful target—treat as "no next"
+    if (current === "/") return null;
 
     return current;
   }, [location.pathname, location.search, location.hash]);
@@ -110,6 +107,7 @@ const Header = () => {
   const handleLogout = async () => {
     sessionStorage.removeItem("profileSlug");
     await supabase.auth.signOut();
+    // After logout, go to login; keep next only if we have something meaningful
     navigate(makeAuthHref("/email-login", next), { replace: true });
   };
 
