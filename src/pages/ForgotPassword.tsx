@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 const ForgotPassword: React.FC = () => {
@@ -7,13 +7,24 @@ const ForgotPassword: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext ? decodeURIComponent(rawNext) : null;
+
+  const safeNext =
+    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+      ? nextPath
+      : "/start";
+
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
     setError(null);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/reset-password?next=${encodeURIComponent(safeNext)}`,
     });
 
     if (error) setError(error.message);
@@ -52,7 +63,9 @@ const ForgotPassword: React.FC = () => {
 
         <div className="form-help">
           Remembered it?{" "}
-          <Link to="/email-login" className="th-link">Back to login</Link>
+          <Link to={`/email-login?next=${encodeURIComponent(safeNext)}`} className="th-link">
+            Back to login
+          </Link>
         </div>
       </div>
     </div>

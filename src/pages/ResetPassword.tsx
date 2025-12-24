@@ -19,6 +19,15 @@ const ResetPassword: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const searchParams = new URLSearchParams(location.search);
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext ? decodeURIComponent(rawNext) : null;
+
+  const safeNext =
+    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//") && !nextPath.startsWith("/email-login")
+      ? nextPath
+      : "/start";
+
   useEffect(() => {
     let cancelled = false;
 
@@ -72,7 +81,10 @@ const ResetPassword: React.FC = () => {
 
     setMessage("Password updated successfully. You can now sign in.");
     window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
-    setTimeout(() => navigate("/email-login", { replace: true }), 1200);
+    setTimeout(
+      () => navigate(`/email-login?next=${encodeURIComponent(safeNext)}`, { replace: true }),
+      1200
+    );
   };
 
   return (

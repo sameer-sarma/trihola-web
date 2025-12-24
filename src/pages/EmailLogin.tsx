@@ -170,9 +170,14 @@ const EmailLogin: React.FC = () => {
           </form>
 
           <div className="form-help">
-            <Link to="/forgot-password" className="th-link">
-              Forgot password?
-            </Link>
+          <Link
+            to={`/forgot-password?next=${encodeURIComponent(
+              safeNext ?? "/start"
+            )}`}
+            className="th-link"
+          >
+            Forgot password?
+          </Link>
           </div>
 
           {showResend && (
