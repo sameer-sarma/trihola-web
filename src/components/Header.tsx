@@ -10,13 +10,22 @@ import { NotificationBell } from "./NotificationBell";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
+function isSafeInternalPath(p?: string | null) {
+  return !!p && p.startsWith("/") && !p.startsWith("//");
+}
+
+function makeAuthHref(base: string, next: string) {
+  // Avoid noisy URLs like ?next=%2F and meaningless roots
+  if (!next || next === "/" || next === "/app") return base;
+  return `${base}?next=${encodeURIComponent(next)}`;
+}
+
 const Header = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isBusiness, setIsBusiness] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Build "next" (current URL) for login redirects
   const next = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const forwardedNext = params.get("next");
@@ -25,32 +34,27 @@ const Header = () => {
       location.pathname.startsWith("/email-login") ||
       location.pathname.startsWith("/register");
 
-    // ✅ If we are already on login/register and a next exists, preserve it
-    if (
-      isAuthRoute &&
-      forwardedNext &&
-      forwardedNext.startsWith("/") &&
-      !forwardedNext.startsWith("//")
-    ) {
-      return decodeURIComponent(forwardedNext);
+    // If already on auth pages and next exists, preserve it.
+    if (isAuthRoute && isSafeInternalPath(forwardedNext)) {
+      return decodeURIComponent(forwardedNext!);
     }
 
-    // Otherwise, derive next from current location
     const current = location.pathname + location.search + location.hash;
 
-    // Avoid redirect loops
+    // Avoid auth loops; if someone is already on auth page without forwarded next.
     if (current.startsWith("/email-login") || current.startsWith("/register")) {
       return "/start";
     }
 
+    // Root isn't a meaningful target—treat it as "no next"
+    if (current === "/") return "/start";
+
     return current;
   }, [location.pathname, location.search, location.hash]);
 
-  const emailLoginHref = useMemo(() => {
-    return `/email-login?next=${encodeURIComponent(next)}`;
-  }, [next]);
+  const emailLoginHref = useMemo(() => makeAuthHref("/email-login", next), [next]);
+  const registerHref = useMemo(() => makeAuthHref("/register", next), [next]);
 
-  // Keep session in sync and clear cached slug when signed out
   useEffect(() => {
     let mounted = true;
 
@@ -59,17 +63,13 @@ const Header = () => {
         data: { session },
       } = await supabase.auth.getSession();
       if (mounted) setSession(session);
-      if (!session) {
-        sessionStorage.removeItem("profileSlug");
-      }
+      if (!session) sessionStorage.removeItem("profileSlug");
     })();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!mounted) return;
       setSession(nextSession || null);
-      if (!nextSession) {
-        sessionStorage.removeItem("profileSlug");
-      }
+      if (!nextSession) sessionStorage.removeItem("profileSlug");
     });
 
     return () => {
@@ -78,7 +78,6 @@ const Header = () => {
     };
   }, []);
 
-  // Fetch profile to know if user is a business
   useEffect(() => {
     if (!session?.access_token) {
       setIsBusiness(false);
@@ -111,9 +110,7 @@ const Header = () => {
   const handleLogout = async () => {
     sessionStorage.removeItem("profileSlug");
     await supabase.auth.signOut();
-
-    // After logout, go to login and keep user on the same page after re-login
-    navigate(`/email-login?next=${encodeURIComponent(next)}`, { replace: true });
+    navigate(makeAuthHref("/email-login", next), { replace: true });
   };
 
   return (
@@ -124,7 +121,6 @@ const Header = () => {
           <span className="logo-text">TriHola</span>
         </Link>
 
-        {/* Primary nav */}
         <nav className="nav-links" aria-label="Primary">
           {session ? (
             <>
@@ -142,32 +138,24 @@ const Header = () => {
             </>
           ) : (
             <>
-              <NavLink
-                to={`/register?next=${encodeURIComponent(next)}`}
-                className={({ isActive }) => (isActive ? "active" : "")}
-              >
+              <NavLink to={registerHref} className={({ isActive }) => (isActive ? "active" : "")}>
                 Register
               </NavLink>
 
-              {/* ✅ Login preserves current location */}
-              <NavLink
-                to={emailLoginHref}
-                className={({ isActive }) => (isActive ? "active" : "")}
-              >
+              <NavLink to={emailLoginHref} className={({ isActive }) => (isActive ? "active" : "")}>
                 Login with Email
               </NavLink>
             </>
           )}
         </nav>
 
-        {/* Right-side tools: App Launcher (always visible; adapts to auth) */}
         <div className="header-tools">
           <AppLauncher
             isLoggedIn={!!session}
             isBusiness={isBusiness}
             onLogout={handleLogout}
             userLabel={session?.user?.email ?? null}
-            avatarUrl={null /* plug your profile avatar URL if you have it */}
+            avatarUrl={null}
           />
           {session && <NotificationBell />}
         </div>

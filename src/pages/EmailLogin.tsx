@@ -1,6 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+
+function isSafeInternalPath(p?: string | null) {
+  return !!p && p.startsWith("/") && !p.startsWith("//");
+}
+
+function normalizeNext(p?: string | null) {
+  // treat "/" as no-op
+  if (!p || p === "/" || p === "/app") return null;
+  return p;
+}
 
 const EmailLogin: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -13,61 +23,76 @@ const EmailLogin: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // read ?openSlug=... from the query string
-  const searchParams = new URLSearchParams(location.search);
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const openSlug = searchParams.get("openSlug");
   const rawNext = searchParams.get("next");
 
-  // optional: decode in case you encodeURIComponent() on the way in
   const nextPath = rawNext ? decodeURIComponent(rawNext) : null;
-  const safeNext =
-    nextPath &&
-    nextPath.startsWith("/") &&
-    !nextPath.startsWith("//") &&
-    !nextPath.startsWith("/email-login")
-      ? nextPath
-      : null;
+  const safeNext = useMemo(() => {
+    const n = normalizeNext(nextPath);
+    if (!isSafeInternalPath(n)) return null;
+    if (n!.startsWith("/email-login")) return null;
+    return n;
+  }, [nextPath]);
 
-  // single function to decide where to send the user after login
+  const fallbackNext = useMemo(() => {
+    if (safeNext) return safeNext;
+    if (openSlug) return `/open/${openSlug}`;
+    return "/start";
+  }, [safeNext, openSlug]);
+
+  const forgotPasswordHref = useMemo(() => {
+    // Only include next if meaningful
+    const n = normalizeNext(fallbackNext);
+    if (!n) return "/forgot-password";
+    return `/forgot-password?next=${encodeURIComponent(n)}`;
+  }, [fallbackNext]);
+
+  const registerHref = useMemo(() => {
+    const n = normalizeNext(fallbackNext);
+    if (!n) return "/register";
+    return `/register?next=${encodeURIComponent(n)}`;
+  }, [fallbackNext]);
+
   const handlePostLoginRedirect = (session: any) => {
     if (!session?.user?.id) return;
+    navigate(fallbackNext, { replace: true });
+  };
 
-    if (safeNext) {
-        navigate(safeNext, { replace: true });
-        // highest priority: explicit "safe next" path from URL
-      } else if (openSlug) {
-        // next: open referral claim
-        navigate(`/open/${openSlug}`, { replace: true });
-      } else {
-        // fallback: profile
-        navigate("/start", { replace: true });
+  useEffect(() => {
+    let mounted = true;
+
+    const isRecoveryFlow =
+      location.pathname === "/reset-password" ||
+      location.search.includes("type=recovery") ||
+      location.hash.includes("type=recovery");
+
+    if (isRecoveryFlow) return;
+
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (mounted && session?.user?.id) {
+        handlePostLoginRedirect(session);
       }
     };
 
-    useEffect(() => {
-      let mounted = true;
+    checkSession();
 
-      const checkSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (mounted && session?.user?.id) {
-          handlePostLoginRedirect(session);
-        }
-      };
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted && session?.user?.id) {
+        handlePostLoginRedirect(session);
+      }
+    });
 
-      checkSession();
-
-      const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (mounted && session?.user?.id) {
-          handlePostLoginRedirect(session);
-        }
-      });
-
-      return () => {
-        mounted = false;
-        sub.subscription.unsubscribe();
-      };
-    }, [location.search]); // only needs search, not full location
-
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+    // important: depends on fallbackNext so it redirects correctly when next changes
+  }, [location.pathname, location.search, location.hash, fallbackNext]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +129,7 @@ const EmailLogin: React.FC = () => {
     setLoading(true);
     setError(null);
     setMessage(null);
+
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
@@ -121,7 +147,6 @@ const EmailLogin: React.FC = () => {
   return (
     <div className="th-page auth-page">
       <div className="auth-layout">
-        {/* LEFT: login form */}
         <div className="card card--narrow">
           <h2 className="card-title">Login to Trihola</h2>
 
@@ -159,34 +184,27 @@ const EmailLogin: React.FC = () => {
             </div>
 
             <div className="th-field">
-              <button
-                type="submit"
-                className="btn btn--primary btn--block"
-                disabled={loading}
-              >
+              <button type="submit" className="btn btn--primary btn--block" disabled={loading}>
                 {loading ? "Logging in…" : "Login"}
               </button>
             </div>
           </form>
 
-          <div className="form-help">
-          <Link
-            to={`/forgot-password?next=${encodeURIComponent(
-              safeNext ?? "/start"
-            )}`}
-            className="th-link"
-          >
-            Forgot password?
-          </Link>
+          <div className="form-help" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <Link to={forgotPasswordHref} className="th-link">
+              Forgot password?
+            </Link>
+
+            <span className="th-muted">•</span>
+
+            <Link to={registerHref} className="th-link">
+              Create an account
+            </Link>
           </div>
 
           {showResend && (
             <div className="form-help">
-              <button
-                onClick={handleResend}
-                className="th-link-button"
-                disabled={loading}
-              >
+              <button onClick={handleResend} className="th-link-button" disabled={loading}>
                 Resend verification email
               </button>
             </div>
@@ -196,15 +214,12 @@ const EmailLogin: React.FC = () => {
           {error && <div className="alert alert--error">{error}</div>}
         </div>
 
-        {/* RIGHT: marketing / explainer */}
         <aside className="auth-aside">
           <div className="auth-eyebrow">Referrals • Offers • Rewards</div>
-          <h3 className="auth-title">
-            Referrals made simple. Rewards made real.
-          </h3>
+          <h3 className="auth-title">Referrals made simple. Rewards made real.</h3>
           <p className="auth-sub">
-            Turn every recommendation into a win-win. Connect people with
-            businesses, track in real time, and unlock exclusive rewards.
+            Turn every recommendation into a win-win. Connect people with businesses, track in real
+            time, and unlock exclusive rewards.
           </p>
           <ul className="auth-bullets">
             <li>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -7,6 +7,15 @@ function parseHashTokens(hash: string) {
   const access_token = params.get("access_token") ?? undefined;
   const refresh_token = params.get("refresh_token") ?? undefined;
   return { access_token, refresh_token };
+}
+
+function isSafeInternalPath(p?: string | null) {
+  return !!p && p.startsWith("/") && !p.startsWith("//");
+}
+
+function normalizeNext(p?: string | null) {
+  if (!p || p === "/" || p === "/app") return null;
+  return p;
 }
 
 const ResetPassword: React.FC = () => {
@@ -19,14 +28,21 @@ const ResetPassword: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const searchParams = new URLSearchParams(location.search);
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const rawNext = searchParams.get("next");
   const nextPath = rawNext ? decodeURIComponent(rawNext) : null;
 
-  const safeNext =
-    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//") && !nextPath.startsWith("/email-login")
-      ? nextPath
-      : "/start";
+  const safeNext = useMemo(() => {
+    const n = normalizeNext(nextPath);
+    if (!isSafeInternalPath(n)) return null;
+    if (n!.startsWith("/email-login")) return null;
+    return n;
+  }, [nextPath]);
+
+  const loginHref = useMemo(() => {
+    if (!safeNext) return "/email-login";
+    return `/email-login?next=${encodeURIComponent(safeNext)}`;
+  }, [safeNext]);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +61,9 @@ const ResetPassword: React.FC = () => {
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (cancelled) return;
 
       if (!session) setError("Recovery session not found. Please request a new reset link.");
@@ -53,7 +71,9 @@ const ResetPassword: React.FC = () => {
     };
 
     hydrateSession();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [location.hash]);
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -81,10 +101,7 @@ const ResetPassword: React.FC = () => {
 
     setMessage("Password updated successfully. You can now sign in.");
     window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
-    setTimeout(
-      () => navigate(`/email-login?next=${encodeURIComponent(safeNext)}`, { replace: true }),
-      1200
-    );
+    setTimeout(() => navigate(loginHref, { replace: true }), 1200);
   };
 
   return (
@@ -99,7 +116,9 @@ const ResetPassword: React.FC = () => {
         {!busy && !error && (
           <form onSubmit={handleUpdate} className="th-form" noValidate>
             <div className="th-field">
-              <label className="th-label" htmlFor="new-password">New password</label>
+              <label className="th-label" htmlFor="new-password">
+                New password
+              </label>
               <input
                 id="new-password"
                 type="password"
@@ -113,7 +132,9 @@ const ResetPassword: React.FC = () => {
             </div>
 
             <div className="th-field">
-              <label className="th-label" htmlFor="confirm-password">Confirm new password</label>
+              <label className="th-label" htmlFor="confirm-password">
+                Confirm new password
+              </label>
               <input
                 id="confirm-password"
                 type="password"
@@ -130,7 +151,11 @@ const ResetPassword: React.FC = () => {
               Update Password
             </button>
 
-            {message && <div className="alert alert--success" style={{ marginTop: 12 }}>{message}</div>}
+            {message && (
+              <div className="alert alert--success" style={{ marginTop: 12 }}>
+                {message}
+              </div>
+            )}
           </form>
         )}
       </div>

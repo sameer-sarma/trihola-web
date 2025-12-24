@@ -1,6 +1,15 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+
+function isSafeInternalPath(p?: string | null) {
+  return !!p && p.startsWith("/") && !p.startsWith("//");
+}
+
+function normalizeNext(p?: string | null) {
+  if (!p || p === "/" || p === "/app") return null;
+  return p;
+}
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -8,15 +17,27 @@ const ForgotPassword: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
   const rawNext = searchParams.get("next");
   const nextPath = rawNext ? decodeURIComponent(rawNext) : null;
 
-  const safeNext =
-    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
-      ? nextPath
-      : "/start";
+  const safeNext = useMemo(() => {
+    const n = normalizeNext(nextPath);
+    if (!isSafeInternalPath(n)) return null;
+    return n;
+  }, [nextPath]);
+
+  const resetRedirectTo = useMemo(() => {
+    // If no meaningful next, keep URL clean
+    if (!safeNext) return `${window.location.origin}/reset-password`;
+    return `${window.location.origin}/reset-password?next=${encodeURIComponent(safeNext)}`;
+  }, [safeNext]);
+
+  const backToLoginHref = useMemo(() => {
+    if (!safeNext) return "/email-login";
+    return `/email-login?next=${encodeURIComponent(safeNext)}`;
+  }, [safeNext]);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +45,7 @@ const ForgotPassword: React.FC = () => {
     setError(null);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password?next=${encodeURIComponent(safeNext)}`,
+      redirectTo: resetRedirectTo,
     });
 
     if (error) setError(error.message);
@@ -39,7 +60,9 @@ const ForgotPassword: React.FC = () => {
 
         <form className="th-form" onSubmit={handleReset}>
           <div className="th-field">
-            <label htmlFor="fp-email" className="th-label">Email address</label>
+            <label htmlFor="fp-email" className="th-label">
+              Email address
+            </label>
             <input
               id="fp-email"
               type="email"
@@ -63,7 +86,7 @@ const ForgotPassword: React.FC = () => {
 
         <div className="form-help">
           Remembered it?{" "}
-          <Link to={`/email-login?next=${encodeURIComponent(safeNext)}`} className="th-link">
+          <Link to={backToLoginHref} className="th-link">
             Back to login
           </Link>
         </div>
