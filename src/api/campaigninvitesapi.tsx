@@ -2,9 +2,8 @@
 // FILE: src/api/campaignInvites.ts
 // (API layer – thin wrappers around fetch; supports cursor pagination)
 // =============================================
-import type { CampaignInvite, SendCampaignInvitesRequest, Paginated, InviteDetailResponse, MyInviteListItemDTO } from '../types/invites';
+import type { CampaignInvite, SendCampaignInvitesRequest, Paginated, InviteDetailResponse, MyInviteListItemDTO, PublicCampaignInviteLandingView, OpenCampaignInviteLandingView } from '../types/invites';
 import type { CampaignHubAffiliating } from '../types/campaign';
-import type { PublicCampaignInviteLandingView } from '../types/invites';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '';
 
@@ -169,7 +168,7 @@ export async function getOpenAffiliateCampaignLanding(
   campaignSlug: string,
   openInviteSlug: string,
   token?: string
-): Promise<any> {
+): Promise<OpenCampaignInviteLandingView> {
   if (!campaignSlug || !openInviteSlug) {
     throw new Error("Missing campaignSlug or openInviteSlug");
   }

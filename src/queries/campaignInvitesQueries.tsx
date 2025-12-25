@@ -5,9 +5,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { acceptInvite, declineInvite, listCampaignInvites, sendCampaignInvites, getInviteDetail, getPublicCampaignInviteLanding,
 getOpenAffiliateCampaignLanding, joinCampaignViaOpenInvite, listMyInvites } from '../api/campaigninvitesapi';
-import type { CampaignInvite, Paginated, SendCampaignInvitesRequest, InviteDetailResponse } from '../types/invites';
+import type { CampaignInvite, Paginated, SendCampaignInvitesRequest, InviteDetailResponse, OpenCampaignInviteLandingView } from '../types/invites';
 import type { PublicCampaignInviteLandingView } from '../types/invites';
-import type { CampaignPublicDTO } from '../types/campaign';
 
 export function useInfiniteCampaignInvites(campaignId: string, token?: string, pageSize = 25) {
 return useInfiniteQuery<Paginated<CampaignInvite>>({
@@ -79,7 +78,7 @@ export function useOpenAffiliateCampaignLanding(
   openInviteSlug: string | undefined,
   token?: string
 ) {
-  return useQuery<CampaignPublicDTO>({
+  return useQuery<OpenCampaignInviteLandingView>({
     queryKey: [
       "openAffiliateCampaignLanding",
       campaignSlug,

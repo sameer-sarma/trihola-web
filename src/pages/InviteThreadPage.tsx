@@ -106,6 +106,17 @@ const InviteThreadPage: React.FC = () => {
   const isAccepted = inviteStatus === "ACCEPTED";
   //const isDeclined = inviteStatus === "DECLINED" || inviteStatus === "REJECTED";
 
+  const campaignDetailsPath = useMemo(() => {
+    const campaignUuid = campaign?.id;
+    const campaignSlug = campaign?.slug;
+    const openInviteSlug = campaign?.openInviteSlug;
+
+    if (isBusiness) {
+      return campaignUuid ? `/campaigns/${campaignUuid}` : null;
+    }
+    return (campaignSlug && openInviteSlug) ? `/campaign-open/${campaignSlug}/${openInviteSlug}` : null;
+  }, [isBusiness, campaign?.id, campaign?.slug, campaign?.openInviteSlug]);
+
   const canRespondToInvite = isAffiliate && inviteStatus === "INVITED";
   const canShowAffiliateCtas = isAffiliate && isAccepted;
 
@@ -538,11 +549,11 @@ const InviteThreadPage: React.FC = () => {
                 {affiliateSubheading && (
                   <div className="invite-campaign-subtitle">{affiliateSubheading}</div>
                 )}
-                {campaign.id && (
-                  <Link to={`/campaigns/${campaign.id}`} className="link invite-campaign-link">
-                    View campaign details
+                {campaignDetailsPath && (
+                  <Link to={campaignDetailsPath} className="link invite-campaign-link">
+                    {isBusiness ? "View campaign details" : "View campaign"}
                   </Link>
-                )}
+                )}              
               </div>
             </section>
           )}

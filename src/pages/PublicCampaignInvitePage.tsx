@@ -1,15 +1,15 @@
 // src/pages/PublicCampaignInvitePage.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { usePublicCampaignInviteLanding } from "../queries/campaignInvitesQueries";
-//import type { PublicCampaignInviteLandingView } from "../types/invites";
 import type { ProfileMiniDTO } from "../types/campaign";
 
 const formatName = (p?: ProfileMiniDTO | null): string | undefined => {
   if (!p) return undefined;
   if (p.firstName || p.lastName) {
-    return `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || undefined;
+    const n = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim();
+    return n || undefined;
   }
   if (p.businessName) return p.businessName;
   return undefined;
@@ -19,11 +19,7 @@ const formatDate = (iso?: string | null): string | undefined => {
   if (!iso) return undefined;
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   } catch {
     return iso;
   }
@@ -36,25 +32,22 @@ const PublicCampaignInvitePage: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  // Track auth status + token
+  // Keep auth state in sync
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       const result = await supabase.auth.getSession();
-      if (!cancelled) {
-        const session = result.data.session;
-        setIsLoggedIn(!!session);
-        setAccessToken(session?.access_token ?? null);
-      }
+      if (cancelled) return;
+      const session = result.data.session;
+      setIsLoggedIn(!!session);
+      setAccessToken(session?.access_token ?? null);
     })();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setIsLoggedIn(!!session);
-        setAccessToken(session?.access_token ?? null);
-      }
-    );
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+      setAccessToken(session?.access_token ?? null);
+    });
 
     return () => {
       cancelled = true;
@@ -62,93 +55,121 @@ const PublicCampaignInvitePage: React.FC = () => {
     };
   }, []);
 
-  // React Query hook – calls Ktor /public/campaign-invites/{inviteId}
-  const {
-    data: view,
-    isLoading,
-    error,
-  } = usePublicCampaignInviteLanding(inviteId, accessToken ?? undefined);
+  // IMPORTANT: Hooks must be called unconditionally.
+  const { data: view, isLoading, error } = usePublicCampaignInviteLanding(inviteId, accessToken ?? undefined);
 
-  // Auto-redirect to invite thread if viewer is a participant
-  useEffect(() => {
-    if (!view) return;
-    if (!view.myParticipantRole) return; // not a participant
-    const campaignId = view.invite.campaignId;
-    const inviteIdLocal = view.invite.id;
-    if (!campaignId || !inviteIdLocal) return;
+  // ---- Derive everything WITHOUT new hooks ----
 
-    const threadPath = `/campaigns/${campaignId}/invites/${inviteIdLocal}/thread`;
-    navigate(threadPath, { replace: true });
-  }, [view, navigate]);
+  const typedError = error as Error | null;
 
-  const businessName = useMemo(
-    () => formatName(view?.invite.business),
-    [view?.invite.business]
-  );
-  const affiliateName = useMemo(
-    () => formatName(view?.invite.recipient),
-    [view?.invite.recipient]
-  );
+  const campaignId = view?.invite?.campaignId;
+
+  // Role is invite-scoped now (per your Ktor change)
+  const myRole = (view as any)?.myParticipantRole as "BUSINESS" | "AFFILIATE" | null | undefined;
+  const isBusinessViewer = myRole === "BUSINESS";
+  const isInviteeAffiliateViewer = myRole === "AFFILIATE"; // invitee of THIS invite only
+
+  const viewerIsAlreadyAffiliate = !!(view as any)?.viewerIsAlreadyAffiliate;
+  const viewerInviteId = ((view as any)?.viewerInviteId as string | undefined) ?? undefined;
+
+  // Campaign affiliate elsewhere: only when authed + backend says yes + not owner/invitee of this invite
+  const isCampaignAffiliateElsewhere =
+    !!accessToken && viewerIsAlreadyAffiliate && !!viewerInviteId && !isBusinessViewer && !isInviteeAffiliateViewer;
+
+  const inviteThreadPath =
+    campaignId && view?.invite?.id ? `/campaigns/${campaignId}/invites/${view.invite.id}/thread` : null;
+
+  const myInviteThreadPath =
+    campaignId && viewerInviteId ? `/campaigns/${campaignId}/invites/${viewerInviteId}/thread` : null;
+
+  const ownerCampaignPath = campaignId ? `/campaigns/${campaignId}` : null;
 
   const snapshot = view?.snapshot;
   const themeColor = snapshot?.themeColor || undefined;
+
+  const businessName = formatName(view?.invite?.business);
+  const inviteeName = formatName(view?.invite?.recipient);
+
   const affiliateHeadline = snapshot?.affiliateHeadline || undefined;
   const affiliateSubheading = snapshot?.affiliateSubheading || undefined;
   const campaignDescription = snapshot?.campaignDescription || undefined;
-  const affiliateLongDescription =
-    snapshot?.affiliateLongDescription || undefined;
-  const prospectDescriptionShort =
-    snapshot?.prospectDescriptionShort || undefined;
-  const prospectDescriptionLong =
-    snapshot?.prospectDescriptionLong || undefined;
+  const affiliateLongDescription = snapshot?.affiliateLongDescription || undefined;
+  const prospectDescriptionShort = snapshot?.prospectDescriptionShort || undefined;
+  const prospectDescriptionLong = snapshot?.prospectDescriptionLong || undefined;
 
-  const heroTitle =
-    affiliateHeadline || snapshot?.title || "Campaign invite";
+  const heroTitle = affiliateHeadline || snapshot?.title || "Campaign invite";
 
-  const heroSubtitle = useMemo(() => {
-    // 1) Prefer the campaign's affiliate subheading
+  const heroSubtitle = (() => {
     if (affiliateSubheading) return affiliateSubheading;
-
-    // 2) Fallback to previous behaviour
-    if (!view) return undefined;
-    if (businessName && affiliateName) {
-      return `${businessName} invited ${affiliateName} to promote this campaign.`;
-    }
-    if (businessName) {
-      return `${businessName} invited you to promote this campaign.`;
-    }
+    if (businessName && inviteeName) return `${businessName} invited ${inviteeName} to promote this campaign.`;
+    if (businessName) return `${businessName} invited you to promote this campaign.`;
     return "You’ve been invited to promote this campaign.";
-  }, [view, businessName, affiliateName, affiliateSubheading]);
+  })();
 
   const heroImage =
-    view?.snapshot.primaryImageUrl ??
-    view?.snapshot.product?.primaryImageUrl ??
-    view?.snapshot.bundle?.primaryImageUrl ??
-    undefined;
+    snapshot?.primaryImageUrl ?? snapshot?.product?.primaryImageUrl ?? snapshot?.bundle?.primaryImageUrl ?? undefined;
 
-  const expiresLabel = formatDate(view?.snapshot.expiresAt);
+  const expiresLabel = formatDate(snapshot?.expiresAt);
 
   const walletPolicySummary = view?.walletPolicySummary ?? undefined;
   const prospectOfferSummary = view?.prospectOfferSummary ?? undefined;
 
-  const handleGoToThreadOrLogin = () => {
-    if (!view) return;
-    const campaignId = view.invite.campaignId;
-    const inviteIdLocal = view.invite.id;
-    if (!campaignId || !inviteIdLocal) return;
+  const openedSomeoneElsesInvite =
+    isCampaignAffiliateElsewhere && !!view?.invite?.id && !!viewerInviteId && view.invite.id !== viewerInviteId;
 
-    const threadPath = `/campaigns/${campaignId}/invites/${inviteIdLocal}/thread`;
+  const inviteeDisplay = inviteeName ?? "this person";
 
-    if (isLoggedIn) {
-      navigate(threadPath);
-    } else {
-      // keep simple: user logs in, then re-click email link
-      const nextPath = `/campaigns/${campaignId}/invites/${inviteIdLocal}/thread`;
-      navigate(`/email-login?next=${encodeURIComponent(nextPath)}`);
+  const primaryLabel = !isLoggedIn
+    ? "Sign in to view invite"
+    : isBusinessViewer
+      ? "Open campaign dashboard"
+      : isInviteeAffiliateViewer
+        ? "Open this invite thread"
+        : isCampaignAffiliateElsewhere
+          ? "Open your invite thread"
+          : `This invite is for ${inviteeDisplay}`;
+
+  const primaryDisabled =
+    isLoggedIn && !isBusinessViewer && !isInviteeAffiliateViewer && !isCampaignAffiliateElsewhere;
+
+  const handlePrimaryCta = () => {
+    if (!inviteId) return;
+
+    if (!isLoggedIn) {
+      navigate(`/email-login?next=${encodeURIComponent(`/campaign-invite/${inviteId}`)}`);
+      return;
+    }
+
+    if (isBusinessViewer) {
+      if (ownerCampaignPath) navigate(ownerCampaignPath);
+      return;
+    }
+
+    if (isInviteeAffiliateViewer) {
+      if (inviteThreadPath) navigate(inviteThreadPath);
+      return;
+    }
+
+    if (isCampaignAffiliateElsewhere) {
+      if (myInviteThreadPath) navigate(myInviteThreadPath);
+      return;
     }
   };
 
-  // Extra guard: missing inviteId in URL
+  const openCampaignPath =
+    snapshot?.slug && snapshot?.openInviteSlug ? `/campaign-open/${snapshot.slug}/${snapshot.openInviteSlug}` : null;
+
+  const showOpenInviteSecondary =
+    isLoggedIn &&
+    !isBusinessViewer &&
+    !isInviteeAffiliateViewer &&
+    !isCampaignAffiliateElsewhere &&
+    !!openCampaignPath;
+
+  const statusLower = snapshot?.status?.toLowerCase?.() ?? "unknown";
+
+  // ---- Now safe early returns (NO hooks below this point) ----
+
   if (!inviteId) {
     return (
       <div className="th-page public-page">
@@ -159,8 +180,6 @@ const PublicCampaignInvitePage: React.FC = () => {
       </div>
     );
   }
-
-  const typedError = error as Error | null;
 
   if (isLoading) {
     return (
@@ -175,10 +194,7 @@ const PublicCampaignInvitePage: React.FC = () => {
       <div className="th-page public-page">
         <div className="public-page-error-card">
           <h1>Campaign invite not available</h1>
-          <p>
-            {typedError?.message ??
-              "This invite might have expired or been withdrawn."}
-          </p>
+          <p>{typedError?.message ?? "This invite might have expired or been withdrawn."}</p>
         </div>
       </div>
     );
@@ -192,21 +208,20 @@ const PublicCampaignInvitePage: React.FC = () => {
           {heroImage && <img src={heroImage} alt={heroTitle} />}
           <div
             className="public-hero-overlay"
-            style={
-              themeColor
-                ? {
-                    background: `linear-gradient(135deg, ${themeColor} 0%, #000000cc 55%)`,
-                  }
-                : undefined
-            }
-          ></div>
+            style={themeColor ? { background: `linear-gradient(135deg, ${themeColor} 0%, #000000cc 55%)` } : undefined}
+          />
         </div>
 
         <div className="public-hero-content">
           <div className="breadcrumb">Invite → Campaign</div>
           <h1 className="public-hero-title">{heroTitle}</h1>
-          {heroSubtitle && (
-            <p className="public-hero-subtitle">{heroSubtitle}</p>
+          {heroSubtitle && <p className="public-hero-subtitle">{heroSubtitle}</p>}
+
+          {openedSomeoneElsesInvite && (
+            <div className="public-info" style={{ marginTop: 10 }}>
+              You’re already an affiliate for this campaign. This link is someone else’s invite — you can open yours
+              instead.
+            </div>
           )}
 
           <div className="public-hero-chips">
@@ -215,9 +230,9 @@ const PublicCampaignInvitePage: React.FC = () => {
                 From <strong>{businessName}</strong>
               </span>
             )}
-            {affiliateName && (
+            {inviteeName && (
               <span className="chip">
-                Invite for <strong>{affiliateName}</strong>
+                Invite for <strong>{inviteeName}</strong>
               </span>
             )}
             {expiresLabel && (
@@ -229,22 +244,39 @@ const PublicCampaignInvitePage: React.FC = () => {
 
           <button
             className="public-hero-button"
-            onClick={handleGoToThreadOrLogin}
+            onClick={handlePrimaryCta}
+            disabled={primaryDisabled}
             style={
               themeColor
-                ? { backgroundColor: themeColor, borderColor: themeColor }
-                : undefined
+                ? {
+                    backgroundColor: themeColor,
+                    borderColor: themeColor,
+                    opacity: primaryDisabled ? 0.6 : 1,
+                    cursor: primaryDisabled ? "not-allowed" : "pointer",
+                  }
+                : primaryDisabled
+                  ? { opacity: 0.6, cursor: "not-allowed" }
+                  : undefined
             }
           >
-            {isLoggedIn ? "View your invite thread" : "Sign in to respond"}
+            {primaryLabel}
           </button>
+
+          {showOpenInviteSecondary && (
+            <button
+              className="public-secondary-button"
+              onClick={() => openCampaignPath && navigate(openCampaignPath)}
+              style={themeColor ? { borderColor: themeColor, color: themeColor } : undefined}
+            >
+              Use open invite link instead
+            </button>
+          )}
         </div>
       </section>
 
       {/* CONTENT */}
       <section className="public-content">
         <div className="public-content-container">
-          {/* About this campaign */}
           <div className="public-card">
             <h2>About this campaign</h2>
             {campaignDescription ? (
@@ -252,45 +284,33 @@ const PublicCampaignInvitePage: React.FC = () => {
             ) : view.invite.personalMessage ? (
               <p>{view.invite.personalMessage}</p>
             ) : (
-              <p>
-                This campaign lets you earn rewards by referring people to{" "}
-                {businessName ?? "this business"}.
-              </p>
+              <p>This campaign lets you earn rewards by referring people to {businessName ?? "this business"}.</p>
             )}
 
             <p className="status-row">
               Current status:{" "}
-              <span
-                className={`status-pill status-pill--${snapshot?.status.toLowerCase()}`}
-              >
-                {snapshot?.status}
-              </span>
+              <span className={`status-pill status-pill--${statusLower}`}>{snapshot?.status ?? "UNKNOWN"}</span>
             </p>
           </div>
 
-          {/* What’s in it for everyone */}
           <div className="public-card">
             <h2>What’s in it for everyone?</h2>
 
             {(affiliateLongDescription || walletPolicySummary) && (
               <div className="reward-block">
-                <h3>For you (as affiliate)</h3>
+                <h3>For the affiliate</h3>
                 <p>{affiliateLongDescription || walletPolicySummary}</p>
               </div>
             )}
 
-            {(prospectDescriptionShort ||
-              prospectDescriptionLong ||
-              prospectOfferSummary) && (
+            {(prospectDescriptionShort || prospectDescriptionLong || prospectOfferSummary) && (
               <div className="reward-block">
-                <h3>For people you refer</h3>
+                <h3>For people referred</h3>
                 {prospectDescriptionShort && <p>{prospectDescriptionShort}</p>}
-                {prospectDescriptionLong && (
-                  <p style={{ marginTop: 4 }}>{prospectDescriptionLong}</p>
+                {prospectDescriptionLong && <p style={{ marginTop: 4 }}>{prospectDescriptionLong}</p>}
+                {!prospectDescriptionShort && !prospectDescriptionLong && prospectOfferSummary && (
+                  <p>{prospectOfferSummary}</p>
                 )}
-                {!prospectDescriptionShort &&
-                  !prospectDescriptionLong &&
-                  prospectOfferSummary && <p>{prospectOfferSummary}</p>}
               </div>
             )}
 
@@ -298,24 +318,23 @@ const PublicCampaignInvitePage: React.FC = () => {
               !walletPolicySummary &&
               !prospectDescriptionShort &&
               !prospectDescriptionLong &&
-              !prospectOfferSummary && (
-                <p>
-                  The business is still configuring the rewards for this
-                  campaign.
-                </p>
-              )}
+              !prospectOfferSummary && <p>The business is still configuring the rewards for this campaign.</p>}
 
-            <button
-              className="public-secondary-button"
-              onClick={handleGoToThreadOrLogin}
-              style={
-                themeColor
-                  ? { borderColor: themeColor, color: themeColor }
-                  : undefined
-              }
-            >
-              {isLoggedIn ? "Go to invite thread" : "Sign in to get started"}
-            </button>
+            {!primaryDisabled && (
+              <button
+                className="public-secondary-button"
+                onClick={handlePrimaryCta}
+                style={themeColor ? { borderColor: themeColor, color: themeColor } : undefined}
+              >
+                {!isLoggedIn
+                  ? "Sign in to get started"
+                  : isBusinessViewer
+                    ? "Go to campaign dashboard"
+                    : isInviteeAffiliateViewer
+                      ? "Go to this invite thread"
+                      : "Go to your invite thread"}
+              </button>
+            )}
           </div>
         </div>
       </section>

@@ -10,6 +10,9 @@ import {
 type OpenAffiliateMode = "OFF" | "AUTO_ACCEPT" | "REQUIRE_APPROVAL";
 type JoinState = "idle" | "loading" | "success" | "error";
 
+// Viewer context role from backend (open landing should only emit BUSINESS or null, but keep broad)
+type ParticipantRole = "BUSINESS" | "AFFILIATE" | "PROSPECT";
+
 export const OpenCampaignInviteLandingPage: React.FC = () => {
   const { campaignSlug, openInviteSlug } = useParams<{
     campaignSlug: string;
@@ -41,12 +44,15 @@ export const OpenCampaignInviteLandingPage: React.FC = () => {
     };
   }, []);
 
-  // Load campaign
+  // Load open landing (NEW SHAPE)
+  // data = { campaign, myParticipantRole, viewerIsAlreadyAffiliate, viewerInviteId }
   const {
-    data: campaign,
+    data: view,
     isLoading,
     error,
   } = useOpenAffiliateCampaignLanding(campaignSlug, openInviteSlug, token);
+
+  const campaign = view?.campaign;
 
   const joinMutation = useJoinOpenAffiliateInviteMutation(
     campaignSlug ?? "",
@@ -55,8 +61,10 @@ export const OpenCampaignInviteLandingPage: React.FC = () => {
   );
 
   const handleJoin = useCallback(() => {
+    if (!campaignSlug || !openInviteSlug) return;
+
     if (!token) {
-      const nextPath = `/campaign-open/${campaignSlug!}/${openInviteSlug!}`;
+      const nextPath = `/campaign-open/${campaignSlug}/${openInviteSlug}`;
       navigate(`/email-login?next=${encodeURIComponent(nextPath)}`);
       return;
     }
@@ -109,6 +117,12 @@ export const OpenCampaignInviteLandingPage: React.FC = () => {
     );
   }
 
+  // Viewer context (NEW FIELDS)
+  const myParticipantRole = (view?.myParticipantRole ?? null) as ParticipantRole | null;
+  const isBusinessOwner = myParticipantRole === "BUSINESS";
+  const viewerIsAlreadyAffiliate = view?.viewerIsAlreadyAffiliate === true;
+  const viewerInviteId = view?.viewerInviteId ?? null;
+
   const mode: OpenAffiliateMode =
     (campaign.openAffiliateMode as OpenAffiliateMode) ?? "OFF";
 
@@ -160,8 +174,11 @@ export const OpenCampaignInviteLandingPage: React.FC = () => {
 
   const prospectDescriptionLong = campaign.prospectDescriptionLong || "";
 
-  const canJoin =
+  // Eligibility to join (IMPORTANT: do NOT allow join if already affiliate or owner)
+  const joinEligible =
     isLoggedIn &&
+    !isBusinessOwner &&
+    !viewerIsAlreadyAffiliate &&
     mode !== "OFF" &&
     campaign.status === "ACTIVE" &&
     !expired;
@@ -188,6 +205,75 @@ export const OpenCampaignInviteLandingPage: React.FC = () => {
       } as React.CSSProperties)
     : undefined;
 
+  // CTA decision tree
+  const nextPath = `/campaign-open/${campaignSlug}/${openInviteSlug}`;
+
+  const primaryCta = (() => {
+    if (!isLoggedIn) {
+      return {
+        kind: "link" as const,
+        label: "Sign in and join",
+        to: `/email-login?next=${encodeURIComponent(nextPath)}`,
+        disabled: false,
+        help:
+          "Sign in to join this campaign as an affiliate. You’ll get an invite thread and referral tools.",
+      };
+    }
+
+    if (isBusinessOwner) {
+      return {
+        kind: "button" as const,
+        label: "Open campaign dashboard",
+        onClick: () => navigate(`/campaigns/${campaign.id}`),
+        disabled: false,
+        help: "You are the business owner for this campaign.",
+      };
+    }
+
+    if (viewerIsAlreadyAffiliate && viewerInviteId) {
+      return {
+        kind: "button" as const,
+        label: "Open your invite thread",
+        onClick: () =>
+          navigate(`/campaigns/${campaign.id}/invites/${viewerInviteId}/thread`),
+        disabled: false,
+        help:
+          "You’re already an affiliate for this campaign. This link is just the public join page.",
+      };
+    }
+
+    // Logged in, not owner, not already affiliate
+    if (mode === "OFF" || expired || campaign.status !== "ACTIVE") {
+      const reason =
+        mode === "OFF"
+          ? "This campaign is not accepting new affiliates right now."
+          : expired
+          ? "This campaign has expired."
+          : "This campaign is not active right now.";
+      return {
+        kind: "button" as const,
+        label: "Campaign closed",
+        onClick: () => {},
+        disabled: true,
+        help: reason,
+      };
+    }
+
+    return {
+      kind: "button" as const,
+      label:
+        joinState === "loading"
+          ? "Joining…"
+          : mode === "AUTO_ACCEPT"
+          ? "Join campaign now"
+          : "Request to join",
+      onClick: handleJoin,
+      disabled: !joinEligible || joinState === "loading",
+      help:
+        "Once you join, this campaign will appear in your Trihola hub with a dedicated invite thread and referral tools.",
+    };
+  })();
+
   return (
     <div className="th-page open-ref-page">
       {/* HERO */}
@@ -199,6 +285,18 @@ export const OpenCampaignInviteLandingPage: React.FC = () => {
             <span className="open-ref-chip open-ref-chip--soft">
               Open affiliates · {modeLabel}
             </span>
+
+            {viewerIsAlreadyAffiliate && viewerInviteId && !isBusinessOwner && (
+              <span className="open-ref-chip open-ref-chip--soft">
+                You’re already an affiliate
+              </span>
+            )}
+
+            {isBusinessOwner && (
+              <span className="open-ref-chip open-ref-chip--soft">
+                Owner view
+              </span>
+            )}
           </div>
 
           <h1 className="open-ref-title">{affiliateHeadline}</h1>
@@ -221,34 +319,21 @@ export const OpenCampaignInviteLandingPage: React.FC = () => {
           )}
 
           <div className="open-ref-cta-row">
-            {!isLoggedIn && mode !== "OFF" && !expired && (
-              <Link
-                className="btn btn--primary open-ref-btn"
-                to={`/email-login?next=${encodeURIComponent(`/campaign-open/${campaignSlug!}/${openInviteSlug!}`)}`}
-              >
-                Sign in and join
+            {primaryCta.kind === "link" ? (
+              <Link className="btn btn--primary open-ref-btn" to={primaryCta.to}>
+                {primaryCta.label}
               </Link>
-            )}
-
-            {isLoggedIn && (
+            ) : (
               <button
                 className="btn btn--primary open-ref-btn"
-                disabled={!canJoin || joinState === "loading"}
-                onClick={handleJoin}
+                disabled={primaryCta.disabled}
+                onClick={primaryCta.onClick}
               >
-                {joinState === "loading"
-                  ? "Joining…"
-                  : mode === "AUTO_ACCEPT"
-                  ? "Join campaign now"
-                  : "Request to join"}
+                {primaryCta.label}
               </button>
             )}
 
-            <p className="open-ref-cta-help">
-              Once you join, this campaign will appear in your Trihola referrals
-              hub. You&apos;ll get a dedicated invite thread, referral links,
-              and visibility into how your referrals perform.
-            </p>
+            <p className="open-ref-cta-help">{primaryCta.help}</p>
           </div>
         </div>
 
@@ -301,7 +386,9 @@ export const OpenCampaignInviteLandingPage: React.FC = () => {
 
           {prospectDescriptionLong && (
             <section className="card open-ref-card">
-              <h3 className="card-title">What prospects get from this campaign</h3>
+              <h3 className="card-title">
+                What prospects get from this campaign
+              </h3>
               <p className="th-muted">{prospectDescriptionLong}</p>
             </section>
           )}

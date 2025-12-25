@@ -1,4 +1,4 @@
-import type { OfferLink, ProfileMiniDTO } from "./campaign";
+import type { OfferLink, ProfileMiniDTO, CampaignPublicDTO } from "./campaign";
 import type { ProductMini, BundleMini } from "./offer";
 import type {PointsAccrualPolicyDTO} from "./wallet";
 import type { ParticipantRole } from "./referral";
@@ -73,6 +73,7 @@ export type InviteThreadMessageReq = {
 export type InviteSnapshotCampaign = {
   id: string;
   slug: string;
+  openInviteSlug?: string | null;
   title: string;
   message?: string | null;
   affiliateHeadline?: string | null;
@@ -144,6 +145,8 @@ export type PublicCampaignInviteLandingView = {
   walletPolicySummary?: string | null;
   prospectOfferSummary?: string | null;
   myParticipantRole?: ParticipantRole | null;
+  viewerIsAlreadyAffiliate: boolean;
+  viewerInviteId?: string | null;
 };
 
 export type MyInviteListItemDTO = {
@@ -166,3 +169,12 @@ export type MyInviteListItemDTO = {
 
   myRole: "BUSINESS" | "AFFILIATE";
 };
+
+export interface OpenCampaignInviteLandingView {
+  campaign: CampaignPublicDTO;
+
+  // Viewer context (optional)
+  myParticipantRole?: ParticipantRole | null; // BUSINESS if owner, else null here
+  viewerIsAlreadyAffiliate?: boolean;
+  viewerInviteId?: string | null;
+}
