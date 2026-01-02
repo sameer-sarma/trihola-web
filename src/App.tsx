@@ -51,6 +51,7 @@ import MyInvitesPage from './pages/MyInvitesPage';
 import WalletStorePage from "./pages/WalletStorePage";
 import WalletOfferPage from "./pages/WalletOfferPage";
 import MyOffers from "./pages/MyOffers";
+import ActionRequiredPage from "./pages/ActionRequiredPage";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { supabase } from "./supabaseClient";
@@ -221,6 +222,11 @@ useEffect(() => {
     }
   }, [session?.access_token]);
 
+  const refreshAll = useCallback(async () => {
+    await refreshProfile();           // re-fetch /profile
+    await boot.refreshBootstrap?.();  // re-fetch /me/bootstrap
+  }, [refreshProfile, boot]);
+
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.access_token) return;
@@ -322,6 +328,21 @@ function InviteLandingRoute({ token }: { token?: string }) {
               }
             />
 
+            <Route
+              path="/action-required"
+              element={
+                boot.loading ? (
+                  <div className="loading">Loading…</div>
+                ) : boot.error ? (
+                  <div className="error-banner">{boot.error}</div>
+                ) : boot.data ? (
+                  <ActionRequiredPage bootstrap={boot.data} />
+                ) : (
+                  <div className="loading">Loading…</div>
+                )
+              }
+            />
+
             {/* Profile routes */}
             <Route path="/profile" element={<RedirectToOwnProfile />} />
             <Route path="/profile/:slug" element={<PublicProfilePage />} />
@@ -333,7 +354,7 @@ function InviteLandingRoute({ token }: { token?: string }) {
                   userId={userId}
                   onChange={handleProfileChange}
                   onSubmit={handleProfileSubmit}
-                  onProfileRefresh={refreshProfile}
+                  onProfileRefresh={refreshAll}
                   onImageUpload={handleImageUpload}
                 />
               }

@@ -1,8 +1,23 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 const LS_KEY = "trihola:firstLoginDone";
+
+export type GateItemDTO = {
+  key: string;
+  title: string;
+  subtitle: string;
+  blocking?: boolean;
+  action: string;         // e.g. "EDIT_PROFILE", "EDIT_BUSINESS_PROFILE"
+  focus?: string | null;  // e.g. "firstName", "businessName"
+  missing?: string[];
+};
+
+export type GatesDTO = {
+  blocking: boolean;
+  items: GateItemDTO[];
+};
 
 export type PriorActivitySummaryDTO = {
   contactsAdded: number;
@@ -76,6 +91,7 @@ export type BootstrapDTO = {
   // NEW server flag (may be absent while you’re rolling out)
   hasPriorActivity?: boolean;
   featuredBusiness?: PublicProfile | null; 
+  gates?: GatesDTO;
 };
 
 export type BootstrapResult = {
@@ -85,7 +101,8 @@ export type BootstrapResult = {
 
   firstLoginDone: boolean;
   hasPriorActivity: boolean;
-  nextRoute: "/start";
+  nextRoute: string;
+  refreshBootstrap: () => Promise<void>; 
 };
 
 function readFirstLoginDone(): boolean {
@@ -119,6 +136,8 @@ export function useBootstrap(token?: string | null): BootstrapResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<BootstrapDTO | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
 
   const firstLoginDone = useMemo(() => readFirstLoginDone(), []);
 
@@ -144,13 +163,22 @@ export function useBootstrap(token?: string | null): BootstrapResult {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, refreshKey]);
+
+      const refreshBootstrap = useCallback(() => {
+      setRefreshKey((k) => k + 1);
+    }, []);
 
   // Prefer server truth; fallback to computed for rollout safety
   const hasPriorActivity =
     data?.hasPriorActivity ?? computeHasPriorActivityFromPrior(data?.priorActivity);
 
-  const nextRoute: BootstrapResult["nextRoute"] = "/start";
+  // ✅ single “where should I go” signal
+  const nextRoute = useMemo(() => {
+    if (!data) return "/start";
+    if (data.gates?.blocking) return "/action-required";
+    return "/start";
+  }, [data]);
 
   return {
     loading,
@@ -159,5 +187,6 @@ export function useBootstrap(token?: string | null): BootstrapResult {
     firstLoginDone,
     hasPriorActivity,
     nextRoute,
+    refreshBootstrap
   };
 }
