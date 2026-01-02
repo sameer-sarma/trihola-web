@@ -54,6 +54,7 @@ import MyOffers from "./pages/MyOffers";
 import ActionRequiredPage from "./pages/ActionRequiredPage";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import RequireNoBlockingGates from "./components/RequireNoBlockingGates";
 import { supabase } from "./supabaseClient";
 import axios from "axios";
 import "./css/base.css";
@@ -372,10 +373,24 @@ function InviteLandingRoute({ token }: { token?: string }) {
             <Route path="/:businessSlug/bundle/:bundleSlug" element={<BundleDetails />} />
             <Route path="/:businessSlug/wallet-store" element={<WalletStorePage />} />
             <Route path="/wallet/:businessSlug/offers/:offerTemplateId" element={<WalletOfferPage />} />
-            <Route path="/referrals" element={<ReferralFeed />} />
+            <Route
+              path="/referrals"
+              element={
+                <RequireNoBlockingGates boot={boot}>
+                  <ReferralFeed />
+                </RequireNoBlockingGates>
+              }
+            />
             <Route path="/referrals/new" element={<CreateReferralForm />} />
             <Route path="/referral/:slug/thread" element={<ReferralThread />} />
-            <Route path="/my-offers" element={<MyOffers />} />
+            <Route
+            path="/my-offers" 
+            element={
+              <RequireNoBlockingGates boot={boot}>
+                <MyOffers />
+                </RequireNoBlockingGates>
+              }
+            />
             <Route path="/settings" element={<UserSettingsForm />} />
             <Route
               path="/offer-templates"
@@ -398,7 +413,14 @@ function InviteLandingRoute({ token }: { token?: string }) {
             <Route path="/campaigns/:id/edit" element={<EditCampaign token={session.access_token} />} />
             <Route path="/campaigns/:id/invites/send" element={<SendCampaignInviteRoute token={session.access_token} />} />
             <Route path="/campaigns/:campaignId/invites/:inviteId/thread" element={<InviteThreadPage />} />
-            <Route path="/invites" element={<InviteFeed />} />
+            <Route
+              path="/invites"
+              element={
+                <RequireNoBlockingGates boot={boot}>
+                  <InviteFeed />
+                </RequireNoBlockingGates>
+              }
+            />
             <Route path="/invites/:inviteId" element={<InviteLandingRoute token={session.access_token} />} />
             <Route path="/wallet-policies" element={<WalletPolicyEditor businessId={businessId} token={session.access_token} />} />
 
