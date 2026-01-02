@@ -136,39 +136,50 @@ export function useBootstrap(token?: string | null): BootstrapResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<BootstrapDTO | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+//  const [refreshKey, setRefreshKey] = useState(0);
 
 
   const firstLoginDone = useMemo(() => readFirstLoginDone(), []);
 
-  useEffect(() => {
-    if (!token) return;
-    let cancelled = false;
-
-    (async () => {
-      setLoading(true);
+  /**
+   * Core fetch function (single source of truth)
+   */
+  const fetchBootstrap = useCallback(async () => {
+    if (!token) {
+      setData(null);
       setError(null);
-      try {
-        const res = await axios.get<BootstrapDTO>(`${API_BASE}/me/bootstrap`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!cancelled) setData(res.data);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Bootstrap failed");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+      setLoading(false);
+      return;
+    }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [token, refreshKey]);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get<BootstrapDTO>(`${API_BASE}/me/bootstrap`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setData(res.data);
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to load bootstrap");
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
 
-      const refreshBootstrap = useCallback(() => {
-      setRefreshKey((k) => k + 1);
-    }, []);
+  /**
+   * Initial load + reload when token changes
+   */
+  useEffect(() => {
+    fetchBootstrap();
+  }, [fetchBootstrap]);
 
+  /**
+   * Explicit refresh (used after profile edits, business registration, etc.)
+   */
+  const refreshBootstrap = useCallback(async () => {
+    await fetchBootstrap();
+  }, [fetchBootstrap]);
+  
   // Prefer server truth; fallback to computed for rollout safety
   const hasPriorActivity =
     data?.hasPriorActivity ?? computeHasPriorActivityFromPrior(data?.priorActivity);
