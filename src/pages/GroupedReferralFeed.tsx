@@ -44,29 +44,6 @@ function snip(s?: string | null, max = 88) {
   return t.slice(0, max - 1) + "…";
 }
 
-function getGroupSubtitle(group: ReferralGroupDTO) {
-  const titles = (group.items || [])
-    .map((x) => x.campaignTitle)
-    .filter((x): x is string => !!x && x.trim().length > 0);
-
-  if (!titles.length) return null;
-
-  const freq = new Map<string, number>();
-  titles.forEach((t) => freq.set(t, (freq.get(t) ?? 0) + 1));
-
-  let best = titles[0];
-  let bestCount = 0;
-  for (const [t, c] of freq.entries()) {
-    if (c > bestCount) {
-      best = t;
-      bestCount = c;
-    }
-  }
-
-  if (bestCount === (group.items || []).length) return `Campaign: ${best}`;
-  return `Campaign: ${best} (+${(group.items || []).length - bestCount} more)`;
-}
-
 function isPendingish(v: any) {
   const s = String(v || "").toUpperCase();
   return (
@@ -656,21 +633,9 @@ const GroupedReferralFeed: React.FC = () => {
                   <ReferralCard
                     referral={r}
                     userId={userId || ""}
-                    onAccept={async (id) => {
-                      if (!token) return;
-                      await acceptReferral(token, id);
-                      await refreshGroups(token);
-                    }}
-                    onReject={async (id) => {
-                      if (!token) return;
-                      await rejectReferral(token, id);
-                      await refreshGroups(token);
-                    }}
-                    onCancel={async (id) => {
-                      if (!token) return;
-                      await cancelReferral(token, id);
-                      await refreshGroups(token);
-                    }}
+                    onAccept={handleAccept}
+                    onReject={handleReject}
+                    onCancel={handleCancel}
                     onCopyReferralLink={r.slug ? () => handleCopyReferralLink(r.slug) : undefined}
                   />
                 </div>
