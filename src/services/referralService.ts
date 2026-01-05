@@ -1,5 +1,5 @@
 import axios from "axios";
-import { CreateReferralReq, ReferralDTO, ReferralThreadEventDTO, ReferralPublicView, SendCampaignReferralsResponse } from "../types/referral";
+import { CreateReferralReq, ReferralDTO, ReferralThreadEventDTO, ReferralPublicView, SendCampaignReferralsResponse, MyReferralGroupsDTO } from "../types/referral";
 import { supabase } from "../supabaseClient";
 import type { SendReferralsRequest } from '../types/invites';
 
@@ -157,3 +157,9 @@ export async function fetchPublicReferral(
   const json = (await res.json()) as ReferralPublicView;
   return json;
 }
+
+// ✅ Fetch grouped referrals (new endpoint)
+export const fetchMyReferralGroups = async (token: string): Promise<MyReferralGroupsDTO> => {
+  const res = await axios.get(`${__API_BASE__}/referrals/me/grouped`, authHeader(token));
+  return res.data;
+};

@@ -1,0 +1,418 @@
+/* -------------------------------------------------------
+   TriHola – Gmail-like Referral Inbox (3-column + hero)
+   CLEAN FILE: removes legacy mailbox styles + conflicts
+-------------------------------------------------------- */
+
+:root{
+  /* these are expected to exist from ui-forms.css; we fallback safely */
+  --th-border: var(--border, #e6edf5);
+  --th-ink: var(--ink-strong, #0f172a);
+  --th-ink-mid: var(--ink-mid, #64748b);
+  --th-shadow: var(--shadow, 0 6px 20px rgba(15,23,42,.08));
+}
+
+/* Page wrapper */
+.th-inboxPage{
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 18px 18px 28px;
+}
+
+/* ---------------- HERO ---------------- */
+
+.th-inboxHero{
+  border-radius: 22px;
+  padding: 22px;
+  margin-bottom: 16px;
+  display:grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 18px;
+
+  background:
+    radial-gradient(1200px 500px at 20% 10%, rgba(99,102,241,.35), rgba(15,23,42,0) 60%),
+    radial-gradient(900px 400px at 85% 20%, rgba(124,58,237,.28), rgba(15,23,42,0) 55%),
+    linear-gradient(135deg, #0b1020 0%, #0f172a 55%, #060913 100%);
+  color: #fff;
+  box-shadow: 0 18px 45px rgba(2,6,23,.18);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.th-inboxHero__eyebrow{
+  font-size: 12px;
+  letter-spacing: .18em;
+  opacity: .78;
+  font-weight: 700;
+}
+
+.th-inboxHero__title{
+  margin: 10px 0 8px;
+  font-size: 34px;
+  line-height: 1.08;
+  font-weight: 850;
+}
+
+.th-inboxHero__sub{
+  margin: 0;
+  opacity: .86;
+  max-width: 62ch;
+}
+
+.th-inboxHero__actions{
+  margin-top: 14px;
+  display:flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items:center;
+}
+
+.th-inboxHero__panel{
+  border-radius: 18px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(2,6,23,.25);
+}
+
+.th-inboxHero__panelTitle{
+  font-weight: 750;
+  margin-bottom: 10px;
+}
+
+.th-inboxHero__metrics{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.th-inboxMetric{
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(2,6,23,.18);
+}
+
+.th-inboxMetric__label{
+  font-size: 11px;
+  letter-spacing: .12em;
+  opacity: .72;
+  font-weight: 750;
+}
+
+.th-inboxMetric__value{
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 850;
+}
+
+.th-inboxHero__hint{
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: .8;
+}
+
+/* ---------------- GRID ---------------- */
+
+.th-inboxGrid{
+  display:grid;
+  gap: 14px;
+  align-items: stretch;
+  min-height: 560px;
+}
+
+.th-inboxGrid.is-3col{
+  grid-template-columns: 260px 420px 1fr;
+}
+
+.th-inboxGrid.is-2col{
+  grid-template-columns: 260px 1fr;
+}
+
+/* Card-like column containers */
+.th-inboxCol{
+  background:#fff;
+  border: 1px solid var(--th-border);
+  border-radius: 16px;
+  overflow:hidden;
+  box-shadow: var(--th-shadow);
+  min-width: 0;
+  display:flex;
+  flex-direction: column;
+}
+
+.th-inboxCol__header{
+  padding: 12px 12px;
+  font-weight: 650;
+  border-bottom: 1px solid #eef2f7;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  color: var(--th-ink);
+}
+
+.th-inboxCol__sub{
+  font-weight: 450;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--th-ink-mid);
+}
+
+.th-inboxCol__scroll{
+  overflow-y: auto;
+}
+
+.th-inboxCol__pad{
+  padding: 12px;
+}
+
+/* ---------------- LEFT NAV ---------------- */
+
+.th-inboxCol--nav{
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.th-navSectionTitle{
+  margin: 12px 12px 8px;
+  font-weight: 650;
+  color: var(--th-ink);
+}
+
+/* Base nav row */
+.th-navItem{
+  width: calc(100% - 16px);
+  margin: 6px 8px;
+  border-radius: 12px;
+  padding: 10px 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor:pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+
+  font-weight: 450;
+  color: var(--th-ink);
+}
+
+.th-navItem:hover{
+  background:#f8fafc;
+  border-color:#eef2f7;
+}
+
+.th-navItem:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+/* Selected nav row — Gmail-like */
+.th-navItem.is-active{
+  background: #eef4ff;
+  border-color: transparent;
+  color: var(--th-ink);
+  box-shadow: inset 3px 0 0 #3b82f6;
+}
+
+.th-navItem__label{
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
+}
+
+/* Count pill (default) */
+.th-navItem__count{
+  font-size: 12px;
+  font-weight: 650;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Count pill (selected) — FIXED contrast */
+.th-navItem.is-active .th-navItem__count{
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-weight: 650;
+}
+
+/* Bottom actions area */
+.th-navActions{
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid #eef2f7;
+  background:#fff;
+}
+
+/* Lighten action buttons (Gmail-ish) */
+.th-navActions .btn,
+.th-navActions .btn--primary{
+  width: 100%;
+  padding: 10px 14px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* Primary: soft filled */
+.th-navActions .btn--primary{
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #e5e7eb;
+}
+
+.th-navActions .btn--primary:hover{
+  background: #e5e7eb;
+}
+
+/* Secondary: light dashed */
+.th-navActions .btn{
+  margin-top: 8px;
+  background: #ffffff;
+  border: 1px dashed #cbd5f5;
+  color: #1e3a8a;
+}
+
+.th-navActions .btn:hover{
+  background: #f8fafc;
+}
+
+/* ---------------- MIDDLE GROUP LIST ---------------- */
+
+/* Group row */
+.th-grouprow{
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f7;
+  cursor:pointer;
+
+  display:grid;
+  grid-template-columns: 48px 1fr;
+  gap: 10px;
+  align-items:center;
+}
+
+.th-grouprow:hover{
+  background:#f8fafc;
+}
+
+.th-grouprow.is-selected{
+  background: #f1f5f9;
+}
+
+.th-grouprow__avatar{ width: 44px; height: 44px; }
+
+.th-grouprow__avatarImg{
+  width:40px; height:40px;
+  border-radius:999px;
+  object-fit:cover;
+  border: 1px solid var(--th-border);
+  display:block;
+}
+
+.th-grouprow__avatarFallback{
+  width:40px; height:40px;
+  border-radius:999px;
+  border: 1px solid var(--th-border);
+  display:grid; place-items:center;
+  font-weight: 650;
+  color: var(--th-ink-mid);
+  background:#fff;
+}
+
+.th-grouprow__body{ min-width:0; }
+
+.th-grouprow__top{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.th-grouprow__title{
+  font-size: 13px;
+  font-weight: 550; /* not bold by default */
+  color: var(--th-ink);
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
+}
+
+.th-grouprow__time{
+  font-size: 12px;
+  color: var(--th-ink-mid);
+  white-space: nowrap;
+  flex: 0 0 auto;
+  font-weight: 400;
+}
+
+.th-grouprow__chips{
+  margin-top: 6px;
+  display:flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* When you want “needs action” to stand out a bit */
+.th-grouprow__title.is-strong{ font-weight: 650; }
+
+/* ---------------- SHARED CHIP STYLES ---------------- */
+
+.th-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border: 1px solid #e5e7eb;
+  background:#fff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--th-ink);
+}
+
+.th-chip--info{
+  background:#e0f2fe;
+  border-color:#bae6fd;
+  color:#0369a1;
+}
+
+.th-chip--warn{
+  background:#fff7ed;
+  border-color:#fed7aa;
+  color:#9a3412;
+}
+
+/* ---------------- RIGHT PANEL HELPERS ---------------- */
+
+.th-openCard{
+  margin-bottom: 12px;
+}
+
+/* Empty states */
+.th-empty{
+  padding: 12px;
+}
+
+.th-empty__title{
+  font-weight: 650;
+  color: var(--th-ink);
+}
+
+.th-empty__sub{
+  margin-top: 6px;
+  color: var(--th-ink-mid);
+  font-weight: 400;
+}
+
+/* ---------------- RESPONSIVE ---------------- */
+
+@media (max-width: 1080px){
+  .th-inboxHero{
+    grid-template-columns: 1fr;
+  }
+  .th-inboxGrid.is-3col{
+    grid-template-columns: 260px 1fr;
+  }
+}
+
+.th-openCard .ref-card__title{
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 700;
+}

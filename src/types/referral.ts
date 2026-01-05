@@ -45,6 +45,9 @@ export interface ReferralDTO {
   referrerOffer?: EmbeddedOfferDTO | null;
   prospectOffer?: EmbeddedOfferDTO | null;
 
+  campaignInviteId?: string | null;
+  campaignTitle?: string | null;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -220,4 +223,21 @@ export function getAttachedInfo(r: RefLike) {
 export type SendCampaignReferralsResponse = {
   createdReferralIds: string[];
   duplicateReferralIdsMessaged: string[];
+};
+
+export type ReferralGroupDTO = {
+  role: ParticipantRole;        // "BUSINESS" | "PROSPECT" | "REFERRER"
+  groupKeyId: string;           // prospectId or businessId (depending on role)
+  groupTitle?: string | null;   // prospectName or businessName
+  groupProfileSlug?: string | null;
+  groupImageUrl?: string | null;
+  count: number;
+  latestCreatedAt: string;
+  items: ReferralDTO[];
+};
+
+export type MyReferralGroupsDTO = {
+  asBusiness: ReferralGroupDTO[];
+  asProspect: ReferralGroupDTO[];
+  asReferrer: ReferralGroupDTO[];
 };

@@ -16,7 +16,8 @@ import PublicProfilePage from "./pages/PublicProfilePage";
 import VerifyPhone from "./pages/VerifyPhone";            // optional page (not forced)
 import EditProfile from "./pages/EditProfile";
 import ContactsPage from "./pages/ContactsPage";
-import ReferralFeed from "./pages/ReferralFeed";
+//import ReferralFeed from "./pages/ReferralFeed";
+import GroupedReferralFeed from "./pages/GroupedReferralFeed";
 import CreateReferralForm from "./components/CreateReferralForm";
 import ReferralThread from "./components/ReferralThread";
 import UserSettingsForm from "./pages/UserSettingsForm";
@@ -377,7 +378,7 @@ function InviteLandingRoute({ token }: { token?: string }) {
               path="/referrals"
               element={
                 <RequireNoBlockingGates boot={boot}>
-                  <ReferralFeed />
+                  <GroupedReferralFeed />
                 </RequireNoBlockingGates>
               }
             />

@@ -176,6 +176,12 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
           </Link>
         </div>
       )}
+      {/* Optional campaign context */}
+      {referral.campaignTitle && (
+        <div className="referral-note" style={{ marginTop: 4 }}>
+          As part of campaign: {referral.campaignTitle}
+        </div>
+      )}
 
       {/* Note */}
       {referral.note && <div className="th-muted ref-card__note">{referral.note}</div>}
