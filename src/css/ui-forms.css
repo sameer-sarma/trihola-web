@@ -4140,3 +4140,26 @@
   opacity: 0.8;
   transform: translateX(2px);
 }
+
+/* Gmail-like snippet line inside referral cards */
+.ref-card__preview {
+  font-size: 13px;
+  line-height: 1.25;
+  color: var(--ink-mid, #475569);
+  margin-right: 8px; /* keeps text away from chevron gutter */
+}
+
+.ref-card__preview a.th-link {
+  font-weight: 600;   /* Gmail-ish emphasis for linked subject */
+}
+
+.ref-card__preview-sep {
+  color: #94a3b8; /* muted separator dot */
+}
+
+/* Desktop: tighter like Gmail (optional but recommended) */
+@media (min-width: 901px) {
+  .ref-card__preview.line-clamp-2 {
+    -webkit-line-clamp: 1;
+  }
+}

@@ -22,23 +22,21 @@ const InlinePerson: React.FC<{
   name?: string | null;
   you?: boolean;
 }> = ({ to, imageUrl, name, you }) => (
-  <span
-    className="inline-person"
-    style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-  >
+  <span className="inline-person" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
     {imageUrl ? (
-      <AvatarOrPlaceholder
-        src={imageUrl}
-        name={name ?? undefined}
-        size={20}
-        showLabel={false}
-      />
+      <AvatarOrPlaceholder src={imageUrl} name={name ?? undefined} size={20} showLabel={false} />
     ) : null}
     <Link to={to} className="th-link" onClick={(e) => e.stopPropagation()}>
       {you ? "You" : name || "Unknown"}
     </Link>
   </span>
 );
+
+function toPreviewText(s?: string | null, maxChars = 240) {
+  const t = (s || "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  return t.length > maxChars ? t.slice(0, maxChars - 1) + "…" : t;
+}
 
 const ReferralCard: React.FC<ReferralCardProps> = ({
   referral,
@@ -98,6 +96,29 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
     }
   };
 
+  // Gmail-style preview line: (attached/campaign/note) merged into ONE compact snippet
+  const previewParts: Array<React.ReactNode> = [];
+
+  if (attached) {
+    previewParts.push(
+      <span key="attached">
+        on{" "}
+        <Link to={attached.url} className="th-link" onClick={(e) => e.stopPropagation()}>
+          {attached.title}
+        </Link>
+      </span>
+    );
+  }
+
+  if (referral.campaignTitle) {
+    previewParts.push(<span key="campaign">Campaign: {referral.campaignTitle}</span>);
+  }
+
+  const notePreview = toPreviewText(referral.note);
+  if (notePreview) {
+    previewParts.push(<span key="note">{notePreview}</span>);
+  }
+
   return (
     <div
       onClick={openThread}
@@ -130,7 +151,7 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
         ›
       </div>
 
-      {/* Tokenized sentence */}
+      {/* Line 1 (Gmail subject-equivalent): tokenized sentence */}
       <div
         className="ref-card__line ref-card__line--tokens"
         style={{
@@ -167,24 +188,17 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
         />
       </div>
 
-      {/* Optional product/bundle hint */}
-      {attached && (
-        <div className="referral-note" style={{ marginTop: 6 }}>
-          on{" "}
-          <Link to={attached.url} className="th-link" onClick={(e) => e.stopPropagation()}>
-            {attached.title}
-          </Link>
+      {/* Line 2 (Gmail snippet): ONE compact preview, clamped */}
+      {previewParts.length > 0 && (
+        <div className="ref-card__preview line-clamp-2" style={{ marginTop: 6 }}>
+          {previewParts.map((p, idx) => (
+            <React.Fragment key={idx}>
+              {idx > 0 ? <span className="ref-card__preview-sep"> · </span> : null}
+              {p}
+            </React.Fragment>
+          ))}
         </div>
       )}
-      {/* Optional campaign context */}
-      {referral.campaignTitle && (
-        <div className="referral-note" style={{ marginTop: 4 }}>
-          As part of campaign: {referral.campaignTitle}
-        </div>
-      )}
-
-      {/* Note */}
-      {referral.note && <div className="th-muted ref-card__note">{referral.note}</div>}
 
       {/* Meta: status (left) and timestamp (right) */}
       <div
