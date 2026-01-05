@@ -475,6 +475,13 @@ const GroupedReferralFeed: React.FC = () => {
     );
   };
 
+  function roleTitle(role: NormalRole) {
+    if (role === "prospect") return "Prospect referrals";
+    if (role === "business") return "Business referrals";
+    if (role === "referrer") return "Referrals made";
+    return "Referrals";
+  }
+
   if (loading) return <div className="loading">Loading…</div>;
   if (error) return <div className="error-banner">{error}</div>;
 
@@ -679,8 +686,9 @@ const GroupedReferralFeed: React.FC = () => {
         {/* MIDDLE */}
         {showMiddle ? (
           <div className="th-inboxCol th-inboxCol--list">
-            <div className="th-inboxCol__header">Groups ({sortedGroupList.length})</div>
-
+            <div className="th-inboxCol__header">
+              {roleTitle(currentRole)} ({sortedGroupList.length})
+            </div>
             <div className="th-inboxCol__scroll">
               {sortedGroupList.length === 0 ? (
                 <div className="th-empty">
