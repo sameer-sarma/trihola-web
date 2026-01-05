@@ -677,3 +677,19 @@
 .th-fab:active{
   transform: translateY(1px);
 }
+.th-mobileHero{
+  padding: 14px 16px 6px;
+}
+
+.th-mobileHero__title{
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--th-ink);
+}
+
+.th-mobileHero__sub{
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--th-ink-mid);
+}

@@ -22,6 +22,13 @@ function roleLabel(role: ReferralGroupDTO["role"]) {
   return String(role || "").toLowerCase();
 }
 
+function roleTitle(role: NormalRole) {
+  if (role === "prospect") return "Prospects";
+  if (role === "business") return "Business referrals";
+  if (role === "referrer") return "Referrals made";
+  return "Referrals";
+}
+
 function safeDateShort(iso?: string | null) {
   if (!iso) return "";
   const d = new Date(iso);
@@ -186,8 +193,9 @@ const GroupedReferralFeed: React.FC = () => {
       return s === "PENDING" || s === "PARTIALLY_ACCEPTED" || s === "AWAITING_RESPONSE";
     }).length;
 
-    const accepted = Array.from(unique.values()).filter((r: any) => String(r?.status || "").toUpperCase() === "ACCEPTED")
-      .length;
+    const accepted = Array.from(unique.values()).filter(
+      (r: any) => String(r?.status || "").toUpperCase() === "ACCEPTED"
+    ).length;
 
     const actionNeeded =
       (groups?.asProspect || []).reduce((acc, g) => acc + actionNeededCount(g), 0) +
@@ -212,7 +220,6 @@ const GroupedReferralFeed: React.FC = () => {
     const data = await fetchMyReferralGroups(t);
     setGroups(data);
 
-    // keep role if possible, otherwise choose default
     const nextRole = (() => {
       if (primary.type === "normal") {
         if (primary.role === "prospect" && data.asProspect?.length) return "prospect" as const;
@@ -227,7 +234,6 @@ const GroupedReferralFeed: React.FC = () => {
       return { type: "normal", role: nextRole };
     });
 
-    // Ensure group selection valid for new role
     const list =
       nextRole === "prospect"
         ? data.asProspect || []
@@ -235,7 +241,9 @@ const GroupedReferralFeed: React.FC = () => {
           ? data.asBusiness || []
           : data.asReferrer || [];
 
-    const sorted = [...list].sort((a, b) => new Date(b.latestCreatedAt || 0).getTime() - new Date(a.latestCreatedAt || 0).getTime());
+    const sorted = [...list].sort(
+      (a, b) => new Date(b.latestCreatedAt || 0).getTime() - new Date(a.latestCreatedAt || 0).getTime()
+    );
 
     if (!sorted.length) {
       setSelectedGroupKeyId(null);
@@ -279,7 +287,6 @@ const GroupedReferralFeed: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Lazy-load open referrals when switching to Open
   useEffect(() => {
     if (primary.type !== "open") return;
     if (!token) return;
@@ -345,10 +352,7 @@ const GroupedReferralFeed: React.FC = () => {
   const pickRole = (role: NormalRole) => {
     setPrimary({ type: "normal", role });
     setSelectedGroupKeyId(null);
-    if (isMobile) {
-      setMobileNavOpen(false);
-      // If switching into normal, encourage group selection by keeping it available but not forced
-    }
+    if (isMobile) setMobileNavOpen(false);
   };
 
   const pickOpen = () => {
@@ -360,7 +364,7 @@ const GroupedReferralFeed: React.FC = () => {
   };
 
   const renderGroupRow = (g: ReferralGroupDTO) => {
-    const title = g.groupTitle?.trim() || "Group";
+    const title = g.groupTitle?.trim() || "Conversation";
     const needs = actionNeededCount(g);
     const isSelected = g.groupKeyId === (selectedGroup?.groupKeyId ?? null);
 
@@ -420,7 +424,8 @@ const GroupedReferralFeed: React.FC = () => {
     const isActive = statusUpper === "ACTIVE";
     const toggleLabel = isActive ? "Pause link" : "Activate link";
 
-    const businessName = business.businessName || `${business.firstName ?? ""} ${business.lastName ?? ""}`.trim() || "Business";
+    const businessName =
+      business.businessName || `${business.firstName ?? ""} ${business.lastName ?? ""}`.trim() || "Business";
     const avatarUrl = business.profileImageUrl || null;
 
     const productName = product?.name ?? null;
@@ -475,30 +480,23 @@ const GroupedReferralFeed: React.FC = () => {
     );
   };
 
-  function roleTitle(role: NormalRole) {
-    if (role === "prospect") return "Prospect referrals";
-    if (role === "business") return "Business referrals";
-    if (role === "referrer") return "Referrals made";
-    return "Referrals";
-  }
-
   if (loading) return <div className="loading">Loading…</div>;
   if (error) return <div className="error-banner">{error}</div>;
 
   const showMiddle = primary.type === "normal";
 
-  // Mobile header text
+  // Mobile header text (center title stays the selected conversation title)
   const mobileTitle =
     primary.type === "open"
       ? "Open referrals"
-      : selectedGroup?.groupTitle?.trim() || "Referrals";
+      : selectedGroup?.groupTitle?.trim() || roleTitle(currentRole);
 
   const mobileSubtitle =
     primary.type === "open"
       ? "Shareable links you’ve published"
       : selectedGroup
-        ? `${selectedGroup.count} referral${selectedGroup.count === 1 ? "" : "s"} in this group`
-        : "Pick a group to see referrals";
+        ? `${selectedGroup.count} referral${selectedGroup.count === 1 ? "" : "s"}`
+        : `Pick a conversation from ${roleTitle(currentRole)}`;
 
   return (
     <div className={`th-inboxPage ${isMobile ? "is-mobile" : ""}`}>
@@ -552,10 +550,24 @@ const GroupedReferralFeed: React.FC = () => {
               </div>
             </div>
 
-            <div className="th-inboxHero__hint">Tip: Use the left column to switch roles. Use the middle column to pick a group.</div>
+            <div className="th-inboxHero__hint">
+              Tip: Use the left column to switch roles. Use the middle column to pick a conversation.
+            </div>
           </aside>
         </section>
-      ) : null}
+      ) : (
+        /* MOBILE HERO (slim, Gmail-like context) */
+        <section className="th-mobileHero">
+          <h1 className="th-mobileHero__title">
+            {primary.type === "open" ? "Open referrals" : roleTitle(currentRole)}
+          </h1>
+          <p className="th-mobileHero__sub">
+            {primary.type === "open"
+              ? "Shareable referral links"
+              : `Tap ${roleTitle(currentRole)} to pick a conversation`}
+          </p>
+        </section>
+      )}
 
       {/* MOBILE TOP BAR */}
       {isMobile ? (
@@ -577,7 +589,7 @@ const GroupedReferralFeed: React.FC = () => {
                 onClick={() => setMobileGroupsOpen(true)}
                 disabled={!sortedGroupList.length}
               >
-                Groups
+                {roleTitle(currentRole)}
               </button>
             ) : (
               <button type="button" className="th-mbtn th-mbtn--primary" onClick={handleRefresh}>
@@ -586,7 +598,7 @@ const GroupedReferralFeed: React.FC = () => {
             )}
           </div>
 
-          {/* Role chips row (only for normal) */}
+          {/* Role chips row */}
           <div className="th-mobileTop__chips">
             <button
               type="button"
@@ -674,10 +686,20 @@ const GroupedReferralFeed: React.FC = () => {
           </button>
 
           <div className="th-navActions">
-            <button type="button" className="btn btn--primary" style={{ width: "100%" }} onClick={() => navigate("/referrals/new")}>
+            <button
+              type="button"
+              className="btn btn--primary"
+              style={{ width: "100%" }}
+              onClick={() => navigate("/referrals/new")}
+            >
               + New referral
             </button>
-            <button type="button" className="btn" style={{ width: "100%", marginTop: 8 }} onClick={() => navigate("/referrals/new?mode=open")}>
+            <button
+              type="button"
+              className="btn"
+              style={{ width: "100%", marginTop: 8 }}
+              onClick={() => navigate("/referrals/new?mode=open")}
+            >
               + New open referral
             </button>
           </div>
@@ -689,6 +711,7 @@ const GroupedReferralFeed: React.FC = () => {
             <div className="th-inboxCol__header">
               {roleTitle(currentRole)} ({sortedGroupList.length})
             </div>
+
             <div className="th-inboxCol__scroll">
               {sortedGroupList.length === 0 ? (
                 <div className="th-empty">
@@ -708,13 +731,13 @@ const GroupedReferralFeed: React.FC = () => {
         <div className="th-inboxCol th-inboxCol--detail">
           {!isMobile ? (
             <div className="th-inboxCol__header">
-              {primary.type === "open" ? "Open referrals" : selectedGroup?.groupTitle?.trim() || "Select a group"}
+              {primary.type === "open" ? "Open referrals" : selectedGroup?.groupTitle?.trim() || "Select a conversation"}
               <div className="th-inboxCol__sub">
                 {primary.type === "open"
                   ? "Shareable links you’ve published. No grouping applies here."
                   : selectedGroup
-                    ? `${selectedGroup.count} referral${selectedGroup.count === 1 ? "" : "s"} in this group`
-                    : "Pick a group from the middle column."}
+                    ? `${selectedGroup.count} referral${selectedGroup.count === 1 ? "" : "s"}`
+                    : `Pick a conversation from ${roleTitle(currentRole)}.`}
               </div>
             </div>
           ) : null}
@@ -745,16 +768,18 @@ const GroupedReferralFeed: React.FC = () => {
               )
             ) : !selectedGroup ? (
               <div className="card">
-                <div style={{ fontWeight: 800 }}>No group selected</div>
+                <div style={{ fontWeight: 800 }}>No conversation selected</div>
                 <div className="th-muted" style={{ marginTop: 6 }}>
-                  {isMobile ? "Tap “Groups” above to pick a group." : "Choose a group from the middle column to see its referrals."}
+                  {isMobile
+                    ? `Tap “${roleTitle(currentRole)}” above to pick a conversation.`
+                    : `Choose a conversation from the middle column to see its referrals.`}
                 </div>
               </div>
             ) : selectedReferrals.length === 0 ? (
               <div className="card">
-                <div style={{ fontWeight: 800 }}>No referrals in this group</div>
+                <div style={{ fontWeight: 800 }}>No referrals in this conversation</div>
                 <div className="th-muted" style={{ marginTop: 6 }}>
-                  This group is empty (unexpected). Try Refresh.
+                  This conversation is empty (unexpected). Try Refresh.
                 </div>
               </div>
             ) : (
@@ -829,13 +854,28 @@ const GroupedReferralFeed: React.FC = () => {
               </button>
 
               <div className="th-sheet__cta">
-                <button type="button" className="btn btn--primary" style={{ width: "100%" }} onClick={() => navigate("/referrals/new")}>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  style={{ width: "100%" }}
+                  onClick={() => navigate("/referrals/new")}
+                >
                   + New referral
                 </button>
-                <button type="button" className="btn" style={{ width: "100%", marginTop: 8 }} onClick={() => navigate("/referrals/new?mode=open")}>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ width: "100%", marginTop: 8 }}
+                  onClick={() => navigate("/referrals/new?mode=open")}
+                >
                   + New open referral
                 </button>
-                <button type="button" className="btn btn--ghost" style={{ width: "100%", marginTop: 8 }} onClick={handleRefresh}>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  style={{ width: "100%", marginTop: 8 }}
+                  onClick={handleRefresh}
+                >
                   Refresh
                 </button>
               </div>
@@ -844,12 +884,12 @@ const GroupedReferralFeed: React.FC = () => {
         </div>
       ) : null}
 
-      {/* MOBILE: Groups drawer */}
+      {/* MOBILE: Role drawer (was “Groups”) */}
       {isMobile && mobileGroupsOpen && primary.type === "normal" ? (
         <div className="th-sheetOverlay" role="dialog" aria-modal="true" onClick={() => setMobileGroupsOpen(false)}>
           <div className="th-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="th-sheet__header">
-              <div className="th-sheet__title">Groups</div>
+              <div className="th-sheet__title">{roleTitle(currentRole)}</div>
               <button type="button" className="th-sheet__close" onClick={() => setMobileGroupsOpen(false)}>
                 ✕
               </button>
@@ -858,8 +898,8 @@ const GroupedReferralFeed: React.FC = () => {
             <div className="th-sheet__body th-sheet__body--flush">
               {sortedGroupList.length === 0 ? (
                 <div className="th-empty">
-                  <div className="th-empty__title">No groups yet</div>
-                  <div className="th-empty__sub">As soon as referrals arrive, your groups will appear here.</div>
+                  <div className="th-empty__title">No conversations yet</div>
+                  <div className="th-empty__sub">As soon as referrals arrive, your conversations will appear here.</div>
                 </div>
               ) : (
                 sortedGroupList.map(renderGroupRow)
