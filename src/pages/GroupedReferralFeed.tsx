@@ -13,9 +13,7 @@ import { fetchMyOpenReferrals, updateOpenReferral } from "../services/openReferr
 import ReferralCard from "../components/ReferralCard";
 
 type NormalRole = "prospect" | "business" | "referrer";
-type Primary =
-  | { type: "open" }
-  | { type: "normal"; role: NormalRole };
+type Primary = { type: "open" } | { type: "normal"; role: NormalRole };
 
 function roleLabel(role: ReferralGroupDTO["role"]) {
   if (role === "BUSINESS") return "You’re the business";
@@ -62,8 +60,34 @@ function actionNeededCount(group: ReferralGroupDTO) {
   return 0;
 }
 
+function useIsMobile(breakpointPx = 900) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpointPx}px)`);
+    const apply = () => setIsMobile(!!mq.matches);
+    apply();
+
+    // Safari <14 uses addListener/removeListener
+    // eslint-disable-next-line deprecation/deprecation
+    if (mq.addEventListener) mq.addEventListener("change", apply);
+    // eslint-disable-next-line deprecation/deprecation
+    else mq.addListener(apply);
+
+    return () => {
+      // eslint-disable-next-line deprecation/deprecation
+      if (mq.removeEventListener) mq.removeEventListener("change", apply);
+      // eslint-disable-next-line deprecation/deprecation
+      else mq.removeListener(apply);
+    };
+  }, [breakpointPx]);
+
+  return isMobile;
+}
+
 const GroupedReferralFeed: React.FC = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile(900);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -81,6 +105,17 @@ const GroupedReferralFeed: React.FC = () => {
 
   // Primary selection
   const [primary, setPrimary] = useState<Primary>({ type: "normal", role: "prospect" });
+
+  // Mobile drawers
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileGroupsOpen, setMobileGroupsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileNavOpen(false);
+      setMobileGroupsOpen(false);
+    }
+  }, [isMobile]);
 
   const counts = useMemo(() => {
     return {
@@ -136,11 +171,7 @@ const GroupedReferralFeed: React.FC = () => {
 
   // HERO metrics: unique referral count across all roles (dedupe by id)
   const heroMetrics = useMemo(() => {
-    const all = [
-      ...(groups?.asProspect || []),
-      ...(groups?.asBusiness || []),
-      ...(groups?.asReferrer || []),
-    ];
+    const all = [...(groups?.asProspect || []), ...(groups?.asBusiness || []), ...(groups?.asReferrer || [])];
 
     const unique = new Map<string, ReferralDTO>();
     for (const g of all) {
@@ -155,7 +186,8 @@ const GroupedReferralFeed: React.FC = () => {
       return s === "PENDING" || s === "PARTIALLY_ACCEPTED" || s === "AWAITING_RESPONSE";
     }).length;
 
-    const accepted = Array.from(unique.values()).filter((r: any) => String(r?.status || "").toUpperCase() === "ACCEPTED").length;
+    const accepted = Array.from(unique.values()).filter((r: any) => String(r?.status || "").toUpperCase() === "ACCEPTED")
+      .length;
 
     const actionNeeded =
       (groups?.asProspect || []).reduce((acc, g) => acc + actionNeededCount(g), 0) +
@@ -190,7 +222,6 @@ const GroupedReferralFeed: React.FC = () => {
       return chooseDefaultRole(data);
     })();
 
-    // If currently normal, ensure role valid
     setPrimary((prev) => {
       if (prev.type === "open") return prev;
       return { type: "normal", role: nextRole };
@@ -204,9 +235,7 @@ const GroupedReferralFeed: React.FC = () => {
           ? data.asBusiness || []
           : data.asReferrer || [];
 
-    const sorted = [...list].sort(
-      (a, b) => new Date(b.latestCreatedAt || 0).getTime() - new Date(a.latestCreatedAt || 0).getTime()
-    );
+    const sorted = [...list].sort((a, b) => new Date(b.latestCreatedAt || 0).getTime() - new Date(a.latestCreatedAt || 0).getTime());
 
     if (!sorted.length) {
       setSelectedGroupKeyId(null);
@@ -254,7 +283,6 @@ const GroupedReferralFeed: React.FC = () => {
   useEffect(() => {
     if (primary.type !== "open") return;
     if (!token) return;
-    // refresh every time you enter open (feels more “inbox” than stale)
     void loadOpenReferrals(token);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primary.type, token]);
@@ -314,6 +342,23 @@ const GroupedReferralFeed: React.FC = () => {
     }
   };
 
+  const pickRole = (role: NormalRole) => {
+    setPrimary({ type: "normal", role });
+    setSelectedGroupKeyId(null);
+    if (isMobile) {
+      setMobileNavOpen(false);
+      // If switching into normal, encourage group selection by keeping it available but not forced
+    }
+  };
+
+  const pickOpen = () => {
+    setPrimary({ type: "open" });
+    if (isMobile) {
+      setMobileNavOpen(false);
+      setMobileGroupsOpen(false);
+    }
+  };
+
   const renderGroupRow = (g: ReferralGroupDTO) => {
     const title = g.groupTitle?.trim() || "Group";
     const needs = actionNeededCount(g);
@@ -325,11 +370,15 @@ const GroupedReferralFeed: React.FC = () => {
         className={`th-grouprow ${isSelected ? "is-selected" : ""}`}
         role="button"
         tabIndex={0}
-        onClick={() => setSelectedGroupKeyId(g.groupKeyId)}
+        onClick={() => {
+          setSelectedGroupKeyId(g.groupKeyId);
+          if (isMobile) setMobileGroupsOpen(false);
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             setSelectedGroupKeyId(g.groupKeyId);
+            if (isMobile) setMobileGroupsOpen(false);
           }
         }}
       >
@@ -363,7 +412,6 @@ const GroupedReferralFeed: React.FC = () => {
     );
   };
 
-
   const renderOpenReferralCard = (o: OpenReferralDTO) => {
     const { id, slug, business, product, bundle } = o;
 
@@ -372,8 +420,7 @@ const GroupedReferralFeed: React.FC = () => {
     const isActive = statusUpper === "ACTIVE";
     const toggleLabel = isActive ? "Pause link" : "Activate link";
 
-    const businessName =
-      business.businessName || `${business.firstName ?? ""} ${business.lastName ?? ""}`.trim() || "Business";
+    const businessName = business.businessName || `${business.firstName ?? ""} ${business.lastName ?? ""}`.trim() || "Business";
     const avatarUrl = business.profileImageUrl || null;
 
     const productName = product?.name ?? null;
@@ -410,7 +457,7 @@ const GroupedReferralFeed: React.FC = () => {
             Created {o.createdAt ? new Date(o.createdAt).toLocaleString() : "recently"}
           </div>
 
-          <div className="th-row" style={{ gap: 8 }}>
+          <div className="th-row" style={{ gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
             <button type="button" className="btn btn--ghost" onClick={() => handleCopyOpenReferralLink(slug)}>
               Copy link
             </button>
@@ -433,62 +480,144 @@ const GroupedReferralFeed: React.FC = () => {
 
   const showMiddle = primary.type === "normal";
 
+  // Mobile header text
+  const mobileTitle =
+    primary.type === "open"
+      ? "Open referrals"
+      : selectedGroup?.groupTitle?.trim() || "Referrals";
+
+  const mobileSubtitle =
+    primary.type === "open"
+      ? "Shareable links you’ve published"
+      : selectedGroup
+        ? `${selectedGroup.count} referral${selectedGroup.count === 1 ? "" : "s"} in this group`
+        : "Pick a group to see referrals";
+
   return (
-    <div className="th-inboxPage">
-      {/* HERO (compact, full-width, uses screen better) */}
-      <section className="th-inboxHero">
-        <div className="th-inboxHero__copy">
-          <div className="th-inboxHero__eyebrow">REFERRALS • OFFERS • REWARDS</div>
-          <h1 className="th-inboxHero__title">
-            Referrals made simple.
-            <br />
-            Rewards made real.
-          </h1>
+    <div className={`th-inboxPage ${isMobile ? "is-mobile" : ""}`}>
+      {/* HERO (desktop/tablet) */}
+      {!isMobile ? (
+        <section className="th-inboxHero">
+          <div className="th-inboxHero__copy">
+            <div className="th-inboxHero__eyebrow">REFERRALS • OFFERS • REWARDS</div>
+            <h1 className="th-inboxHero__title">
+              Referrals made simple.
+              <br />
+              Rewards made real.
+            </h1>
 
-          <p className="th-inboxHero__sub">
-            Track every recommendation you make, see who has responded, and jump into the live thread with a single click.
-            When the right people connect, everyone wins.
-          </p>
+            <p className="th-inboxHero__sub">
+              Track every recommendation you make, see who has responded, and jump into the live thread with a single
+              click. When the right people connect, everyone wins.
+            </p>
 
-          <div className="th-inboxHero__actions">
-            <button type="button" className="btn" onClick={() => navigate("/referrals/new")}>
-              + New referral
+            <div className="th-inboxHero__actions">
+              <button type="button" className="btn" onClick={() => navigate("/referrals/new")}>
+                + New referral
+              </button>
+              <button type="button" className="btn" onClick={() => navigate("/referrals/new?mode=open")}>
+                + New open referral
+              </button>
+              <button type="button" className="btn" onClick={handleRefresh}>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <aside className="th-inboxHero__panel">
+            <div className="th-inboxHero__panelTitle">Your referral snapshot</div>
+            <div className="th-inboxHero__metrics">
+              <div className="th-inboxMetric">
+                <div className="th-inboxMetric__label">Total</div>
+                <div className="th-inboxMetric__value">{heroMetrics.total}</div>
+              </div>
+              <div className="th-inboxMetric">
+                <div className="th-inboxMetric__label">Accepted</div>
+                <div className="th-inboxMetric__value">{heroMetrics.accepted}</div>
+              </div>
+              <div className="th-inboxMetric">
+                <div className="th-inboxMetric__label">Waiting</div>
+                <div className="th-inboxMetric__value">{heroMetrics.waiting}</div>
+              </div>
+              <div className="th-inboxMetric">
+                <div className="th-inboxMetric__label">Need action</div>
+                <div className="th-inboxMetric__value">{heroMetrics.actionNeeded}</div>
+              </div>
+            </div>
+
+            <div className="th-inboxHero__hint">Tip: Use the left column to switch roles. Use the middle column to pick a group.</div>
+          </aside>
+        </section>
+      ) : null}
+
+      {/* MOBILE TOP BAR */}
+      {isMobile ? (
+        <div className="th-mobileTop">
+          <div className="th-mobileTop__row">
+            <button type="button" className="th-mbtn" onClick={() => setMobileNavOpen(true)}>
+              Inbox
             </button>
-            <button type="button" className="btn" onClick={() => navigate("/referrals/new?mode=open")}>
-              + New open referral
+
+            <div className="th-mobileTop__titleWrap">
+              <div className="th-mobileTop__title">{mobileTitle}</div>
+              <div className="th-mobileTop__sub">{mobileSubtitle}</div>
+            </div>
+
+            {primary.type === "normal" ? (
+              <button
+                type="button"
+                className="th-mbtn th-mbtn--primary"
+                onClick={() => setMobileGroupsOpen(true)}
+                disabled={!sortedGroupList.length}
+              >
+                Groups
+              </button>
+            ) : (
+              <button type="button" className="th-mbtn th-mbtn--primary" onClick={handleRefresh}>
+                Refresh
+              </button>
+            )}
+          </div>
+
+          {/* Role chips row (only for normal) */}
+          <div className="th-mobileTop__chips">
+            <button
+              type="button"
+              className={`th-chipBtn ${primary.type === "open" ? "is-active" : ""}`}
+              onClick={pickOpen}
+            >
+              Open <span className="th-chipBtn__count">{openReferrals.length || 0}</span>
             </button>
-            <button type="button" className="btn" onClick={handleRefresh}>
-              Refresh
+
+            <button
+              type="button"
+              className={`th-chipBtn ${primary.type === "normal" && primary.role === "prospect" ? "is-active" : ""}`}
+              onClick={() => pickRole("prospect")}
+              disabled={!tabsAvailable.prospect}
+            >
+              Prospect <span className="th-chipBtn__count">{counts.prospect}</span>
+            </button>
+
+            <button
+              type="button"
+              className={`th-chipBtn ${primary.type === "normal" && primary.role === "business" ? "is-active" : ""}`}
+              onClick={() => pickRole("business")}
+              disabled={!tabsAvailable.business}
+            >
+              Business <span className="th-chipBtn__count">{counts.business}</span>
+            </button>
+
+            <button
+              type="button"
+              className={`th-chipBtn ${primary.type === "normal" && primary.role === "referrer" ? "is-active" : ""}`}
+              onClick={() => pickRole("referrer")}
+              disabled={!tabsAvailable.referrer}
+            >
+              Referrer <span className="th-chipBtn__count">{counts.referrer}</span>
             </button>
           </div>
         </div>
-
-        <aside className="th-inboxHero__panel">
-          <div className="th-inboxHero__panelTitle">Your referral snapshot</div>
-          <div className="th-inboxHero__metrics">
-            <div className="th-inboxMetric">
-              <div className="th-inboxMetric__label">Total</div>
-              <div className="th-inboxMetric__value">{heroMetrics.total}</div>
-            </div>
-            <div className="th-inboxMetric">
-              <div className="th-inboxMetric__label">Accepted</div>
-              <div className="th-inboxMetric__value">{heroMetrics.accepted}</div>
-            </div>
-            <div className="th-inboxMetric">
-              <div className="th-inboxMetric__label">Waiting</div>
-              <div className="th-inboxMetric__value">{heroMetrics.waiting}</div>
-            </div>
-            <div className="th-inboxMetric">
-              <div className="th-inboxMetric__label">Need action</div>
-              <div className="th-inboxMetric__value">{heroMetrics.actionNeeded}</div>
-            </div>
-          </div>
-
-          <div className="th-inboxHero__hint">
-            Tip: Use the left column to switch roles. Use the middle column to pick a group.
-          </div>
-        </aside>
-      </section>
+      ) : null}
 
       {/* GRID */}
       <div className={`th-inboxGrid ${showMiddle ? "is-3col" : "is-2col"}`}>
@@ -499,7 +628,7 @@ const GroupedReferralFeed: React.FC = () => {
           <button
             type="button"
             className={`th-navItem ${primary.type === "open" ? "is-active" : ""}`}
-            onClick={() => setPrimary({ type: "open" })}
+            onClick={pickOpen}
           >
             <span className="th-navItem__label">Open referrals</span>
             <span className="th-navItem__count">{openReferrals.length || 0}</span>
@@ -510,10 +639,7 @@ const GroupedReferralFeed: React.FC = () => {
           <button
             type="button"
             className={`th-navItem ${primary.type === "normal" && primary.role === "prospect" ? "is-active" : ""}`}
-            onClick={() => {
-              setPrimary({ type: "normal", role: "prospect" });
-              setSelectedGroupKeyId(null);
-            }}
+            onClick={() => pickRole("prospect")}
             disabled={!tabsAvailable.prospect}
           >
             <span className="th-navItem__label">As Prospect</span>
@@ -523,10 +649,7 @@ const GroupedReferralFeed: React.FC = () => {
           <button
             type="button"
             className={`th-navItem ${primary.type === "normal" && primary.role === "business" ? "is-active" : ""}`}
-            onClick={() => {
-              setPrimary({ type: "normal", role: "business" });
-              setSelectedGroupKeyId(null);
-            }}
+            onClick={() => pickRole("business")}
             disabled={!tabsAvailable.business}
           >
             <span className="th-navItem__label">As Business</span>
@@ -536,10 +659,7 @@ const GroupedReferralFeed: React.FC = () => {
           <button
             type="button"
             className={`th-navItem ${primary.type === "normal" && primary.role === "referrer" ? "is-active" : ""}`}
-            onClick={() => {
-              setPrimary({ type: "normal", role: "referrer" });
-              setSelectedGroupKeyId(null);
-            }}
+            onClick={() => pickRole("referrer")}
             disabled={!tabsAvailable.referrer}
           >
             <span className="th-navItem__label">As Referrer</span>
@@ -578,16 +698,18 @@ const GroupedReferralFeed: React.FC = () => {
 
         {/* RIGHT */}
         <div className="th-inboxCol th-inboxCol--detail">
-          <div className="th-inboxCol__header">
-            {primary.type === "open" ? "Open referrals" : selectedGroup?.groupTitle?.trim() || "Select a group"}
-            <div className="th-inboxCol__sub">
-              {primary.type === "open"
-                ? "Shareable links you’ve published. No grouping applies here."
-                : selectedGroup
-                  ? `${selectedGroup.count} referral${selectedGroup.count === 1 ? "" : "s"} in this group`
-                  : "Pick a group from the middle column."}
+          {!isMobile ? (
+            <div className="th-inboxCol__header">
+              {primary.type === "open" ? "Open referrals" : selectedGroup?.groupTitle?.trim() || "Select a group"}
+              <div className="th-inboxCol__sub">
+                {primary.type === "open"
+                  ? "Shareable links you’ve published. No grouping applies here."
+                  : selectedGroup
+                    ? `${selectedGroup.count} referral${selectedGroup.count === 1 ? "" : "s"} in this group`
+                    : "Pick a group from the middle column."}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div className="th-inboxCol__scroll th-inboxCol__pad">
             {primary.type === "open" ? (
@@ -617,7 +739,7 @@ const GroupedReferralFeed: React.FC = () => {
               <div className="card">
                 <div style={{ fontWeight: 800 }}>No group selected</div>
                 <div className="th-muted" style={{ marginTop: 6 }}>
-                  Choose a group from the middle column to see its referrals.
+                  {isMobile ? "Tap “Groups” above to pick a group." : "Choose a group from the middle column to see its referrals."}
                 </div>
               </div>
             ) : selectedReferrals.length === 0 ? (
@@ -644,6 +766,113 @@ const GroupedReferralFeed: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* MOBILE: Inbox drawer */}
+      {isMobile && mobileNavOpen ? (
+        <div className="th-sheetOverlay" role="dialog" aria-modal="true" onClick={() => setMobileNavOpen(false)}>
+          <div className="th-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="th-sheet__header">
+              <div className="th-sheet__title">Inbox</div>
+              <button type="button" className="th-sheet__close" onClick={() => setMobileNavOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="th-sheet__body">
+              <button
+                type="button"
+                className={`th-sheetItem ${primary.type === "open" ? "is-active" : ""}`}
+                onClick={pickOpen}
+              >
+                <span>Open referrals</span>
+                <span className="th-sheetItem__count">{openReferrals.length || 0}</span>
+              </button>
+
+              <div className="th-sheet__section">Normal referrals</div>
+
+              <button
+                type="button"
+                className={`th-sheetItem ${primary.type === "normal" && primary.role === "prospect" ? "is-active" : ""}`}
+                onClick={() => pickRole("prospect")}
+                disabled={!tabsAvailable.prospect}
+              >
+                <span>As Prospect</span>
+                <span className="th-sheetItem__count">{counts.prospect}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`th-sheetItem ${primary.type === "normal" && primary.role === "business" ? "is-active" : ""}`}
+                onClick={() => pickRole("business")}
+                disabled={!tabsAvailable.business}
+              >
+                <span>As Business</span>
+                <span className="th-sheetItem__count">{counts.business}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`th-sheetItem ${primary.type === "normal" && primary.role === "referrer" ? "is-active" : ""}`}
+                onClick={() => pickRole("referrer")}
+                disabled={!tabsAvailable.referrer}
+              >
+                <span>As Referrer</span>
+                <span className="th-sheetItem__count">{counts.referrer}</span>
+              </button>
+
+              <div className="th-sheet__cta">
+                <button type="button" className="btn btn--primary" style={{ width: "100%" }} onClick={() => navigate("/referrals/new")}>
+                  + New referral
+                </button>
+                <button type="button" className="btn" style={{ width: "100%", marginTop: 8 }} onClick={() => navigate("/referrals/new?mode=open")}>
+                  + New open referral
+                </button>
+                <button type="button" className="btn btn--ghost" style={{ width: "100%", marginTop: 8 }} onClick={handleRefresh}>
+                  Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* MOBILE: Groups drawer */}
+      {isMobile && mobileGroupsOpen && primary.type === "normal" ? (
+        <div className="th-sheetOverlay" role="dialog" aria-modal="true" onClick={() => setMobileGroupsOpen(false)}>
+          <div className="th-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="th-sheet__header">
+              <div className="th-sheet__title">Groups</div>
+              <button type="button" className="th-sheet__close" onClick={() => setMobileGroupsOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="th-sheet__body th-sheet__body--flush">
+              {sortedGroupList.length === 0 ? (
+                <div className="th-empty">
+                  <div className="th-empty__title">No groups yet</div>
+                  <div className="th-empty__sub">As soon as referrals arrive, your groups will appear here.</div>
+                </div>
+              ) : (
+                sortedGroupList.map(renderGroupRow)
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* MOBILE: FAB */}
+      {isMobile ? (
+        <button
+          type="button"
+          className="th-fab"
+          onClick={() => navigate("/referrals/new")}
+          aria-label="New referral"
+          title="New referral"
+        >
+          +
+        </button>
+      ) : null}
     </div>
   );
 };

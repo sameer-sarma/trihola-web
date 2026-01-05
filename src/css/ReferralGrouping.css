@@ -1,10 +1,9 @@
 /* -------------------------------------------------------
-   TriHola – Gmail-like Referral Inbox (3-column + hero)
+   TriHola – Gmail-like Referral Inbox (3-column + mobile drawers)
    CLEAN FILE: removes legacy mailbox styles + conflicts
 -------------------------------------------------------- */
 
 :root{
-  /* these are expected to exist from ui-forms.css; we fallback safely */
   --th-border: var(--border, #e6edf5);
   --th-ink: var(--ink-strong, #0f172a);
   --th-ink-mid: var(--ink-mid, #64748b);
@@ -326,7 +325,7 @@
 
 .th-grouprow__title{
   font-size: 13px;
-  font-weight: 550; /* not bold by default */
+  font-weight: 550;
   color: var(--th-ink);
   white-space: nowrap;
   overflow:hidden;
@@ -347,9 +346,6 @@
   gap: 6px;
   flex-wrap: wrap;
 }
-
-/* When you want “needs action” to stand out a bit */
-.th-grouprow__title.is-strong{ font-weight: 650; }
 
 /* ---------------- SHARED CHIP STYLES ---------------- */
 
@@ -400,6 +396,13 @@
   font-weight: 400;
 }
 
+/* Open cards: ensure title matches normal cards better */
+.th-openCard .ref-card__title{
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
 /* ---------------- RESPONSIVE ---------------- */
 
 @media (max-width: 1080px){
@@ -411,8 +414,266 @@
   }
 }
 
-.th-openCard .ref-card__title{
-  font-size: 16px;
-  line-height: 1.25;
-  font-weight: 700;
+/* ---------------- MOBILE: Gmail-like single column ---------------- */
+@media (max-width: 900px){
+  .th-inboxPage{
+    padding: 12px 12px 84px; /* leave room for FAB */
+  }
+
+  /* Force single column list like Gmail */
+  .th-inboxGrid.is-3col,
+  .th-inboxGrid.is-2col{
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  /* Hide left + middle columns completely on mobile */
+  .th-inboxCol--nav,
+  .th-inboxCol--list{
+    display:none;
+  }
+
+  /* Make right panel feel like primary feed */
+  .th-inboxCol--detail{
+    border-radius: 14px;
+  }
+
+  .th-inboxCol__pad{
+    padding: 10px;
+  }
+}
+
+/* ---------------- MOBILE TOP BAR ---------------- */
+
+.th-mobileTop{
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid var(--th-border);
+  box-shadow: var(--th-shadow);
+  overflow: hidden;
+}
+
+.th-mobileTop__row{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 10px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.th-mobileTop__titleWrap{
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+.th-mobileTop__title{
+  font-weight: 750;
+  color: var(--th-ink);
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
+}
+
+.th-mobileTop__sub{
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--th-ink-mid);
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
+}
+
+.th-mbtn{
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.th-mbtn--primary{
+  background: #eef4ff;
+  border-color: #dbeafe;
+  color: #1e3a8a;
+}
+
+.th-mobileTop__chips{
+  display:flex;
+  gap: 8px;
+  padding: 10px 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.th-chipBtn{
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 10px;
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.th-chipBtn:disabled{
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.th-chipBtn__count{
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 650;
+}
+
+.th-chipBtn.is-active{
+  background: #eef4ff;
+  border-color: #dbeafe;
+  color: #1e3a8a;
+}
+
+.th-chipBtn.is-active .th-chipBtn__count{
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+/* ---------------- BOTTOM SHEETS (Inbox/Groups) ---------------- */
+
+.th-sheetOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,23,.45);
+  z-index: 60;
+  display:flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 12px;
+}
+
+.th-sheet{
+  width: min(720px, 100%);
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid var(--th-border);
+  box-shadow: 0 25px 70px rgba(2,6,23,.35);
+  overflow:hidden;
+  max-height: 86vh;
+  display:flex;
+  flex-direction: column;
+}
+
+.th-sheet__header{
+  padding: 12px 12px;
+  border-bottom: 1px solid #eef2f7;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.th-sheet__title{
+  font-weight: 800;
+  color: var(--th-ink);
+}
+
+.th-sheet__close{
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor:pointer;
+}
+
+.th-sheet__body{
+  overflow:auto;
+  padding: 10px;
+}
+
+.th-sheet__body--flush{
+  padding: 0;
+}
+
+.th-sheetItem{
+  width: 100%;
+  border: 1px solid #eef2f7;
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 12px;
+  margin-bottom: 10px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor:pointer;
+  font-weight: 650;
+}
+
+.th-sheetItem.is-active{
+  background: #eef4ff;
+  border-color: #dbeafe;
+  color: #1e3a8a;
+}
+
+.th-sheetItem:disabled{
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.th-sheetItem__count{
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 650;
+}
+
+.th-sheet__section{
+  margin: 10px 0 8px;
+  font-weight: 750;
+  color: var(--th-ink);
+}
+
+.th-sheet__cta{
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eef2f7;
+}
+
+/* ---------------- FAB ---------------- */
+
+.th-fab{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.35);
+  background: #0f172a;
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  display:grid;
+  place-items:center;
+  box-shadow: 0 18px 45px rgba(2,6,23,.25);
+  cursor: pointer;
+  z-index: 70;
+}
+
+.th-fab:active{
+  transform: translateY(1px);
 }
