@@ -556,16 +556,33 @@ const GroupedReferralFeed: React.FC = () => {
           </aside>
         </section>
       ) : (
-        /* MOBILE HERO (slim, Gmail-like context) */
+        /* MOBILE HERO (slim + visible CTAs) */
         <section className="th-mobileHero">
-          <h1 className="th-mobileHero__title">
-            {primary.type === "open" ? "Open referrals" : roleTitle(currentRole)}
-          </h1>
-          <p className="th-mobileHero__sub">
-            {primary.type === "open"
-              ? "Shareable referral links"
-              : `Tap ${roleTitle(currentRole)} to pick a conversation`}
-          </p>
+          <div className="th-mobileHero__head">
+            <h1 className="th-mobileHero__title">
+              {primary.type === "open" ? "Open referrals" : roleTitle(currentRole)}
+            </h1>
+            <p className="th-mobileHero__sub">
+              {primary.type === "open"
+                ? "Shareable referral links"
+                : `Tap ${roleTitle(currentRole)} to pick a conversation`}
+            </p>
+          </div>
+
+          {/* CTA strip (always visible on mobile) */}
+          <div className="th-mobileHero__actions">
+            <button type="button" className="btn btn--primary" onClick={() => navigate("/referrals/new")}>
+              + New referral
+            </button>
+
+            <button type="button" className="btn" onClick={() => navigate("/referrals/new?mode=open")}>
+              + New open
+            </button>
+
+            <button type="button" className="btn btn--ghost" onClick={handleRefresh}>
+              Refresh
+            </button>
+          </div>
         </section>
       )}
 

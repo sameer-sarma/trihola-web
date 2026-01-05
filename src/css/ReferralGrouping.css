@@ -693,3 +693,40 @@
   font-size: 13px;
   color: var(--th-ink-mid);
 }
+
+.th-mobileHero{
+  padding: 14px 16px 10px;
+}
+
+.th-mobileHero__title{
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--th-ink);
+}
+
+.th-mobileHero__sub{
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--th-ink-mid);
+}
+
+.th-mobileHero__actions{
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Make the CTA strip feel “app-like” on narrow screens */
+@media (max-width: 420px){
+  .th-mobileHero__actions .btn{
+    flex: 1 1 auto;
+  }
+}
+
+/* Keep buttons compact on mobile */
+.th-mobileHero__actions .btn{
+  padding: 10px 12px;
+  font-weight: 650;
+}
