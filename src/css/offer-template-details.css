@@ -1,0 +1,605 @@
+/* src/css/offer-template-details.css
+   Offer-template specific presentation only.
+   Shared layout, section, grid, and entity card styles now live in layout.css.
+*/
+
+.ofd-page {
+  color: var(--text);
+}
+
+.ofd-inlineError {
+  margin-top: 4px;
+}
+
+.ofd-page--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ofd-errorBlock {
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Hero */
+/* -------------------------------------------------------------------------- */
+
+.ofd-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 1px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.ofd-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.74),
+    rgba(255, 255, 255, 0.66)
+  );
+  pointer-events: none;
+}
+
+.ofd-heroGlow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(28px);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.ofd-heroGlow--one {
+  width: 240px;
+  height: 240px;
+  top: -90px;
+  left: -50px;
+  background: radial-gradient(circle, rgba(247, 136, 47, 0.14), transparent 70%);
+}
+
+.ofd-heroGlow--two {
+  display: none;
+}
+
+.ofd-heroInner {
+  position: relative;
+  z-index: 1;
+  padding: 24px;
+  display: grid;
+  gap: 20px;
+}
+
+.ofd-heroBrand {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ofd-brandBadge {
+  width: 84px;
+  height: 84px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.ofd-brandBadge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ofd-brandFallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--muted);
+  background:
+    radial-gradient(circle at top left, rgba(247, 136, 47, 0.1), transparent 55%),
+    linear-gradient(180deg, #ffffff, #f8fafc);
+}
+
+.ofd-brandText {
+  min-width: 0;
+}
+
+.ofd-brandEyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.ofd-title {
+  margin: 14px 0 0;
+  font-size: clamp(30px, 3.4vw, 46px);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.ofd-subtitle {
+  margin-top: 10px;
+  max-width: 760px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.ofd-chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ofd-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.ofd-chip--success {
+  color: #1b7a45;
+  background: rgba(232, 250, 238, 0.9);
+}
+
+.ofd-chip--muted {
+  color: #6c7788;
+  background: rgba(243, 245, 249, 0.92);
+}
+
+.ofd-chip--accent {
+  color: #3559d4;
+  background: rgba(235, 240, 255, 0.92);
+}
+
+.ofd-heroMain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: 18px;
+  align-items: stretch;
+}
+
+.ofd-heroVisual {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(280px, 420px) minmax(220px, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.ofd-heroImageButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.ofd-heroImage,
+.ofd-heroImageFallback {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  border-radius: 24px;
+  object-fit: cover;
+  display: block;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.ofd-heroImageFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 58px;
+  font-weight: 850;
+  color: var(--muted);
+  letter-spacing: -0.04em;
+  background:
+    radial-gradient(circle at top left, rgba(247, 136, 47, 0.12), transparent 55%),
+    linear-gradient(180deg, #ffffff, #f8fafc);
+}
+
+.ofd-heroValuePanel {
+  position: relative;
+  padding: 24px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(88, 113, 255, 0.96), rgba(117, 86, 255, 0.9));
+  box-shadow: 0 20px 40px rgba(80, 94, 214, 0.22);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.ofd-heroValuePanel::before {
+  content: "";
+  position: absolute;
+  top: -28px;
+  right: -24px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.24), transparent 68%);
+}
+
+.ofd-heroValue {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(34px, 4vw, 60px);
+  line-height: 0.95;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  color: #ffffff;
+}
+
+.ofd-heroValueMeta {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.84);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.ofd-heroActions {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.ofd-heroActions .btn--primary {
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Page content */
+/* -------------------------------------------------------------------------- */
+
+.ofd-content {
+  display: grid;
+  gap: 18px;
+}
+
+.ofd-section {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.ofd-section::before {
+  content: "";
+  position: absolute;
+  left: -40px;
+  top: -50px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(247, 136, 47, 0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.ofd-sectionTitle,
+.ofd-sectionSubtitle {
+  position: relative;
+  z-index: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Text panel */
+/* -------------------------------------------------------------------------- */
+
+.ofd-textPanel {
+  position: relative;
+  z-index: 1;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 14px;
+}
+
+.ofd-textPanelLabel {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.ofd-textPanelBody {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tier tiles */
+/* -------------------------------------------------------------------------- */
+
+.ofd-tierGrid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ofd-tierTile {
+  position: relative;
+  overflow: hidden;
+  min-height: 170px;
+  padding: 18px;
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(88, 113, 255, 0.94), rgba(119, 83, 255, 0.88));
+  color: #ffffff;
+  box-shadow: 0 20px 40px rgba(84, 97, 214, 0.22);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ofd-tierTile::before {
+  content: "";
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  top: -50px;
+  right: -34px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.24), transparent 70%);
+}
+
+.ofd-tierRange,
+.ofd-tierBenefit,
+.ofd-tierFoot {
+  position: relative;
+  z-index: 1;
+}
+
+.ofd-tierRange {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.ofd-tierBenefit {
+  margin-top: 12px;
+  font-size: 34px;
+  line-height: 1.02;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.ofd-tierFoot {
+  margin-top: 18px;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Gallery */
+/* -------------------------------------------------------------------------- */
+
+.ofd-galleryShell {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(320px, 1.3fr) minmax(260px, 1fr);
+  gap: 14px;
+}
+
+.ofd-galleryLead,
+.ofd-galleryTile {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.ofd-galleryLead img,
+.ofd-galleryTile img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.ofd-galleryLead img {
+  min-height: 320px;
+}
+
+.ofd-galleryTile img {
+  min-height: 152px;
+}
+
+.ofd-galleryLead:hover img,
+.ofd-galleryTile:hover img {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: var(--shadow-md);
+}
+
+.ofd-galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ofd-galleryBadge {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(18, 27, 46, 0.72);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .ofd-heroMain {
+    grid-template-columns: 1fr;
+  }
+
+  .ofd-heroActions {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .ofd-tierGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ofd-galleryShell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 920px) {
+  .ofd-heroInner {
+    padding: 20px;
+  }
+
+  .ofd-heroBrand {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .ofd-brandBadge {
+    width: 76px;
+    height: 76px;
+    border-radius: 20px;
+  }
+
+  .ofd-heroVisual {
+    grid-template-columns: 1fr;
+  }
+
+  .ofd-heroImage,
+  .ofd-heroImageFallback {
+    min-height: 240px;
+  }
+
+  .ofd-galleryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .ofd-hero,
+  .ofd-section,
+  .ofd-errorBlock {
+    border-radius: 22px;
+  }
+
+  .ofd-heroInner,
+  .ofd-section {
+    padding: 16px;
+  }
+
+  .ofd-heroBrand {
+    grid-template-columns: 1fr;
+  }
+
+  .ofd-brandBadge {
+    width: 72px;
+    height: 72px;
+  }
+
+  .ofd-tierGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .ofd-galleryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .ofd-galleryLead img {
+    min-height: 240px;
+  }
+
+  .ofd-galleryTile img {
+    min-height: 180px;
+  }
+
+  .ofd-title {
+    font-size: 30px;
+  }
+
+  .ofd-subtitle {
+    font-size: 14px;
+  }
+}

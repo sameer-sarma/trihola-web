@@ -1,0 +1,556 @@
+/* =============================================
+   FILE: src/css/admin.css
+   Trihola Admin styling
+   ============================================= */
+
+.adminLayout {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* Sidebar */
+
+.adminSide {
+  position: sticky;
+  top: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(250, 251, 255, 0.88));
+  border-radius: 24px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 36px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+.adminBrand {
+  padding: 6px 6px 14px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  margin-bottom: 14px;
+}
+
+.adminBrand__title {
+  font-weight: 950;
+  font-size: 18px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.adminBrand__sub {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.adminNav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.adminNav__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: rgba(31, 41, 55, 0.84);
+  font-weight: 850;
+  border: 1px solid transparent;
+  background: rgba(15, 23, 42, 0.03);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.02s ease;
+}
+
+.adminNav__link:hover {
+  background: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+.adminNav__link.is-on {
+  color: var(--text);
+  border-color: rgba(247, 136, 47, 0.28);
+  background: linear-gradient(180deg, rgba(247, 136, 47, 0.12), rgba(247, 195, 49, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(247, 136, 47, 0.06);
+}
+
+.adminNav__link.is-on::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 10px;
+  bottom: 10px;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--brand), var(--brand-2));
+}
+
+.adminNav__link.is-disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.adminSide__footer {
+  margin-top: auto;
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+/* Main */
+
+.adminMain {
+  min-width: 0;
+  min-height: calc(100vh - 36px);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.92));
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+/* Panel */
+
+.adminPanel {
+  width: 100%;
+  display: grid;
+  gap: 16px;
+}
+
+.adminPanel__title {
+  font-weight: 950;
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.adminPanel__sub {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+  max-width: 720px;
+}
+
+/* Top bar */
+
+.adminTop {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.adminTop__title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.05;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.adminTop__sub {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.adminTop__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.adminSearch {
+  min-width: 300px;
+  max-width: 420px;
+}
+
+/* Chips / filters */
+
+.adminChips {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.chip {
+  appearance: none;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text);
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 13px;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.02s ease,
+    box-shadow 0.15s ease;
+}
+
+.chip:hover {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(15, 23, 42, 0.18);
+}
+
+.chip.is-on {
+  border-color: rgba(247, 136, 47, 0.34);
+  background: linear-gradient(180deg, rgba(247, 136, 47, 0.12), rgba(247, 195, 49, 0.08));
+  box-shadow: 0 6px 14px rgba(247, 136, 47, 0.10);
+}
+
+/* States */
+
+.adminError {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(220, 38, 38, 0.28);
+  background: rgba(220, 38, 38, 0.08);
+  color: #8f1d1d;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.adminEmpty,
+.adminLoading {
+  padding: 18px 16px;
+  border-radius: 18px;
+  border: 1px dashed rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Table surface */
+
+.adminTableWrap {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.adminTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.adminTable th,
+.adminTable td {
+  padding: 14px 14px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  vertical-align: middle;
+}
+
+.adminTable th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(31, 41, 55, 0.54);
+  background: rgba(248, 250, 252, 0.98);
+  font-weight: 900;
+}
+
+.adminTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.adminTable tr:hover td {
+  background: rgba(15, 23, 42, 0.018);
+}
+
+/* Business cell */
+
+.bizCell {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 260px;
+}
+
+.bizLogo {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(15, 23, 42, 0.03);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.bizLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bizLogo__ph {
+  font-weight: 950;
+  font-size: 18px;
+  color: rgba(31, 41, 55, 0.56);
+}
+
+.bizMeta {
+  min-width: 0;
+}
+
+.bizName {
+  font-weight: 900;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.bizSlug {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* Proofs / verified pills */
+
+.verifyLine,
+.proofLine {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(15, 23, 42, 0.03);
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 850;
+  color: rgba(31, 41, 55, 0.74);
+  text-decoration: none;
+}
+
+.pill--link:hover {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.16);
+}
+
+.pill--muted {
+  opacity: 0.66;
+}
+
+/* Created info */
+
+.createdCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.createdBy {
+  font-size: 12px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Row actions */
+
+.rowActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Status badges */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  font-weight: 900;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.badge--ok {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
+.badge--warn {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.34);
+}
+
+.badge--bad {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.34);
+}
+
+.badge--muted {
+  background: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+/* Responsive */
+
+@media (max-width: 1180px) {
+  .adminLayout {
+    grid-template-columns: 248px minmax(0, 1fr);
+  }
+
+  .bizSlug {
+    max-width: 240px;
+  }
+}
+
+@media (max-width: 980px) {
+  .adminLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .adminSide {
+    position: static;
+    min-height: auto;
+  }
+
+  .adminMain {
+    min-height: auto;
+  }
+
+  .adminTop {
+    align-items: stretch;
+  }
+
+  .adminTop__actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .adminSearch {
+    min-width: 220px;
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .adminLayout {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .adminMain,
+  .adminSide {
+    border-radius: 20px;
+    padding: 16px;
+  }
+
+  .adminTableWrap {
+    overflow-x: auto;
+  }
+
+  .adminTable {
+    min-width: 980px;
+  }
+
+  .rowActions {
+    min-width: 220px;
+  }
+}
+
+.bizContactStack {
+  margin-top: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.bizContactLine {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.bizContactLabel {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(31, 41, 55, 0.50);
+}
+
+.bizContactValue {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: rgba(31, 41, 55, 0.82);
+}
+
+.createdCell {
+  min-width: 120px;
+}
+
+.rowActions {
+  min-width: 260px;
+}
+
+.adminTable td {
+  vertical-align: top;
+}

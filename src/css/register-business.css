@@ -1,0 +1,126 @@
+/* src/css/register-business.css */
+
+/* Keep page centering / width, but let base.css + components.css handle the look. */
+.rb-page {
+  display: flex;
+  justify-content: center;
+}
+
+.rb-card {
+  width: min(980px, 100%);
+}
+
+/* Business form grid */
+.rb-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.rb-span2 {
+  grid-column: 1 / -1;
+}
+
+.rb-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Slug hint pill (small UI only) */
+.rb-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-radius: 12px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.rb-hint--muted {
+  color: var(--muted);
+}
+
+.rb-hint--ok {
+  border-color: rgba(60, 200, 120, 0.4);
+  background: rgba(60, 200, 120, 0.12);
+}
+
+.rb-hint--bad {
+  border-color: rgba(255, 60, 60, 0.4);
+  background: rgba(255, 60, 60, 0.12);
+}
+
+.rb-hint-url {
+  opacity: 0.85;
+  font-weight: 800;
+}
+
+.rb-divider {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+/* Action row */
+.rb-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.rb-uploadBox {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.rb-uploadBox .th-label {
+  margin-bottom: 8px;
+}
+
+.rb-uploadBox .th-help {
+  margin-top: 8px;
+}
+
+.rb-uploadBox input[type="file"].th-input {
+  padding: 10px 12px;
+  height: auto;
+}
+
+.verify-nudge {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 12px 0 18px;
+}
+
+.verify-nudge__title {
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.verify-nudge__body {
+  font-size: 14px;
+  opacity: 0.9;
+  display: grid;
+  gap: 6px;
+}
+
+@media (max-width: 760px) {
+  .rb-grid {
+    grid-template-columns: 1fr;
+  }
+}

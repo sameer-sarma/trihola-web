@@ -1,0 +1,133 @@
+/* src/css/thread-cta.css */
+
+/*
+  CTA should:
+  - Be a rigid, thick-bordered rectangle (card)
+  - Have larger padding than standard messages
+  - Use SAME soft bubble color as sender (mine vs theirs)
+  - Remain readable + compact in the thread
+*/
+
+.th-ctaBubble {
+  width: 100%;
+  max-width: 560px;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+
+  border: 1px solid #eef1f5;
+  border-radius: 12px;
+  padding: 12px 14px;
+
+  background: #ffffff;
+  color: #1f2a37;
+
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(0);
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.th-ctaBubble:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+  border-color: #e2e6ec;
+}
+
+.th-ctaBubble:active {
+  transform: translateY(0);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+}
+
+/* Left stripe to signal “structured/action card” */
+.th-ctaBubble::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #cbd5e1;
+}
+
+
+/* Give content breathing room away from stripe */
+.th-ctaBubble > * {
+  position: relative;
+  padding-left: 6px;
+}
+
+/* ------------------------------------------------------------
+   Mine vs Theirs (IMPORTANT)
+   ThreadPage uses: "mine" and "theirs"
+   Keep ".other" as an alias in case you reuse elsewhere.
+------------------------------------------------------------ */
+
+/* Mine: soft blue like your message bubble */
+.th-ctaBubble.mine {
+  background: #eaf2fb;
+  color: #1f2a37;
+  border-color: #d6e3f5;
+}
+
+.th-ctaBubble.mine::before {
+  background: #b8cde6;
+}
+
+.th-ctaBubble.theirs,
+.th-ctaBubble.other {
+  background: #ffffff;
+  color: #1f2a37;
+  border-color: #eef1f5;
+}
+
+.th-ctaBubble.theirs::before,
+.th-ctaBubble.other::before {
+  background: #d6dde6;
+}
+
+/* ---------- Header Line ---------- */
+
+.th-ctaHeaderDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.65;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.06);
+}
+
+/* ---------- CTA Text ---------- */
+
+.th-ctaText {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 1;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 768px) {
+  .th-ctaBubble {
+    max-width: 100%;
+    padding: 15px 16px;
+  }
+}
+
+.thread-bubble-polished {
+  border-radius: 16px;
+
+  border: 2px solid rgba(0, 0, 0, 0.16);
+
+  /* 🔥 THIS is the polish */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    0 6px 18px rgba(0, 0, 0, 0.08);
+
+  background: var(--stream-theirs-bg, rgba(245, 246, 248, 0.96));
+}

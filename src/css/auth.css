@@ -1,0 +1,77 @@
+/* Auth pages use: th-page auth-page, auth-layout, card, auth-aside */
+.auth-page {
+  display: grid;
+  place-items: center;
+}
+
+.auth-layout {
+  width: min(980px, 96vw);
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  gap: clamp(16px, 3vw, 26px);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-aside {
+    order: -1;
+  }
+}
+
+.auth-aside {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.55));
+}
+
+.auth-eyebrow {
+  color: rgba(17, 24, 39, 0.55);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+}
+
+.auth-title {
+  margin: 10px 0 8px;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.auth-sub {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 60ch;
+}
+
+.auth-bullets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.auth-bullets li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: rgba(17, 24, 39, 0.85);
+}
+
+.tick {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: rgba(255, 45, 45, 0.18);
+  border: 1px solid rgba(255, 45, 45, 0.35);
+  margin-top: 2px;
+}

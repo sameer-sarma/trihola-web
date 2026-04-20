@@ -1,0 +1,218 @@
+/* src/css/components.css
+   Shared non-form UI primitives only.
+   Forms, fields, buttons, and action bars now belong in form.css.
+*/
+
+
+/* -------------------------------------------------------------------------- */
+/* Cards */
+/* -------------------------------------------------------------------------- */
+
+.card {
+  background: linear-gradient(180deg, var(--card), var(--card-2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 20px;
+}
+
+.card--narrow {
+  width: 100%;
+  max-width: 440px;
+}
+
+.card-title {
+  margin: 0 0 10px;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.card-subtle {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 14px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Alerts
+   Keep these here because they are generic component-level feedback blocks.
+   -------------------------------------------------------------------------- */
+
+.alert {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.alert--success {
+  border-color: rgba(60, 200, 120, 0.34);
+  background: rgba(60, 200, 120, 0.12);
+  color: rgba(0, 90, 45, 0.95);
+}
+
+.alert--error,
+.alert--danger {
+  border-color: rgba(255, 60, 60, 0.34);
+  background: rgba(255, 60, 60, 0.12);
+  color: rgba(140, 0, 0, 0.95);
+}
+
+.alert--info {
+  border-color: rgba(107, 122, 143, 0.3);
+  background: rgba(107, 122, 143, 0.12);
+  color: rgba(31, 41, 55, 0.95);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Links / text actions */
+/* -------------------------------------------------------------------------- */
+
+.th-link {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.th-link:hover {
+  color: var(--brand);
+}
+
+.th-link-button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.th-link-button:hover {
+  color: var(--brand);
+}
+
+.th-link-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Small helper text blocks */
+/* -------------------------------------------------------------------------- */
+
+.form-help {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.form-help .th-link,
+.form-help .th-link-button {
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.form-help .th-link:hover,
+.form-help .th-link-button:hover {
+  color: var(--brand);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Image helpers */
+/* -------------------------------------------------------------------------- */
+
+.img-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.img-clickable {
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.img-clickable img {
+  transition: transform 0.15s ease;
+}
+
+.img-clickable:hover img {
+  transform: scale(1.03);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Small reusable media / inline blocks
+/* -------------------------------------------------------------------------- */
+
+.media-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.media-thumb {
+  flex: 0 0 auto;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.media-body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.media-title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.3;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.media-subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Legacy compatibility notes
+   --------------------------------------------------------------------------
+   Intentionally removed from this file:
+   - .th-form
+   - .th-row
+   - .th-field
+   - .th-label
+   - .th-input
+   - .btn
+   - .btn--primary
+   - .btn--block
+   - .th-actions
+   - .th-actions .btn--primary { flex: 1; }
+
+   These now belong in form.css.
+*/

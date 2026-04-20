@@ -1,0 +1,477 @@
+/* src/css/referral-add-cta.css */
+
+/* Body wrapper */
+.th-ramBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* was 12px */
+}
+
+/* Two-section container blocks (meta top, CTA editor bottom) */
+.th-ramSection {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.45);
+  padding: 10px; /* was 12px */
+}
+
+.th-ramSectionTitle {
+  font-size: 12px;
+  font-weight: 900;
+  margin-bottom: 6px; /* was 8px */
+  opacity: 0.9;
+}
+
+.th-ramMuted {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Footer */
+.th-ramFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.th-ramBtn {
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 900;
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+
+.th-ramBtnSecondary {
+  background: rgba(255,255,255,0.6);
+}
+
+.th-ramBtnPrimary {
+  background: rgba(247,136,47,0.18);
+  border-color: rgba(247,136,47,0.35);
+}
+
+.th-ramBtnSmall {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* Error */
+.th-ramError {
+  font-size: 12px;
+  color: #a40000;
+  font-weight: 800;
+}
+
+/* Attachments */
+.th-ramAttachGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.th-ramAttachCard {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  background: rgba(255,255,255,0.6);
+}
+
+.th-ramAttachCard:hover {
+  background: rgba(255,255,255,0.75);
+}
+
+.th-ramAttachLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.th-ramAttachName {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.th-ramAttachMeta {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.th-ramAttachRemove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: white;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+
+.th-ramAttachRemove:hover {
+  background: rgba(255,255,255,0.9);
+}
+
+.th-ramAttachRemove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ------------------------------
+   Header (chat-like)
+--------------------------------*/
+
+.th-ramHeader {
+  display: flex;
+  gap: 10px; /* was 12px */
+  align-items: flex-start;
+  padding: 10px; /* was 12px */
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.45);
+}
+
+.th-ramHeaderAvatar {
+  width: 40px;  /* was 42px */
+  height: 40px; /* was 42px */
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.06);
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+.th-ramHeaderAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.th-ramHeaderAvatarText {
+  font-weight: 900;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.th-ramHeaderMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.th-ramHeaderName {
+  font-size: 13px;
+  font-weight: 900;
+  margin-bottom: 4px; /* was 6px */
+  opacity: 0.9;
+}
+
+.th-ramHeaderMeta {
+  margin-top: 6px; /* was 8px */
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0.75;
+}
+
+/* Pull from your stream variables if present, else fall back */
+:root {
+  --stream-mine-bg: rgba(210, 228, 247, 0.95);
+  --stream-mine-border: rgba(120, 170, 230, 0.55);
+  --stream-mine-fg: rgba(0,0,0,0.92);
+}
+
+/* Chat bubble for request */
+.th-ramChatBubble {
+  display: inline-block;
+  max-width: min(78%, 560px);
+  border-radius: 18px;
+  padding: 10px 12px; /* was 12px 12px */
+  border: 1px solid rgba(226, 232, 240, 1);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.th-ramChatBubble--mine {
+  background: var(--stream-mine-bg);
+  border: 1px solid var(--stream-mine-border);
+  color: var(--stream-mine-fg);
+}
+
+.th-ramChatText {
+  font-size: 16px;         /* matches your .streamText */
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+/* ------------------------------
+   Actioned subpanel
+--------------------------------*/
+
+.th-ramActionedCompact .th-ramActionedTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.th-ramActionedList {
+  margin-top: 8px; /* was 10px */
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* was 10px */
+}
+
+.th-ramActionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 14px;
+  padding: 8px; /* was 10px */
+  background: rgba(255,255,255,0.65);
+}
+
+.th-ramActionLeft {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.th-ramMiniAvatar {
+  width: 32px;  /* was 34px */
+  height: 32px; /* was 34px */
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.06);
+  flex: 0 0 auto;
+}
+
+.th-ramMiniAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.th-ramActionMeta {
+  min-width: 0;
+}
+
+.th-ramActionName {
+  font-weight: 900;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.th-ramActionSub {
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.75;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.th-ramTypePill {
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: rgba(255,255,255,0.8);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.th-ramDot {
+  opacity: 0.6;
+}
+
+.th-ramStatus {
+  font-weight: 800;
+}
+
+/* ------------------------------
+   Pending: stacked vertically
+--------------------------------*/
+
+.th-ramPendingStackTop {
+  display: flex;
+  flex-direction: column;
+  gap: 6px; /* was 8px */
+}
+
+.th-ramPendingStackMeta {
+  margin-top: 6px; /* was 8px */
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.th-ramDotSep {
+  opacity: 0.55;
+}
+
+.th-ramChip {
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.55);
+  border-radius: 999px;
+  padding: 5px 10px; /* was 6px 10px */
+  font-size: 12px;
+}
+
+.th-ramChipMuted {
+  opacity: 0.8;
+}
+
+/* Selected pills */
+.th-ramPills {
+  margin-top: 8px; /* was 10px */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.th-ramPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(255,255,255,0.75);
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.th-ramPillText {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.th-ramPillX {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(255,255,255,0.9);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.th-ramPillX:hover {
+  background: rgba(255,255,255,1);
+}
+
+/* ------------------------------
+   Composer (Message to contacts)
+--------------------------------*/
+
+.th-ramComposerHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 6px; /* was 8px */
+}
+
+.th-ramNote {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px; /* was 12px 12px */
+  background: rgba(255,255,255,0.8);
+  resize: vertical;
+  min-height: 78px;   /* was 86px */
+  max-height: 200px;  /* was 220px */
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* “ChatGPT-like” font stack (Söhne isn’t guaranteed to exist) */
+.th-ramNote--chatgpt {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* Picker modal */
+.th-ramPickerBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.th-ramContactList {
+  max-height: 420px;
+  overflow: auto;
+  border-radius: 14px;
+}
+
+.th-ramPickerHint {
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0.75;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .th-ramChatBubble {
+    max-width: 100%;
+  }
+}
+
+.th-ramPendingTopRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.th-ramPendingMetaInline{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  text-align:right;
+}
+
+.th-ramMetaPill{
+  font-size:12px;
+  font-weight:700;
+  padding:6px 10px;
+  border-radius:999px;
+  background: rgba(0,0,0,0.04);
+}
+
+.th-ramMetaMuted{
+  font-size:12px;
+  font-weight:600;
+  opacity:0.7;
+}
+
+.th-ramMetaDot{
+  opacity:0.5;
+}
+
+.th-ramComposerHeaderRow{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+}

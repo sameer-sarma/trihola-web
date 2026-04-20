@@ -1,0 +1,405 @@
+/* src/css/Modal.css
+   Base modal + production-grade lightbox skin
+*/
+
+/* -------------------------------------------------------------------------- */
+/* Base modal */
+/* -------------------------------------------------------------------------- */
+
+.th-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.th-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 2147483000;
+  background: rgba(2, 6, 23, 0.48);
+  backdrop-filter: blur(4px);
+}
+
+.th-modal__panel {
+  position: relative;
+  z-index: 2147483001;
+  width: min(96vw, 720px);
+  max-height: calc(100vh - 32px);
+  background: var(--card, #ffffff);
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.th-modal__header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--card, #ffffff);
+  padding: 14px 14px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.th-modal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text, #111827);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.th-modal__close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+  color: inherit;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.th-modal__close:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.th-modal__body {
+  padding: 14px;
+  overflow: auto;
+  flex: 1 1 auto;
+}
+
+.th-modal__footer {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Lightbox */
+/* -------------------------------------------------------------------------- */
+
+.th-modal__panel.th-lightbox {
+  width: 100vw;
+  height: 100vh;
+  max-width: none !important;
+  max-height: 100vh;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 44%),
+    linear-gradient(180deg, rgba(3, 7, 18, 0.96), rgba(3, 7, 18, 0.94));
+}
+
+.th-modal__body.th-lightbox__body {
+  padding: 0;
+  overflow: hidden;
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+
+.th-lightbox__stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.36));
+}
+
+.th-lightbox__img {
+  display: block;
+  max-width: calc(100vw - 120px);
+  max-height: calc(100vh - 140px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  animation: th-lightbox-fade-in 0.18s ease;
+}
+
+@keyframes th-lightbox-fade-in {
+  from {
+    opacity: 0.65;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Top bar */
+/* -------------------------------------------------------------------------- */
+
+.th-lightbox__topbar {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.th-lightbox__pill {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+}
+
+.th-lightbox__x {
+  pointer-events: auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+}
+
+.th-lightbox__x:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Navigation buttons */
+/* -------------------------------------------------------------------------- */
+
+.th-lightbox__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+
+  width: 52px;
+  height: 72px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+
+  display: grid;
+  place-items: center;
+
+  font-size: 36px;
+  line-height: 1;
+  cursor: pointer;
+
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+
+  opacity: 0.92;
+  transition:
+    background 0.18s ease,
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.th-lightbox__nav:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.th-lightbox__nav:active {
+  transform: translateY(-50%) scale(0.98);
+}
+
+.th-lightbox__nav:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+.th-lightbox__nav--left {
+  left: 18px;
+}
+
+.th-lightbox__nav--right {
+  right: 18px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Bottom bar */
+/* -------------------------------------------------------------------------- */
+
+.th-lightbox__bottombar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 72px 18px 18px;
+  background: linear-gradient(
+    to top,
+    rgba(3, 7, 18, 0.82) 0%,
+    rgba(3, 7, 18, 0.56) 38%,
+    rgba(3, 7, 18, 0.18) 72%,
+    rgba(3, 7, 18, 0) 100%
+  );
+  pointer-events: none;
+}
+
+.th-lightbox__title {
+  pointer-events: auto;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.35;
+  opacity: 0.96;
+  max-width: min(58vw, 760px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.th-lightbox__actions {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.th-lightbox__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 12px;
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+}
+
+.th-lightbox__link:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .th-lightbox__img {
+    max-width: calc(100vw - 72px);
+    max-height: calc(100vh - 156px);
+  }
+
+  .th-lightbox__nav {
+    width: 46px;
+    height: 64px;
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .th-modal {
+    padding: 0;
+  }
+
+  .th-lightbox__topbar {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+  }
+
+  .th-lightbox__img {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 170px);
+    border-radius: 10px;
+  }
+
+  .th-lightbox__nav {
+    width: 42px;
+    height: 58px;
+    border-radius: 14px;
+    font-size: 28px;
+  }
+
+  .th-lightbox__nav--left {
+    left: 10px;
+  }
+
+  .th-lightbox__nav--right {
+    right: 10px;
+  }
+
+  .th-lightbox__bottombar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 84px 12px 12px;
+  }
+
+  .th-lightbox__title {
+    max-width: 100%;
+    white-space: nowrap;
+  }
+
+  .th-lightbox__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .th-lightbox__link {
+    min-height: 38px;
+    padding: 0 12px;
+  }
+}

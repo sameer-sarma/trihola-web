@@ -1,0 +1,850 @@
+/* src/css/offer-template-editor.css
+   Offer Template editor refinements on top of shared form.css
+   Keeps the advanced editor richer while aligning it to the shared form system
+*/
+
+/* -------------------------------------------------------------------------- */
+/* Editor shell
+/* -------------------------------------------------------------------------- */
+
+.ot-editor-form {
+  position: relative;
+}
+
+.ot-editor-form .page-title,
+.ot-editor-form .section-title {
+  text-wrap: balance;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Section polish
+/* -------------------------------------------------------------------------- */
+
+.card-section {
+  margin-top: 18px;
+}
+
+.card-section:first-of-type {
+  margin-top: 12px;
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.section-header {
+  margin-bottom: 12px;
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.section-block {
+  margin-top: 12px;
+  padding: 16px 18px;
+  border-radius: 18px;
+}
+
+.section-block--accent {
+  background:
+    linear-gradient(180deg, rgba(249, 251, 255, 0.98), rgba(244, 248, 255, 0.94));
+}
+
+.section-grid {
+  gap: 14px;
+}
+
+.section-details {
+  margin-top: 12px;
+  border-radius: 18px;
+}
+
+.section-details summary {
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.25;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.section-details[open] summary {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.section-details .section-grid {
+  padding: 16px;
+  gap: 14px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Horizontal layout tuning
+/* -------------------------------------------------------------------------- */
+
+.ot-editor-form.th-form--horizontal .th-field {
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px 14px;
+  margin: 0;
+}
+
+.ot-editor-form.th-form--horizontal .th-label,
+.ot-editor-form.th-form--horizontal .th-field label {
+  margin-top: 11px;
+  margin-bottom: 0;
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 800;
+  color: rgba(17, 24, 39, 0.92);
+}
+
+.ot-editor-form.th-form--horizontal .th-help,
+.ot-editor-form.th-form--horizontal .help,
+.ot-editor-form.th-form--horizontal .th-error {
+  grid-column: 2;
+}
+
+.ot-editor-form .th-input,
+.ot-editor-form .th-textarea,
+.ot-editor-form .th-select,
+.ot-editor-form .select {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.ot-editor-form .th-input,
+.ot-editor-form .th-select,
+.ot-editor-form .select {
+  min-height: 44px;
+}
+
+.ot-editor-form .th-textarea {
+  min-height: 92px;
+}
+
+.ot-field--stack {
+  display: block !important;
+}
+
+.ot-field--stack .th-label,
+.ot-field--stack label {
+  display: block;
+  margin: 0 0 6px !important;
+}
+
+.ot-field--stack .th-help,
+.ot-field--stack .help,
+.ot-field--stack .th-error {
+  grid-column: auto !important;
+}
+
+.ot-field--full {
+  grid-column: 1 / -1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Image uploader / image list
+/* -------------------------------------------------------------------------- */
+
+.ot-imageToolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ot-imageHint {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.ot-imageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.ot-imageCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+}
+
+.ot-imagePreview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 1), rgba(241, 245, 249, 1));
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.ot-imagePreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ot-imageMeta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ot-imageName {
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ot-imageSub {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.ot-imageActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ot-primaryBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(247, 136, 47, 0.14);
+  color: rgba(166, 88, 0, 0.95);
+  font-size: 11px;
+  font-weight: 900;
+  border: 1px solid rgba(247, 136, 47, 0.22);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tier / breakpoint editor
+/* -------------------------------------------------------------------------- */
+
+.th-pill {
+  padding: 10px 12px;
+  gap: 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.amount-input {
+  width: 124px;
+  min-width: 124px;
+}
+
+.select.discount-type {
+  min-width: 80px;
+}
+
+.ot-editor-form .th-vlist {
+  gap: 10px;
+}
+
+.ot-tierLabel,
+.th-list-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.ot-tierHelp {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.ot-breakpointActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scope / selected list rows
+/* -------------------------------------------------------------------------- */
+
+.th-list-row {
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.ot-scopeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+}
+
+.ot-scopeMain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ot-scopeThumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.ot-scopeText {
+  min-width: 0;
+}
+
+.ot-scopeTitle {
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ot-scopeSub {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Check / switch rows
+/* -------------------------------------------------------------------------- */
+
+.th-check,
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.th-check input[type="checkbox"],
+.switch input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Picker surfaces
+/* -------------------------------------------------------------------------- */
+
+.ot-picker,
+.ot-editor-form .picker,
+.ot-editor-form .picker-root {
+  position: relative;
+}
+
+.ot-pickerCard {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+}
+
+.ot-pickerResults {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ot-pickerEmpty {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.03);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Action row
+/* -------------------------------------------------------------------------- */
+
+.actions {
+  margin-top: 18px;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Compatibility with older ote-* helpers if still present anywhere
+/* -------------------------------------------------------------------------- */
+
+.ote-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.ote-shell {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-md);
+  padding: 24px;
+}
+
+.ote-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.ote-titleWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ote-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ote-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.ote-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ote-errorBanner {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  background: rgba(220, 38, 38, 0.08);
+  color: #991b1b;
+  font-size: 13px;
+}
+
+.ote-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ote-section {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  overflow: hidden;
+}
+
+.ote-section--accent {
+  background:
+    linear-gradient(180deg, rgba(249, 251, 255, 0.98), rgba(244, 248, 255, 0.94));
+}
+
+.ote-sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.ote-sectionTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.ote-sectionBody {
+  padding: 16px;
+}
+
+.ote-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ote-colSpan2 {
+  grid-column: 1 / -1;
+}
+
+.ote-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ote-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(17, 24, 39, 0.92);
+}
+
+.ote-help {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.ote-input,
+.ote-select,
+.ote-textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.96);
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.ote-input:focus,
+.ote-select:focus,
+.ote-textarea:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px var(--focus-soft);
+}
+
+.ote-textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.ote-checkRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.ote-checkRow input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.ote-inlineGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ote-softCard {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 12px;
+}
+
+.ote-pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ote-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.ote-tierPanel {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(249, 251, 255, 0.98), rgba(244, 248, 255, 0.94));
+}
+
+.ote-tierList,
+.ote-breakpointList,
+.ote-scopeList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ote-tierRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) 90px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.ote-tierLabel {
+  font-weight: 800;
+  color: var(--text);
+}
+
+.ote-breakpointRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 9px 10px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.ote-scopeItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.ote-scopeItemMain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ote-scopeThumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: rgba(15, 23, 42, 0.05);
+  flex-shrink: 0;
+}
+
+.ote-scopeText {
+  min-width: 0;
+}
+
+.ote-scopeTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ote-scopeSub {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ote-details {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.ote-details summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.ote-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.ote-details[open] summary {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.96);
+}
+
+.ote-detailsBody {
+  padding: 16px;
+}
+
+.ote-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.ote-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    transform 0.04s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.ote-btn:active {
+  transform: translateY(1px);
+}
+
+.ote-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ote-btn--primary {
+  color: #ffffff;
+  border-color: rgba(247, 136, 47, 0.92);
+  background: linear-gradient(180deg, rgba(247, 136, 47, 0.98), rgba(232, 120, 28, 0.98));
+  box-shadow: 0 8px 20px rgba(247, 136, 47, 0.2);
+}
+
+.ote-btn--ghost {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--text);
+}
+
+.ote-picker {
+  position: relative;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .ot-editor-form.th-form--horizontal .th-field {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .ot-editor-form.th-form--horizontal .th-label,
+  .ot-editor-form.th-form--horizontal .th-field label {
+    margin-top: 0;
+  }
+
+  .ot-editor-form.th-form--horizontal .th-help,
+  .ot-editor-form.th-form--horizontal .help,
+  .ot-editor-form.th-form--horizontal .th-error {
+    grid-column: auto;
+  }
+
+  .ot-imageGrid,
+  .ote-grid,
+  .ote-inlineGrid,
+  .ote-tierRow {
+    grid-template-columns: 1fr;
+  }
+
+  .amount-input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .section-block,
+  .ote-shell {
+    padding: 14px;
+  }
+
+  .section-details summary,
+  .ote-details summary {
+    padding: 12px 14px;
+  }
+
+  .section-details .section-grid,
+  .ote-detailsBody {
+    padding: 14px;
+  }
+
+  .actions,
+  .ote-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .actions .btn,
+  .ote-actions .ote-btn {
+    flex: 1 1 auto;
+  }
+}

@@ -1,0 +1,346 @@
+/* =============================================
+   ContactsPage.css
+   Contacts-specific presentation only
+   Page layout now comes from layout.css
+   ============================================= */
+
+.contactsPage {
+  background:
+    radial-gradient(circle at top left, rgba(237, 226, 211, 0.72), rgba(237, 226, 211, 0) 28%),
+    radial-gradient(circle at top right, rgba(232, 226, 197, 0.58), rgba(232, 226, 197, 0) 24%);
+}
+
+.contactsPage__headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.contactsPage__cta {
+  min-height: 44px;
+  padding-left: 16px;
+  padding-right: 16px;
+  border-radius: 16px;
+  font-weight: 800;
+}
+
+.contactsPage__privacyNote {
+  max-width: 320px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(16, 42, 74, 0.58);
+  text-align: right;
+}
+
+.contactsPage__stateCard {
+  border: 1px solid rgba(16, 42, 74, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 32px rgba(16, 42, 74, 0.05);
+  padding: 22px 20px;
+  color: rgba(16, 42, 74, 0.82);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.contactsPage__stateCard--error {
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.16);
+  background: rgba(255, 250, 250, 0.95);
+}
+
+.contactsPage__emptyTitle {
+  font-size: 18px;
+  font-weight: 800;
+  color: #102a4a;
+}
+
+.contactsPage__emptyText {
+  margin-top: 6px;
+  color: rgba(16, 42, 74, 0.68);
+}
+
+/* ---------------------------------------------
+   Section-specific bits
+   --------------------------------------------- */
+
+.contactsSection {
+  gap: 12px;
+}
+
+.contactsSection__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(16, 42, 74, 0.08);
+  color: rgba(16, 42, 74, 0.7);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* ---------------------------------------------
+   Contact list
+   --------------------------------------------- */
+
+.contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(16, 42, 74, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 24px rgba(16, 42, 74, 0.04);
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.contact-item:hover {
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(16, 42, 74, 0.07);
+  transform: translateY(-1px);
+}
+
+.contact-image {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(16, 42, 74, 0.08);
+  background: linear-gradient(180deg, rgba(16, 42, 74, 0.04), rgba(16, 42, 74, 0.07));
+  flex: 0 0 auto;
+  display: block;
+  text-decoration: none;
+}
+
+.contact-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.contact-image--clickable {
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.contact-image--clickable:hover {
+  transform: scale(1.04);
+  box-shadow: 0 10px 24px rgba(16, 42, 74, 0.16);
+  border-color: rgba(16, 42, 74, 0.18);
+}
+
+.contact-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #eef3f9, #e3ebf5);
+  color: #274364;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.contact-details {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.contact-name {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 900;
+  color: #102a4a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.contact-sub {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: rgba(16, 42, 74, 0.66);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contact-meta {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(16, 42, 74, 0.78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contact-typePill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(16, 42, 74, 0.08);
+  color: rgba(16, 42, 74, 0.68);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* ---------------------------------------------
+   Import modal helpers
+   --------------------------------------------- */
+
+.contacts-import-modal__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.contacts-import-modal__intro {
+  margin-top: 0;
+  color: rgba(0, 0, 0, 0.68);
+}
+
+.contacts-import-modal__sampleRow {
+  margin-bottom: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.contacts-import-modal__helper {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.58);
+}
+
+.contacts-import-modal__fileInput {
+  display: block;
+  margin-top: 8px;
+}
+
+.contacts-import-modal__selected {
+  font-size: 12px;
+  margin-top: 8px;
+  color: rgba(0, 0, 0, 0.68);
+}
+
+.contacts-import-modal__error {
+  margin-top: 12px;
+  color: crimson;
+}
+
+.contacts-import-modal__result {
+  margin-top: 16px;
+}
+
+.contacts-import-modal__resultTitle {
+  margin: 0 0 8px;
+}
+
+.contacts-import-modal__summary {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.contacts-import-modal__issues {
+  margin-top: 12px;
+}
+
+.contacts-import-modal__issuesTitle {
+  margin: 10px 0;
+}
+
+.contacts-import-modal__issueCard {
+  padding: 10px;
+}
+
+.contacts-import-modal__issueRow {
+  font-weight: 700;
+}
+
+.contacts-import-modal__issueMessage {
+  color: rgba(0, 0, 0, 0.68);
+}
+
+.contacts-import-modal__issueRaw {
+  margin-top: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+/* optional: stack helper used in import modal */
+.th-stack {
+  display: grid;
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .contactsPage__headerRight {
+    align-items: flex-start;
+  }
+
+  .contactsPage__privacyNote {
+    text-align: left;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .contact-item {
+    padding: 12px 13px;
+    gap: 12px;
+    border-radius: 18px;
+  }
+
+  .contact-image {
+    width: 58px;
+    height: 58px;
+    border-radius: 16px;
+  }
+
+  .contact-name {
+    font-size: 18px;
+  }
+
+  .contact-sub,
+  .contact-meta {
+    white-space: normal;
+  }
+
+  .contactsPage__cta {
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+  }
+}

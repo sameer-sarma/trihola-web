@@ -1,0 +1,203 @@
+import { useEffect, useMemo, useState, useCallback } from "react";
+import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_API_BASE as string;
+const LS_KEY = "trihola:firstLoginDone";
+
+export type GateItemDTO = {
+  key: string;
+  title: string;
+  subtitle: string;
+  blocking?: boolean;
+  action: string;         // e.g. "EDIT_PROFILE", "EDIT_BUSINESS_PROFILE"
+  focus?: string | null;  // e.g. "firstName", "businessName"
+  missing?: string[];
+};
+
+export type GatesDTO = {
+  blocking: boolean;
+  items: GateItemDTO[];
+};
+
+export type PriorActivitySummaryDTO = {
+  contactsAdded: number;
+  referralsCreated: number;
+  referralsAccepted: number;
+  offersPurchased?: number;
+  campaignsCreated?: number;
+  invitesResponded?: number; // keep for compatibility with your current response
+};
+
+export type SuggestedContactDTO = {
+  id: string;
+  name: string;
+  slug: string;
+  profileImageUrl?: string | null;
+  reason?: string | null;
+};
+
+export type ActivitySectionDTO = {
+  hasActivity: boolean;
+  count: number;
+  cta?: { title: string; subtitle?: string | null; action: string; route?: string | null; priority: number } | null;
+  topItems: any[];
+};
+
+export type PublicProfile = {
+  userId: string;
+  slug: string;
+  firstName: string | null;
+  lastName: string | null;
+  address: string | null;
+  profileImageUrl: string | null;
+  bio: string | null;
+  location?: string;
+  profession?: string;
+  birthday?: string;
+  linkedinUrl?: string;
+  phone: string | null;
+  email: string | null;
+  registeredAsBusiness?: boolean;
+  businessProfile?: {
+    businessName?: string;
+    businessDescription?: string;
+    businessWebsite?: string;
+    businessSlug?: string;
+  } | null;
+  isContact?: boolean;
+};
+
+export type BootstrapDTO = {
+  bootstrapVersion: number;
+  serverTimeUtc: string;
+  auth: { emailVerified: boolean; phoneVerified: boolean; email?: string | null; phone?: string | null };
+  profile: {
+    userId: string;
+    slug?: string | null;
+    displayName?: string | null;
+    profileImageUrl?: string | null;
+    isBusiness: boolean;
+    completionPercent: number;
+    missing: string[];
+  };
+
+  referrals: ActivitySectionDTO;
+  rewards: ActivitySectionDTO;
+  affiliateCampaigns: ActivitySectionDTO;
+
+  priorActivity?: PriorActivitySummaryDTO;
+  suggestedContacts?: SuggestedContactDTO[];
+
+  // NEW server flag (may be absent while you’re rolling out)
+  hasPriorActivity?: boolean;
+  featuredBusiness?: PublicProfile | null; 
+  gates?: GatesDTO;
+};
+
+export type BootstrapResult = {
+  loading: boolean;
+  error: string | null;
+  data: BootstrapDTO | null;
+
+  firstLoginDone: boolean;
+  hasPriorActivity: boolean;
+  nextRoute: string;
+  refreshBootstrap: () => Promise<void>; 
+};
+
+function readFirstLoginDone(): boolean {
+  try {
+    return localStorage.getItem(LS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markFirstLoginDone() {
+  try {
+    localStorage.setItem(LS_KEY, "1");
+  } catch {}
+}
+
+function computeHasPriorActivityFromPrior(prior?: PriorActivitySummaryDTO): boolean {
+  if (!prior) return false;
+
+  return (
+    (prior.contactsAdded ?? 0) > 0 ||
+    (prior.referralsCreated ?? 0) > 0 ||
+    (prior.referralsAccepted ?? 0) > 0 ||
+    (prior.offersPurchased ?? 0) > 0 ||
+    (prior.campaignsCreated ?? 0) > 0 ||
+    (prior.invitesResponded ?? 0) > 0 
+  );
+}
+
+export function useBootstrap(token?: string | null): BootstrapResult {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<BootstrapDTO | null>(null);
+//  const [refreshKey, setRefreshKey] = useState(0);
+
+
+  const firstLoginDone = useMemo(() => readFirstLoginDone(), []);
+
+  /**
+   * Core fetch function (single source of truth)
+   */
+  const fetchBootstrap = useCallback(async () => {
+    if (!token) {
+      setData(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get<BootstrapDTO>(`${API_BASE}/me/bootstrap`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setData(res.data);
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to load bootstrap");
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  /**
+   * Initial load + reload when token changes
+   */
+  useEffect(() => {
+    fetchBootstrap();
+  }, [fetchBootstrap]);
+
+  /**
+   * Explicit refresh (used after profile edits, business registration, etc.)
+   */
+  const refreshBootstrap = useCallback(async () => {
+    await fetchBootstrap();
+  }, [fetchBootstrap]);
+  
+  // Prefer server truth; fallback to computed for rollout safety
+  const hasPriorActivity =
+    data?.hasPriorActivity ?? computeHasPriorActivityFromPrior(data?.priorActivity);
+
+  // ✅ single “where should I go” signal
+  const nextRoute = useMemo(() => {
+    if (!data) return "/start";
+    if (data.gates?.blocking) return "/action-required";
+    return "/start";
+  }, [data]);
+
+  return {
+    loading,
+    error,
+    data,
+    firstLoginDone,
+    hasPriorActivity,
+    nextRoute,
+    refreshBootstrap
+  };
+}

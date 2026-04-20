@@ -1,0 +1,425 @@
+/* src/css/profile.css
+   Profile and business-specific presentation only.
+   Page layout now comes from layout.css.
+*/
+
+/* Container width helper still used alongside generic .card */
+.th-card {
+  width: min(980px, 100%);
+  margin: 0 auto;
+}
+
+/* Divider */
+.th-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+/* Title & muted text */
+.th-page-title {
+  font-size: 22px;
+  font-weight: 950;
+  margin: 0 0 8px;
+}
+
+.th-text-muted {
+  color: var(--muted);
+}
+
+/* Profile layout */
+.th-profile {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header section */
+.th-profile__header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.th-profile__headText {
+  min-width: 0;
+  max-width: 720px;
+}
+
+/* Avatar */
+.th-profile__avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.th-profile__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.th-profile__avatarPlaceholder {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+/* Name block */
+.th-profile__name {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.th-profile__meta {
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.th-dot {
+  opacity: 0.6;
+}
+
+.th-profile__bio {
+  margin-top: 8px;
+  color: var(--text);
+  opacity: 0.9;
+  line-height: 1.45;
+  font-size: 14px;
+  max-width: 640px;
+}
+
+.th-profile__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* Details grid */
+.th-profile__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Profile field cards */
+.th-field {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.th-field--span2 {
+  grid-column: 1 / -1;
+}
+
+.th-field__label {
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.th-field__value {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.th-field__value a {
+  color: var(--brand);
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.th-field__value a:hover {
+  text-decoration: underline;
+}
+
+/* Small pill */
+.th-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 950;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text);
+}
+
+/* Skeletons */
+.th-skeleton-line {
+  height: 12px;
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+  position: relative;
+}
+
+.th-skeleton-line--lg {
+  height: 18px;
+  width: 75%;
+}
+
+.th-skeleton-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.06) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: th-shimmer 1.2s infinite;
+}
+
+@keyframes th-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* --- BusinessPage strips --- */
+.bp-memberStrip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  user-select: none;
+}
+
+.bp-memberStrip:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.bp-memberStrip-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.bp-miniAvatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -8px;
+}
+
+.bp-miniAvatar:first-child {
+  margin-left: 0;
+}
+
+.bp-miniAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bp-miniAvatarText {
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(31, 41, 55, 0.75);
+}
+
+.bp-miniAvatar--more {
+  background: rgba(247, 136, 47, 0.18);
+}
+
+.bp-memberStrip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 850;
+  color: rgba(31, 41, 55, 0.85);
+  font-size: 13px;
+}
+
+.bp-memberStrip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.bp-stripsRow {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: nowrap; /* force single row */
+}
+
+.bp-stripsRow > .bp-memberStrip {
+  flex: 1;            /* all equal width */
+  min-width: 0;       /* allow shrinking */
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .th-profile__header {
+    grid-template-columns: 72px 1fr;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    align-items: start;
+  }
+
+  .th-profile__avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+  }
+
+  .th-profile__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+
+  .th-profile__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .th-field--span2 {
+    grid-column: auto;
+  }
+  
+  .bp-stripsRow {
+    flex-wrap: wrap;
+  }
+
+  .bp-stripsRow > .bp-memberStrip {
+    flex: 1 1 100%;
+  }
+}
+
+/* ===== Profile strips (like BusinessPage) ===== */
+
+.pp-stripsRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.pp-strip {
+  flex: 1 1 280px;
+  min-width: 260px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 10px 14px;
+  border-radius: 999px;
+
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.6);
+
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pp-strip:hover {
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+
+.pp-strip-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.pp-miniAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.9);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-left: -10px;
+}
+
+.pp-miniAvatar:first-child {
+  margin-left: 0;
+}
+
+.pp-miniAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pp-miniAvatarText {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.pp-strip-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.pp-strip-count {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.9);
+  font-weight: 800;
+}
+
+.pp-strip-arrow {
+  font-weight: 900;
+  color: var(--muted);
+}

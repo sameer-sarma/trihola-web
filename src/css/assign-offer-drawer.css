@@ -1,0 +1,11 @@
+/* src/css/assign-offer-drawer.css
+   v1-inspired. This drawer mostly resues from add-referral-cta.css
+*/
+
+.assign-offer-drawer {
+  width: min(720px, 96vw);
+}
+
+.assign-offer-drawer__body {
+  padding-bottom: 6px;
+}

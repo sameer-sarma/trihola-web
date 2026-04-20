@@ -1,0 +1,435 @@
+/* src/css/members-modal.css */
+
+.mm{
+  display:flex;
+  flex-direction:column;
+  gap: 12px;
+}
+
+/* ---------- Top (search + filters) ---------- */
+.mm-top{
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(6px);
+}
+
+.mm-subtitle{
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.mm-searchRow{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+
+.mm-search{
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 0 12px;
+  outline: none;
+}
+
+.mm-search:focus{
+  border-color: rgba(255,45,45,0.55);
+  box-shadow: 0 0 0 3px rgba(255,45,45,0.12);
+}
+
+.mm-filters{
+  display:flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.mm-filter{
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.55);
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.mm-filter--active{
+  background: rgba(255,45,45,0.10);
+  border-color: rgba(255,45,45,0.35);
+}
+
+.mm-topRight{
+  margin-top: 10px;
+  display:flex;
+  gap: 12px;
+  align-items:center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.mm-count{
+  font-weight: 900;
+  color: rgba(31,41,55,0.85);
+}
+
+.mm-viewer{
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mm-viewerRole{
+  color: rgba(31,41,55,0.85);
+  font-weight: 900;
+}
+
+/* ---------- List ---------- */
+.mm-list{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+}
+
+.mm-empty{
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+}
+
+.mm-row{
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.55);
+  overflow:hidden;
+}
+
+.mm-rowMain{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  padding: 12px;
+}
+
+.mm-avatar{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  overflow:hidden;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.85);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 950;
+  color: rgba(31,41,55,0.75);
+  flex: 0 0 auto;
+}
+
+.mm-avatar img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display:block;
+}
+
+.mm-meta{
+  flex: 1;
+  min-width: 0;
+}
+
+.mm-nameLine{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mm-name{
+  font-weight: 950;
+  color: rgba(31,41,55,0.90);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mm-clickable{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  cursor:pointer;
+  flex:1;
+}
+
+.mm-clickable:hover .mm-name{
+  text-decoration: underline;
+}
+
+.mm-clickable:focus{
+  outline:none;
+}
+
+.mm-chip{
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 950;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.mm-chip--owner{
+  background: rgba(255,45,45,0.12);
+  border-color: rgba(255,45,45,0.35);
+}
+
+.mm-chip--admin{
+  background: rgba(99,102,241,0.12);
+  border-color: rgba(99,102,241,0.30);
+}
+
+.mm-chip--staff{
+  background: rgba(16,185,129,0.10);
+  border-color: rgba(16,185,129,0.25);
+}
+
+.mm-subLine{
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  display:flex;
+  gap: 8px;
+  align-items:center;
+  flex-wrap: wrap;
+}
+
+.mm-dot{
+  opacity: 0.6;
+}
+
+.mm-actions{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  flex: 0 0 auto;
+}
+
+/* ---------- Expanded editor ---------- */
+.mm-editor{
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  background: rgba(255,255,255,0.65);
+}
+
+.mm-editorGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mm-field{
+  display:flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mm-field--span2{
+  grid-column: 1 / -1;
+}
+
+.mm-label{
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(31,41,55,0.75);
+}
+
+.mm-input{
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 0 12px;
+  outline:none;
+  background: rgba(255,255,255,0.80);
+}
+
+.mm-input:focus{
+  border-color: rgba(255,45,45,0.55);
+  box-shadow: 0 0 0 3px rgba(255,45,45,0.12);
+}
+
+.mm-editorActions{
+  margin-top: 12px;
+  display:flex;
+  gap: 10px;
+  justify-content:flex-end;
+  flex-wrap: wrap;
+}
+
+.mm-danger{
+  border-color: rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.10);
+}
+
+/* ---------- Add member accordion ---------- */
+.mm-add{
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.55);
+  overflow:hidden;
+}
+
+.mm-addToggle{
+  width: 100%;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 12px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 950;
+  text-align:left;
+}
+
+.mm-addPlus{
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(255,255,255,0.70);
+  font-weight: 1000;
+}
+
+.mm-addHint{
+  margin-left: auto;
+  font-weight: 800;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mm-addPanel{
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  background: rgba(255,255,255,0.65);
+}
+
+.mm-addGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mm-addActions{
+  margin-top: 12px;
+  display:flex;
+  justify-content:flex-end;
+}
+
+/* Mobile */
+@media (max-width: 720px){
+  .mm-editorGrid{ grid-template-columns: 1fr; }
+  .mm-addGrid{ grid-template-columns: 1fr; }
+  .mm-actions{ gap: 8px; }
+}
+
+.mm-identity{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+
+.mm-avatarLink{
+  appearance:none;
+  border:0;
+  background:transparent;
+  padding:0;
+  cursor:pointer;
+  border-radius:999px;
+  line-height:0;
+}
+
+.mm-avatarLink:disabled{
+  cursor:default;
+  opacity:.7;
+}
+
+.mm-avatarLink:focus-visible{
+  outline:2px solid rgba(255,45,45,.35);
+  outline-offset:3px;
+  border-radius:999px;
+}
+
+.mm-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-shrink:0;
+}
+
+/* Inline editor appears to the RIGHT of Manage */
+.mm-inlineEditor{
+  display:flex;
+  align-items:flex-end;
+  gap:10px;
+  padding-left:10px;
+  border-left:1px solid rgba(0,0,0,0.08);
+}
+
+.mm-inlineField{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:180px;
+}
+
+/* Keep editor from breaking row too hard */
+@media (max-width: 900px){
+  .mm-inlineEditor{
+    flex-wrap:wrap;
+    align-items:stretch;
+  }
+  .mm-inlineField{
+    min-width:220px;
+    flex:1;
+  }
+}
+
+.mm-iconBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.mm-iconBtn:hover {
+  background: rgba(0,0,0,0.06);
+}
+
+.mm-iconBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mm-iconBtn--danger:hover {
+  background: rgba(220, 38, 38, 0.12);
+}

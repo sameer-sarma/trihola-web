@@ -1,0 +1,731 @@
+/* src/css/form.css
+   Shared form system for TriHola page forms and advanced editors
+*/
+
+/* -------------------------------------------------------------------------- */
+/* Page shells */
+/* -------------------------------------------------------------------------- */
+
+.th-form-page,
+.page-wrap {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+  box-sizing: border-box;
+}
+
+.form-card {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-md);
+  padding: 24px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.error-text {
+  color: #b42318;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Form header */
+/* -------------------------------------------------------------------------- */
+
+.th-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.th-form-header__main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.th-form-title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.12;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.th-form-subtitle {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 720px;
+}
+
+.th-form-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.th-form-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Form layout */
+/* -------------------------------------------------------------------------- */
+
+.th-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.th-form-row {
+  display: grid;
+  gap: 14px;
+}
+
+.th-form-row--2,
+.th-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.th-col-span-2 {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 760px) {
+  .th-form-row--2,
+  .th-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .th-col-span-2 {
+    grid-column: auto;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Shared sections */
+/* -------------------------------------------------------------------------- */
+
+.th-section,
+.section-block {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.88));
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+  padding: 18px;
+}
+
+.section-block {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+}
+
+.th-section--accent,
+.section-block--accent {
+  background:
+    linear-gradient(180deg, rgba(249, 251, 255, 0.98), rgba(244, 248, 255, 0.94));
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+.th-section-header,
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-header {
+  font-weight: 700;
+}
+
+.th-section-title,
+.section-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.section-title {
+  color: rgba(31, 41, 55, 0.92);
+}
+
+.th-section-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.card-section {
+  margin-top: 16px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Collapsible details */
+/* -------------------------------------------------------------------------- */
+
+.section-details {
+  grid-column: 1 / -1;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+  margin-top: 2px;
+}
+
+.section-details summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.section-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.section-details[open] summary {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.96);
+}
+
+.section-details .section-grid,
+.section-details .th-grid-2,
+.section-details .th-form-row,
+.section-details .th-form-row--2 {
+  padding: 16px;
+}
+
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 760px) {
+  .section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Fields */
+/* -------------------------------------------------------------------------- */
+
+.th-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.th-label,
+.th-field label {
+  display: block;
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 800;
+  color: rgba(17, 24, 39, 0.96);
+  margin: 0;
+}
+
+.th-label__optional {
+  color: rgba(17, 24, 39, 0.48);
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.th-help,
+.th-field .help {
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(31, 41, 55, 0.62);
+  margin-top: 2px;
+}
+
+.th-error {
+  font-size: 12px;
+  line-height: 1.35;
+  color: #b42318;
+  margin-top: 2px;
+}
+
+.th-input,
+.th-textarea,
+.th-select,
+.th-field input,
+.th-field textarea,
+.th-field select,
+input.th-input,
+textarea.th-textarea,
+select.th-select,
+select.select {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+}
+
+.th-input,
+.th-select,
+.th-field input,
+.th-field select,
+input.th-input,
+select.th-select,
+select.select {
+  min-height: 46px;
+  padding: 10px 12px;
+}
+
+.th-textarea,
+.th-field textarea,
+textarea.th-textarea {
+  min-height: 110px;
+  padding: 12px;
+  resize: vertical;
+}
+
+.th-input::placeholder,
+.th-textarea::placeholder,
+.th-field input::placeholder,
+.th-field textarea::placeholder {
+  color: rgba(31, 41, 55, 0.45);
+}
+
+.th-input:focus,
+.th-textarea:focus,
+.th-select:focus,
+.th-field input:focus,
+.th-field textarea:focus,
+.th-field select:focus,
+input.th-input:focus,
+textarea.th-textarea:focus,
+select.th-select:focus,
+select.select:focus {
+  border-color: var(--focus);
+  box-shadow:
+    0 0 0 3px var(--focus-soft),
+    0 1px 0 rgba(15, 23, 42, 0.03);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.th-input:disabled,
+.th-textarea:disabled,
+.th-select:disabled,
+.th-field input:disabled,
+.th-field textarea:disabled,
+.th-field select:disabled,
+button:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Horizontal form mode
+   Used by Offer Template editor today
+/* -------------------------------------------------------------------------- */
+
+.th-form--horizontal .th-field {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  align-items: start;
+  gap: 10px 12px;
+}
+
+.th-form--horizontal .th-label,
+.th-form--horizontal .th-field label {
+  margin-top: 12px;
+  margin-bottom: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(17, 24, 39, 0.88);
+}
+
+.th-form--horizontal .th-field .th-help,
+.th-form--horizontal .th-field .help,
+.th-form--horizontal .th-error {
+  grid-column: 2;
+}
+
+.th-form--horizontal .th-form-row--2 .th-field,
+.th-form--horizontal .th-grid-2 .th-field,
+.th-form--horizontal .section-grid .th-field {
+  grid-template-columns: 1fr;
+}
+
+.th-form--horizontal .th-form-row--2 .th-label,
+.th-form--horizontal .th-grid-2 .th-label,
+.th-form--horizontal .section-grid .th-label,
+.th-form--horizontal .th-form-row--2 .th-field label,
+.th-form--horizontal .th-grid-2 .th-field label,
+.th-form--horizontal .section-grid .th-field label {
+  margin-top: 0;
+  margin-bottom: 2px;
+}
+
+.th-form--horizontal .th-textarea,
+.th-form--horizontal .th-field textarea {
+  min-height: 88px;
+}
+
+@media (max-width: 760px) {
+  .th-form--horizontal .th-field {
+    grid-template-columns: 1fr;
+  }
+
+  .th-form--horizontal .th-label,
+  .th-form--horizontal .th-field label {
+    margin-top: 0;
+    margin-bottom: 2px;
+  }
+
+  .th-form--horizontal .th-field .th-help,
+  .th-form--horizontal .th-field .help,
+  .th-form--horizontal .th-error {
+    grid-column: auto;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Buttons / actions */
+/* -------------------------------------------------------------------------- */
+
+.actions,
+.th-actions,
+.contact-form-footer,
+.rb-actions,
+.ote-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.actions .btn,
+.th-actions .btn,
+.contact-form-footer .btn,
+.rb-actions .btn,
+.ote-actions .btn,
+.ote-actions .ote-btn {
+  min-width: 120px;
+}
+
+.btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    transform 0.02s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  color: #ffffff;
+  border-color: rgba(247, 136, 47, 0.92);
+  background: linear-gradient(180deg, rgba(247, 136, 47, 0.98), rgba(232, 120, 28, 0.98));
+  box-shadow: 0 8px 20px rgba(247, 136, 47, 0.2);
+}
+
+.btn--primary:hover:not(:disabled) {
+  filter: brightness(1.02);
+}
+
+.btn--ghost {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.btn--danger {
+  border-color: rgba(220, 38, 38, 0.18);
+  background: rgba(220, 38, 38, 0.08);
+  color: #b42318;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.12);
+}
+
+.btn--subtle {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.btn--subtle:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--text);
+}
+
+.btn--sm {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 10px;
+  line-height: 1.1;
+}
+
+@media (max-width: 640px) {
+  .actions,
+  .th-actions,
+  .contact-form-footer,
+  .rb-actions,
+  .ote-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .actions .btn,
+  .th-actions .btn,
+  .contact-form-footer .btn,
+  .rb-actions .btn,
+  .ote-actions .btn,
+  .ote-actions .ote-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Shared list / pill helpers
+   Used by richer editors like Offer Template
+/* -------------------------------------------------------------------------- */
+
+.th-vlist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.th-hlist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.th-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--text);
+}
+
+.th-list-row,
+.th-item-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+}
+
+button.th-item-card,
+button.th-list-row {
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.02s ease;
+}
+
+button.th-item-card:hover,
+button.th-list-row:hover {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+}
+
+button.th-item-card:active,
+button.th-list-row:active {
+  transform: translateY(1px);
+}
+
+.th-list-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.th-list-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Switch / check helpers */
+/* -------------------------------------------------------------------------- */
+
+.th-checkRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.th-checkRow input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Small utility blocks used by complex forms
+/* -------------------------------------------------------------------------- */
+
+.amount-input {
+  max-width: 130px;
+}
+
+.select {
+  width: 100%;
+}
+
+.help {
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(31, 41, 55, 0.62);
+}
+
+@media (max-width: 640px) {
+  .th-form-page,
+  .page-wrap {
+    padding: 18px 14px 28px;
+  }
+
+  .form-card {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .th-form-title,
+  .page-title {
+    font-size: 20px;
+  }
+
+  .th-section,
+  .section-block {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .section-details {
+    border-radius: 16px;
+  }
+
+  .actions,
+  .th-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Final override for legacy components.css action stretching
+/* -------------------------------------------------------------------------- */
+
+.th-actions .btn,
+.actions .btn,
+.contact-form-footer .btn,
+.rb-actions .btn,
+.ote-actions .btn,
+.ote-actions .ote-btn {
+  flex: 0 0 auto;
+}
+
+.th-actions .btn--primary,
+.actions .btn--primary,
+.contact-form-footer .btn--primary,
+.rb-actions .btn--primary,
+.ote-actions .btn--primary,
+.ote-actions .ote-btn--primary {
+  flex: 0 0 auto;
+}
+
+.th-textarea--compact {
+  min-height: 56px;
+  line-height: 1.4;
+}
