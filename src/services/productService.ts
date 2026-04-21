@@ -12,7 +12,7 @@ import type {
   ListParams,
 } from "../types/catalog";
 
-const API_BASE = (import.meta.env.VITE_API_BASE as string) || "";
+const API_BASE = __API_BASE__;
 
 /**
  * Fetch Bearer token from Supabase session and return common headers.

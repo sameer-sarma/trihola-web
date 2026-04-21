@@ -2,10 +2,7 @@
 
 import type { InviteRecommenderRequest, CreateResult } from "../types/referral";
 
-const API_BASE =
-  (import.meta as any).env?.VITE_API_BASE_URL ||
-  (import.meta as any).env?.VITE_BACKEND_URL ||
-  "http://127.0.0.1:8080";
+const API_BASE = __API_BASE__;
 
 /**
  * 🔧 Update to match Ktor route.

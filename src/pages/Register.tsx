@@ -105,7 +105,6 @@ export default function Register() {
         effective === "await_email_verification" ||
         msgCode === RegisterMsg.ACCOUNT_CREATED_VERIFY_EMAIL
       ) {
-        // Send Supabase magic link (optional but consistent with your flow)
         await supabase.auth.signInWithOtp({
           email,
           options: {
@@ -114,8 +113,7 @@ export default function Register() {
         });
 
         setTone("success");
-        setMessage("Check your email for a verification link.");
-        navigate(loginHref, { replace: true });
+        setMessage(`Account created. Please check ${email} for your verification link.`);
         return;
       }
 

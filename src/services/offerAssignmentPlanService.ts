@@ -7,7 +7,8 @@ import type {
   CreateOfferAssignmentPlanResponse,
 } from "../types/offerAssignmentPlanTypes";
 
-const API_BASE = import.meta.env.VITE_API_BASE as string;
+//const API_BASE = import.meta.env.VITE_API_BASE as string;
+const API_BASE = __API_BASE__;
 
 type ApiErrorPayload = {
   error?: {

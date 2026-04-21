@@ -5,7 +5,8 @@ import type {
   OfferStatusChangedMsg,
 } from "../types/offerDetailsTypes";
 
-const API_BASE = import.meta.env.VITE_API_BASE as string;
+//const API_BASE = import.meta.env.VITE_API_BASE as string;
+const API_BASE = __API_BASE__;
 
 function extractApiErrorMessage(payload: unknown, fallback: string): string {
   if (!payload || typeof payload !== "object") return fallback;

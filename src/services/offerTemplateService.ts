@@ -10,7 +10,8 @@ import type {
 } from "../types/offerTemplateTypes";
 import { supabase } from "../supabaseClient";
 
-const API_BASE = import.meta.env.VITE_API_BASE as string;
+//const API_BASE = import.meta.env.VITE_API_BASE as string;
+const API_BASE = __API_BASE__;
 
 /* --------------------------- low-level fetch helper --------------------------- */
 

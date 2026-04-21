@@ -87,15 +87,15 @@ export type UserRelationshipProfileDTO = {
   commonContactsPreview: CommonContactPreviewDTO[];
 };
 
-const __API_BASE__ = (import.meta.env.VITE_API_BASE as string) || "";
-
+//const __API_BASE__ = (import.meta.env.VITE_API_BASE as string) || "";
+const API_BASE = __API_BASE__;
 const authHeader = (token?: string) => ({
   headers: token ? { Authorization: `Bearer ${token}` } : {},
 });
 
 // ✅ Fetch all contacts (users + businesses)
 export const fetchMyContactsBundle = async (token?: string): Promise<ContactsBundleResponse> => {
-  const response = await axios.get(`${__API_BASE__}/contacts`, authHeader(token));
+  const response = await axios.get(`${API_BASE}/contacts`, authHeader(token));
   return response.data as ContactsBundleResponse;
 };
 
@@ -105,7 +105,7 @@ export const getRelationshipProfileBySlug = async (
   token: string
 ): Promise<UserRelationshipProfileDTO> => {
   const response = await axios.get(
-    `${__API_BASE__}/contacts/relationship/${encodeURIComponent(slug)}`,
+    `${API_BASE}/contacts/relationship/${encodeURIComponent(slug)}`,
     authHeader(token)
   );
   return response.data as UserRelationshipProfileDTO;
@@ -115,7 +115,7 @@ export const getRelationshipProfileBySlug = async (
 // ✅ Add contact by Profile Slug (endpoint returns {success:true}; keep void)
 export const addContactByUserSlug = async (profileSlug: string, token: string): Promise<void> => {
   await axios.post(
-    `${__API_BASE__}/contacts/add/byUserSlug`,
+    `${API_BASE}/contacts/add/byUserSlug`,
     { contactSlug: profileSlug },
     authHeader(token)
   );
@@ -123,7 +123,7 @@ export const addContactByUserSlug = async (profileSlug: string, token: string): 
 
 export const addContactByBusinessSlug = async (businessSlug: string, token: string): Promise<void> => {
   await axios.post(
-    `${__API_BASE__}/contacts/add/byBusinessSlug`,
+    `${API_BASE}/contacts/add/byBusinessSlug`,
     { businessSlug },
     authHeader(token)
   );
@@ -135,7 +135,7 @@ export async function addContactByContactRequestForm(
   token: string
 ): Promise<ContactsBundleResponse> {
   const res = await axios.post(
-    `${__API_BASE__}/contacts/add/byContactRequestForm`,
+    `${API_BASE}/contacts/add/byContactRequestForm`,
     form,
     authHeader(token)
   );
@@ -147,7 +147,7 @@ export async function importContactsCsv(token: string, file: File): Promise<Cont
   const form = new FormData();
   form.append("file", file); // backend expects "file"
 
-  const res = await fetch(`${__API_BASE__}/import/csv`, {
+  const res = await fetch(`${API_BASE}/import/csv`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
