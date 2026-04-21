@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import axios from "axios";
 import "../css/Header.css";
 import type { Session } from "@supabase/supabase-js";
 import logo from "../assets/logo.png";

@@ -109,12 +109,6 @@ export default function AdminBusinessesPage() {
 
   const [q, setQ] = useState(""); // local search
 
-  const title = useMemo(() => {
-    if (status === "PENDING") return "Pending approvals";
-    if (status === "ACTIVE") return "Active businesses";
-    return "Suspended businesses";
-  }, [status]);
-
   const load = async () => {
     setLoading(true);
     setErr(null);

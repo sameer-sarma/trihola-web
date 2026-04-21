@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DrawerSubmodal from "./DrawerSubModal";
 import PaymentInstructionsModal from "../../../components/PaymentInstructionsModal";
 import OrderItemizationModal from "../../../components/OrderItemizationModal";
@@ -213,17 +213,6 @@ export default function BroadcastOrderItemPanel({
   const hasPaymentInstructions =
     (paymentInstructionsDraft.entries?.length ?? 0) > 0 ||
     !!paymentInstructionsDraft.text?.trim();
-
-  const itemSummaryText = useMemo(() => {
-    if (!itemCount) return "No items added";
-
-    const labels = sanitizedItems
-      .map((item) => item.label)
-      .filter(Boolean);
-
-    if (labels.length <= 2) return labels.join(", ");
-    return `${labels.slice(0, 2).join(", ")} +${labels.length - 2} more`;
-  }, [sanitizedItems, itemCount]);
 
   function handleOpenItemization() {
     if (!itemized) {

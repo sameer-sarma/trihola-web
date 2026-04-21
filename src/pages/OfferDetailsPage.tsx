@@ -467,7 +467,7 @@ export default function OfferDetailsPage() {
                     <div className="od-history__dot" />
                     <div>
                       <div className="od-history__title">Shared with you</div>
-                      <div className="od-history__time">{formatDateTime(offer.assignedAt)}</div>
+                      <div className="od-history__time">{formatDateTime(offer.activatedAt ?? offer.validFrom)}</div>
                     </div>
                   </div>
 
@@ -498,7 +498,7 @@ export default function OfferDetailsPage() {
       <ImageLightbox
         open={lightboxOpen}
         items={lightboxItems}
-        initialIndex={lightboxIndex}
+        startIndex={lightboxIndex}
         onClose={() => setLightboxOpen(false)}
       />
     </div>

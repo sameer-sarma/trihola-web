@@ -477,8 +477,6 @@ export default function RecommendationAddCtaModal({ open, onClose, cta, onSubmit
   const requesterName = (cta as any)?.createdByBadge?.displayName || "Someone";
   const requesterImg = (cta as any)?.createdByBadge?.imageUrl || "";
 
-  const viewerRole = String((cta as any)?.viewerRole ?? "").toUpperCase();
-
   // IMPORTANT: trust server canAct; no fallback that would accidentally enable CREATOR
   const canAct = Boolean((cta as any)?.canAct);
 

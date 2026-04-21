@@ -353,7 +353,12 @@ const EditProfile: React.FC<Props> = ({
         </form>
       </div>
 
-      <ImageLightbox open={imgOpen} src={imgSrc} alt={imgAlt} onClose={() => setImgOpen(false)} />
+      <ImageLightbox
+        open={imgOpen}
+        items={imgSrc ? [{ src: imgSrc, alt: imgAlt, title: imgAlt }] : []}
+        startIndex={0}
+        onClose={() => setImgOpen(false)}
+      />
     </div>
   );
 };

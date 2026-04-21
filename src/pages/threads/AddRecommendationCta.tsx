@@ -78,7 +78,7 @@ function otherParticipantName(
   const name =
     other?.displayName ||
     other?.businessMini?.name ||
-    [other?.userMini?.firstName, other?.userMini?.userName, other?.userMini?.lastName]
+    [other?.userMini?.firstName, other?.userMini?.lastName]
       .filter(Boolean)
       .join(" ")
       .trim();
@@ -104,14 +104,6 @@ function defaultExpiryLocalDatetime(days: number): string {
   // format as "YYYY-MM-DDTHH:mm" in local time
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function inferAttachmentKind(mime: string): CtaAttachment["kind"] {
-  const m = (mime || "").toLowerCase();
-  if (m.startsWith("image/")) return "IMAGE";
-  if (m.startsWith("video/")) return "VIDEO";
-  if (m.startsWith("audio/")) return "AUDIO";
-  return "DOCUMENT";
 }
 
 export default function AddRecommendationCta({

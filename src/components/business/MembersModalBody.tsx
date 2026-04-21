@@ -2,8 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import type { BusinessMemberDTO } from "../../types/business";
-import type { Contact } from "../../types/invites";
+import type { Contact, BusinessMemberDTO } from "../../types/business";
 
 import ContactMultiSelect from "../contacts/ContactMultiSelect";
 import AddContactModal from "../contacts/AddContactModal";

@@ -69,3 +69,13 @@ export type BusinessOwnerProfileResponse = {
   businessId: string;
   status: "PENDING" | "ACTIVE" | "SUSPENDED" | "DELETED";
   profile: BusinessProfileDTOOwner};
+
+export type Contact = {
+userId: string; // TriHola user id
+profileSlug: string;
+firstName?: string | null;
+lastName?: string | null;
+phone?: string | null;
+email?: string | null;
+profileImageUrl?: string | null;
+};

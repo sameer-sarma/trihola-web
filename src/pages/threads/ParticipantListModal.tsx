@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Modal from "../../components/Modal";
 import "../../css/participant-list-modal.css";

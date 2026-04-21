@@ -6,9 +6,10 @@ import "../../css/contact-picker-modal.css";
 
 type Filter = "ALL" | "BUSINESSES" | "USERS";
 
-export type PickerItem =
-  | { kind: "USER"; key: string; user: UserMini }
-  | { kind: "BUSINESS"; key: string; business: BusinessMini };
+type UserPickerItem = { kind: "USER"; key: string; user: UserMini };
+type BusinessPickerItem = { kind: "BUSINESS"; key: string; business: BusinessMini };
+
+export type PickerItem = UserPickerItem | BusinessPickerItem;
 
 function userName(u: UserMini) {
   const fn = (u.firstName ?? "").trim();
@@ -17,7 +18,7 @@ function userName(u: UserMini) {
 }
 
 function userSubtitle(u: UserMini) {
-  const profession = (u as any)?.profession;
+  const profession = u.profession;
   if (profession && String(profession).trim()) return String(profession).trim();
   return u.slug || "";
 }
@@ -81,19 +82,19 @@ export default function ContactPickerModal(props: Props) {
     setSelectedKeys(new Set(props.initialSelectedKeys ?? []));
   }, [props.open, props.defaultFilter, props.initialSelectedKeys]);
 
-  const allUsers: PickerItem[] = useMemo(() => {
+  const allUsers = useMemo<UserPickerItem[]>(() => {
     return (props.users ?? [])
       .map((u) => ({ kind: "USER" as const, key: userKey(u), user: u }))
       .filter((it) => !exclude.has(it.key));
   }, [props.users, exclude]);
 
-  const allBusinesses: PickerItem[] = useMemo(() => {
+  const allBusinesses = useMemo<BusinessPickerItem[]>(() => {
     return (props.businesses ?? [])
       .map((b) => ({ kind: "BUSINESS" as const, key: bizKey(b), business: b }))
       .filter((it) => !exclude.has(it.key));
   }, [props.businesses, exclude]);
 
-  const allItems: PickerItem[] = useMemo(
+  const allItems = useMemo<PickerItem[]>(
     () => [...allBusinesses, ...allUsers],
     [allBusinesses, allUsers]
   );
@@ -106,7 +107,7 @@ export default function ContactPickerModal(props: Props) {
   const normalizedQuery = q.trim().toLowerCase();
 
   const filteredBusinesses = useMemo(() => {
-    if (filter === "USERS") return [];
+    if (filter === "USERS") return [] as BusinessPickerItem[];
 
     const base = allBusinesses;
     if (!normalizedQuery) return base;
@@ -119,7 +120,7 @@ export default function ContactPickerModal(props: Props) {
   }, [allBusinesses, filter, normalizedQuery]);
 
   const filteredUsers = useMemo(() => {
-    if (filter === "BUSINESSES") return [];
+    if (filter === "BUSINESSES") return [] as UserPickerItem[];
 
     const base = allUsers;
     if (!normalizedQuery) return base;

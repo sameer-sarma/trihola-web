@@ -86,14 +86,6 @@ const mapUiKindToOfferType = (
       ? "FIXED_DISCOUNT"
       : "PERCENTAGE_DISCOUNT";
 
-function attachmentKindFromMime(mime: string): UiAttachment["kind"] {
-  const m = String(mime || "").toLowerCase();
-  if (m.startsWith("image/")) return "IMAGE";
-  if (m.startsWith("video/")) return "VIDEO";
-  if (m.startsWith("audio/")) return "AUDIO";
-  return "DOCUMENT";
-}
-
 function normalizePrimaryImages(items: UiAttachment[]): UiAttachment[] {
   const images = (items ?? []).filter(
     (x) => !!x?.url && String(x.mime || "").startsWith("image/")
@@ -798,7 +790,7 @@ const OfferTemplateEditor: React.FC = () => {
                             <button
                               type="button"
                               className="btn btn--ghost btn--sm"
-                              disabled={img.isPrimary}
+                              disabled={!!img.isPrimary}
                               onClick={() => setPrimaryImage(idx)}
                             >
                               {img.isPrimary ? "Primary" : "Set primary"}

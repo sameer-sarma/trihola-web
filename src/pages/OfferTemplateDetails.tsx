@@ -14,7 +14,7 @@ import type { BusinessPublicViewDTO } from "../types/business";
 import type {
   OfferGrantLine,
   OfferTemplateResponse,
-  ScopeItemSpec,
+  ScopeItem,
 } from "../types/offerTemplateTypes";
 
 import "../css/offer-template-details.css";
@@ -85,7 +85,7 @@ function validityLabel(t: OfferTemplateResponse): string {
       return `${duration} from acceptance`;
     default:
       return `${duration} from ${String(t.trigger ?? "assignment")
-        .replaceAll("_", " ")
+        .replace(/_/g, " ")
         .toLowerCase()}`;
   }
 }
@@ -167,7 +167,7 @@ function offerTypeLabel(offerType?: string | null) {
   }
 }
 
-function scopeItemSummary(item: ScopeItemSpec, index: number) {
+function scopeItemSummary(item: ScopeItem, index: number) {
   const type = item.itemType === "PRODUCT" ? "Product" : "Bundle";
   const label =
     item.itemType === "PRODUCT"
@@ -612,7 +612,9 @@ const OfferTemplateDetailsPage: React.FC = () => {
 
                   return (
                     <article
-                      key={`${item.itemType}-${item.id}-${idx}`}
+                      key={`${item.itemType}-${
+                          item.itemType === "PRODUCT" ? item.product.id : item.bundle.id
+                        }-${idx}`}
                       className="app-entityCard"
                     >
                       <div className="app-entityMedia">

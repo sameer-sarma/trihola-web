@@ -261,68 +261,6 @@ export default function ThreadStream({
     };
   }
   
-  function buildBroadcastCtaMessage(cta: any): string {
-    const kindUpper = String(cta?.kind ?? "").toUpperCase();
-
-    const raw = cta?.configJson as string | undefined;
-    let cfg: any = null;
-
-    try {
-      cfg = raw ? JSON.parse(raw) : null;
-    } catch {
-      cfg = null;
-    }
-
-    const explicitMessage = String(cfg?.message ?? "").trim();
-    if (explicitMessage) return explicitMessage;
-
-    if (kindUpper === "REFERRAL_ADD") {
-      const businessKey =
-        effectiveIdentity?.participantType && effectiveIdentity?.participantId
-          ? makeKey(
-              String(effectiveIdentity.participantType),
-              String(effectiveIdentity.participantId)
-            )
-          : "";
-
-      const businessParticipant = businessKey ? participantByKey.get(businessKey) : undefined;
-
-      const businessName =
-        cfg?.targetName ||
-        cfg?.businessName ||
-        businessParticipant?.displayName ||
-        businessParticipant?.businessMini?.name ||
-        "this business";
-
-      return `Refer ${businessName}`;
-    }
-
-    if (kindUpper === "RECOMMEND_BUSINESS") {
-      const assignedIdent = ctaAssignedToIdentity(cta as any);
-
-      const assignedKey = assignedIdent
-        ? makeKey(
-            String(assignedIdent.participantType),
-            String(assignedIdent.participantId)
-          )
-        : "";
-
-      const assignedP = assignedKey ? participantByKey.get(assignedKey) : undefined;
-
-      const targetName =
-        cfg?.targetName ||
-        cfg?.prospectName ||
-        assignedP?.displayName ||
-        assignedP?.businessMini?.name ||
-        fullName(assignedP?.userMini) ||
-        "contact";
-
-      return `Recommend to ${targetName}`;
-    }
-
-    return "Request";
-  }
-
   function getItemActorSig(it: RenderItem): string | null {
     if (it.kind === "group") {
       return (it as RenderGroup).actorKey ?? null;

@@ -78,7 +78,6 @@ import { useThreadData } from "./hooks/useThreadData";
 import { toApiAttachment } from "../../utils/uiHelper";
 
 import CreateOrderModal, {
-  OrderCatalogOption,
   type OrderActorOption,
   type OrderBusinessOption,
   type OrderRecipientOption,
@@ -96,9 +95,6 @@ import OrderDetailsDrawer from "./components/OrderDetailsDrawer";
 
 import OfferDetailsDrawer from "./components/OfferDetailsDrawer";
 import type { OfferOrderPreviewDraftPayloadDTO } from "../../components/OfferOrderPreviewModal";
-
-import { listOwnerProducts } from "../../services/productService";
-import { listOwnerBundles } from "../../services/bundleService";
 
 import "../../css/thread-page.css";
 import "../../css/thread-cta.css";
@@ -387,7 +383,7 @@ function ReferralHeader({
       <div className="refHeader__top">
         <div className="refHeader__meta">
           <span className="refHeader__kicker">Referral</span>
-          <span className={`statusPill ${statusClass}`}>{status.replaceAll("_", " ")}</span>
+          <span className={`statusPill ${statusClass}`}>{status.replace(/_/g, " ")}</span>
         </div>
 
         <div className="refHeader__actions">
@@ -592,7 +588,6 @@ export default function ThreadPage({
     contextVersionByThreadId,
   } = useThreadStore();
 
-  const [authToken, setAuthToken] = useState<string | null>(null);
   const [showParticipantModal, setShowParticipantModal] = useState(false);
   const [invitingRecId, setInvitingRecId] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
@@ -607,9 +602,6 @@ export default function ThreadPage({
   const [showAssignOfferDrawer, setShowAssignOfferDrawer] = useState(false);
   const [offerTemplates, setOfferTemplates] = useState<OfferTemplateResponse[]>([]);
   const [offerTemplatesLoading, setOfferTemplatesLoading] = useState(false);
-
-  const [orderProductOptions, setOrderProductOptions] = useState<OrderCatalogOption[]>([]);
-  const [orderBundleOptions, setOrderBundleOptions] = useState<OrderCatalogOption[]>([]);
 
   const [openCta, setOpenCta] = useState<ThreadCtaDTO | null>(null);
   const [showReferralAddCtaModal, setShowReferralAddCtaModal] = useState(false);
@@ -663,7 +655,6 @@ export default function ThreadPage({
     useState<OfferOrderPreviewDraftPayloadDTO | null>(null);
 
   const [orders, setOrders] = useState<OrderDTO[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
 
   const [showDraftSidebar, setShowDraftSidebar] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -679,21 +670,6 @@ export default function ThreadPage({
     const payload = JSON.parse(atob(session.access_token.split(".")[1]));
     return { token: session.access_token, userId: payload.sub as string };
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      const auth = await getAuth();
-      if (!cancelled) {
-        setAuthToken(auth?.token ?? null);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [getAuth]);
 
   const myDisplayName = useMemo(() => {
     const n = `${myProfile?.firstName ?? ""} ${myProfile?.lastName ?? ""}`.trim();
@@ -1011,8 +987,6 @@ export default function ThreadPage({
     if (!effectiveIdentity) return;
 
     try {
-      setOrdersLoading(true);
-
       const auth = await getAuth();
       if (!auth?.token) {
         return;
@@ -1031,8 +1005,6 @@ export default function ThreadPage({
       setOrders(data);
     } catch (err) {
       console.error("Failed to load orders", err);
-    } finally {
-      setOrdersLoading(false);
     }
   }, [threadId, effectiveIdentity, getAuth]);
 
@@ -1119,11 +1091,6 @@ export default function ThreadPage({
     await refreshThreadContextOnly(asIdentity);
     await loadOrders();
   }, [asIdentity, refreshThreadContextOnly, loadOrders]);
-
-  const openOrderDetails = useCallback((orderId: string) => {
-    setSelectedOrderId(orderId);
-    setShowOrderDetailsDrawer(true);
-  }, []);
 
   const closeOrderDetails = useCallback(() => {
     setShowOrderDetailsDrawer(false);

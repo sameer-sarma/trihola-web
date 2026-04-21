@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AssignedOfferDetailsDTO } from "../types/offerDetailsTypes";
 import "../css/new-chat-drawer.css";
 import "../css/CreateOrderModal.css";

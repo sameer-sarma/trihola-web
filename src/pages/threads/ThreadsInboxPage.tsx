@@ -188,7 +188,7 @@ function ctaLabel(kind: string) {
   if (k === "RECOMMEND_BUSINESS") return "Recommendation ask";
   if (k === "REFERRAL_ADD") return "Referral ask";
 
-  return k.replaceAll("_", " ").toLowerCase();
+  return k.replace(/_/g, " ").toLowerCase();
 }
 
 function threadPreview(t: ThreadSummaryDTO) {

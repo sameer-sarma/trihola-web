@@ -530,8 +530,6 @@ export default function ReferralAddCtaModal({ open, onClose, cta, onSubmit }: Pr
     </div>
   );
 
-  const chipsLeft = Math.max(0, remainingCount - selectedIds.length);
-
   return (
     <>
       <Modal open={open} onClose={onClose} title="Referral request" footer={footer} maxWidth={920}>

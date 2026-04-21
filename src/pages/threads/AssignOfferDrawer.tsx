@@ -70,7 +70,6 @@ export default function AssignOfferDrawer({
   getAuth,
   actingBusinessId,
   threadId,
-  threadTitle,
   recipientOptions,
   initialRecipientKey,
   offerTemplates,

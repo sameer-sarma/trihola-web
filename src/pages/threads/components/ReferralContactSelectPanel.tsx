@@ -43,11 +43,6 @@ function isBusinessContact(c: ContactLite) {
   return !!clean((c as any)?.businessId);
 }
 
-function contactId(c: ContactLite) {
-  const anyC = c as any;
-  return clean(anyC.userId || anyC.businessId || anyC.id);
-}
-
 export default function ReferralContactSelectPanel({
   open,
   onClose,

@@ -1,6 +1,4 @@
 // src/pages/threads/components/stream/OfferAssignedEventItem.tsx
-import React from "react";
-
 type Props = {
   text: string;
   offerTitle?: string | null;

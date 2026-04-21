@@ -17,7 +17,6 @@ import type {
   RenderReferralAsk,
   RenderSystem,
   BroadcastEnvelopeItem,
-  RenderOrder,
 } from "./types";
 
 import {
@@ -118,7 +117,6 @@ export function useThreadRenderItems({
   identityTitleByKey,
   myDisplayName,
   makeKey,
-  fmtDateTime,
   visibleOrders = [],
 }: Params): RenderItem[] {
   return useMemo(() => {
