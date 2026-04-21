@@ -364,7 +364,18 @@ const AppInner: React.FC = () => {
     e.preventDefault();
     if (!session?.access_token) return;
 
-    const { slug: _omitSlug, ...payload } = profile;
+    const payload = {
+      phone: profile.phone,
+      firstName: profile.firstName ?? null,
+      lastName: profile.lastName ?? null,
+      address: profile.address ?? null,
+      profileImageUrl: profile.profileImageUrl ?? null,
+      bio: profile.bio ?? null,
+      location: profile.location ?? null,
+      profession: profile.profession ?? null,
+      birthday: profile.birthday ?? null,
+      linkedinUrl: profile.linkedinUrl ?? null,
+    };
 
     await axios.post(`${API_BASE}/profile`, payload, {
       headers: { Authorization: `Bearer ${session.access_token}` },
