@@ -1,0 +1,127 @@
+.event-card {
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.event-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.referral-line {
+  font-size: 1rem;
+  color: #374151;
+}
+
+.referral-note {
+  background-color: #f9fafb;
+  color: #1f2937;
+  font-size: 0.875rem;
+  padding: 12px;
+  border: 1px solid #f3f4f6;
+  border-radius: 6px;
+  white-space: pre-wrap;
+}
+
+.status-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.response-status {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.response-status span {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+button.accept-btn {
+  padding: 6px 12px;
+  background-color: #22c55e;
+  color: white;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.accept-btn:hover {
+  background-color: #16a34a;
+}
+
+button.reject-btn {
+  padding: 6px 12px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.reject-btn:hover {
+  background-color: #dc2626;
+}
+
+button.cancel-btn {
+  padding: 6px 12px;
+  background-color: #6b7280;
+  color: white;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.cancel-btn:hover {
+  background-color: #4b5563;
+}
+
+.offer-event {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.event-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.approve-claim-button {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  background-color: #10b981; /* Green */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.approve-claim-button:hover {
+  background-color: #059669;
+}
+
+.event-timestamp {
+  white-space: nowrap;
+  color: #6b7280;
+  font-size: 0.75rem;
+}

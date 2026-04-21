@@ -1,0 +1,45 @@
+/* src/modules/products/styles.css */
+.th-page { padding: 16px; }
+.th-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; }
+.th-header-actions { display:flex; gap:8px; }
+.th-filters { display:flex; gap:16px; margin:12px 0; align-items:center; }
+.th-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:12px; }
+.th-card { border:1px solid #ddd; border-radius:10px; text-decoration:none; color:inherit; overflow:hidden; background:#fff; display:block; }
+.th-card-thumb { width:100%; height:140px; object-fit:cover; background:#f7f7f7; }
+.th-placeholder { display:flex; align-items:center; justify-content:center; color:#888; }
+.th-card-body { padding:10px; }
+.th-card-title { font-weight:600; margin-bottom:4px; }
+.th-card-sub { color:#666; font-size:0.9rem; }
+
+.th-form { display:grid; gap:10px; max-width:640px; }
+.th-row { display:grid; gap:6px; }
+.th-actions { margin-top:8px; display:flex; gap:8px; }
+
+.th-btn, .th-btn-primary, .th-btn-danger {
+  padding:8px 12px; border-radius:8px; border:1px solid transparent; cursor:pointer; background:#eee;
+}
+.th-btn-primary { background:#1f6feb; color:#fff; }
+.th-btn-danger { background:#e55353; color:#fff; }
+
+.th-muted { color:#666; }
+.th-error { color:#b00020; margin-top:8px; }
+.th-empty { color:#666; padding:16px 0; }
+
+.th-gallery { margin-top:12px; }
+.th-gallery-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+.th-slot { border:1px solid #ddd; border-radius:10px; padding:6px; background:#fff; min-height:140px; display:flex; flex-direction:column; gap:6px; }
+.th-thumb { width:100%; height:120px; object-fit:cover; border-radius:8px; background:#f7f7f7; }
+.th-slot-actions { display:flex; gap:6px; }
+.th-two-col { display:grid; grid-template-columns: 1fr 320px; gap:24px; align-items:start; }
+.th-kv { margin-bottom:8px; }
+
+.th-slots { display:flex; gap:12px; }
+.th-img-slot { width:160px; }
+.th-img-empty {
+  height:160px; border:1px solid #e5e5e5; border-radius:12px;
+  display:flex; align-items:center; justify-content:center; color:#666; background:#fafafa;
+}
+.th-img { width:160px; height:160px; object-fit:cover; border-radius:12px; border:1px solid #e5e5e5; }
+.th-img-actions { display:flex; align-items:center; gap:8px; margin-top:8px; }
+.th-badge { font-size:12px; padding:2px 8px; border-radius:999px; background:#eee; }
+.th-note { color:#666; font-size:12px; margin-top:8px; }

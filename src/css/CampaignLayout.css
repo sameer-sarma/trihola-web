@@ -1,0 +1,426 @@
+/* CampaignLayout.css */
+
+/* PAGE SHELL */
+.th-page.th-page--campaigns {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+/* HEADER */
+.campaign-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.campaign-page-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campaign-breadcrumb {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.campaign-page-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.campaign-page-subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.campaign-page-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* TOOLBAR (status + open joins, or filters) */
+.campaign-toolbar {
+  background: #ffffff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.campaign-toolbar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campaign-toolbar-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.campaign-toolbar-select {
+  min-width: 160px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.85rem;
+  background: #f9fafb;
+}
+
+/* TABS */
+.campaign-tabs {
+  margin-top: 10px;
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 2px;
+}
+
+.campaign-tab {
+  padding: 8px 2px;
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.campaign-tab.is-active {
+  color: #6d28d9;
+  border-bottom: 3px solid #6d28d9;
+}
+
+/* HERO IMAGE */
+.campaign-hero {
+  margin-top: 12px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+/* METRICS */
+.metric-row {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.metric-box {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.04);
+  text-align: center;
+}
+
+.metric-box__label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9ca3af;
+}
+
+.metric-box__value {
+  margin-top: 4px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* MAIN LAYOUT */
+.campaign-layout {
+  display: flex;
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.campaign-layout__main {
+  flex: 1.75;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.campaign-layout__side {
+  flex: 1.1;
+}
+
+/* GENERIC CARD */
+.card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 16px 16px 18px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+/* STATUS CARD */
+.campaign-status-card .kv {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 4px 0;
+}
+
+.campaign-status-label {
+  color: #6b7280;
+}
+
+.campaign-status-value {
+  font-weight: 500;
+  color: #111827;
+}
+
+.s-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-active {
+  background: #ecfdf5;
+  color: #15803d;
+}
+
+.status-expired {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.status-inactive {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* SIDE INVITES PANEL */
+.campaign-invites-panel {
+  height: 100%;
+}
+
+/* CAMPAIGN LIST */
+.campaigns-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.campaign-card-with-controls {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 12px 12px 14px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.campaign-card-controls {
+  border-top: 1px dashed #e5e7eb;
+  margin-top: 8px;
+  padding-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.campaign-card-controls label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.campaign-card-controls select {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+}
+
+/* CREATE / EDIT FORM WRAPPER */
+.campaign-form-shell {
+  margin-top: 12px;
+}
+
+.campaign-form-shell .card {
+  padding: 18px 18px 22px;
+}
+
+.campaign-hero {
+  position: relative;
+  margin-top: 12px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.campaign-hero-img {
+  width: 100%;
+  display: block;
+}
+
+/* Overlay at bottom of hero */
+.campaign-hero-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14px 18px 16px;
+  background: linear-gradient(
+    to top,
+    rgba(17, 24, 39, 0.85),
+    rgba(17, 24, 39, 0.0)
+  );
+  color: #f9fafb;
+}
+
+.campaign-hero-topline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.campaign-hero-expiry {
+  font-size: 0.75rem;
+  color: #e5e7eb;
+}
+
+.campaign-hero-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.campaign-hero-message {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  max-width: 70%;
+  color: #e5e7eb;
+}
+
+/* Each card in the list */
+.campaign-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top media */
+.campaign-card-media img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Body */
+.campaign-card-body {
+  padding: 12px 14px 8px;
+}
+
+.campaign-card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.campaign-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.campaign-card-subline {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.campaign-card-expiry {
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+/* Status pill inside card */
+.s-badge--chip {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+}
+
+/* View/Edit/Delete links */
+.campaign-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.btn-link {
+  font-size: 0.8rem;
+  color: #4b5563;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.btn-link--accent {
+  color: #6d28d9;
+}
+
+.btn-link--danger {
+  color: #b91c1c;
+}
+
+/* Footer controls INSIDE the card */
+.campaign-card-footer {
+  border-top: 1px solid #e5e7eb;
+  padding: 8px 14px 10px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.campaign-card-footer-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.campaign-card-footer-group label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.campaign-card-footer-group select {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+}

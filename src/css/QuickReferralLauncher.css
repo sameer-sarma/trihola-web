@@ -1,0 +1,14 @@
+.qrl {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
+}
+
+.qrl-title { font-weight: 900; color: #111827; }
+.qrl-help { margin-top: 2px; color: #6b7280; font-size: 13px; }
