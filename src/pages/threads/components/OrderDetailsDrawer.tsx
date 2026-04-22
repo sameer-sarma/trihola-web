@@ -762,7 +762,7 @@ export default function OrderDetailsDrawer({
                   disabled={busy}
                   onClick={handleApproveBusinessReview}
                 >
-                  Approve
+                  Approve for Payment
                 </button>
               ) : null}
 
