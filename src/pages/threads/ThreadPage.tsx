@@ -1838,6 +1838,35 @@ export default function ThreadPage({
   }, [participants, myBusinesses]);
 
   const createOrderRecipientOptions = useMemo<OrderRecipientOption[]>(() => {
+    const userParticipants = participants.filter((p) => p.participantType === "USER");
+    const businessParticipants = participants.filter((p) => p.participantType === "BUSINESS");
+
+    const toRecipientOption = (p: ThreadParticipantDTO): OrderRecipientOption => ({
+      identityType: p.participantType === "BUSINESS" ? "BUSINESS" : "USER",
+      userId: p.participantType === "USER" ? p.participantId : null,
+      businessId: p.participantType === "BUSINESS" ? p.participantId : null,
+      label:
+        p.displayName ??
+        (p.participantType === "BUSINESS"
+          ? p.businessMini?.name
+          : [p.userMini?.firstName, p.userMini?.lastName].filter(Boolean).join(" ")) ??
+        "Participant",
+      subtitle: p.participantType === "BUSINESS" ? "Business" : "User",
+      imageUrl:
+        (p as any).imageUrl ??
+        p.userMini?.profileImageUrl ??
+        p.businessMini?.logoUrl ??
+        null,
+    });
+
+    // Direct USER <-> BUSINESS thread:
+    // business is chosen in the Business picker,
+    // recipient should come from the USER side only.
+    if (userParticipants.length === 1 && businessParticipants.length === 1) {
+      return userParticipants.map(toRecipientOption);
+    }
+
+    // Fallback for other thread shapes:
     return participants
       .filter((p) => {
         if (!effectiveIdentity) return true;
@@ -1847,26 +1876,7 @@ export default function ThreadPage({
           participantId: p.participantId,
         });
       })
-      .map((p) => ({
-        identityType:
-          p.participantType === "BUSINESS"
-            ? ("BUSINESS" as const)
-            : ("USER" as const),
-        userId: p.participantType === "USER" ? p.participantId : null,
-        businessId: p.participantType === "BUSINESS" ? p.participantId : null,
-        label:
-          p.displayName ??
-          (p.participantType === "BUSINESS"
-            ? p.businessMini?.name
-            : [p.userMini?.firstName, p.userMini?.lastName].filter(Boolean).join(" ")) ??
-          "Participant",
-        subtitle: p.participantType === "BUSINESS" ? "Business" : "User",
-        imageUrl:
-          (p as any).imageUrl ??
-          p.userMini?.profileImageUrl ??
-          p.businessMini?.logoUrl ??
-          null,
-      }));
+      .map(toRecipientOption);
   }, [participants, effectiveIdentity]);
 
   const initialCreateOrderBusinessId = useMemo(() => {
@@ -1887,7 +1897,7 @@ export default function ThreadPage({
     const businessParticipants = participants.filter((p) => p.participantType === "BUSINESS");
 
     // Direct USER <-> BUSINESS thread:
-    // businessId should be the business, recipient should default to the user.
+    // recipient should default to the user participant.
     if (userParticipants.length === 1 && businessParticipants.length === 1) {
       const user = userParticipants[0];
       return {
