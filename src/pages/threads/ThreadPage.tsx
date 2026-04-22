@@ -1883,6 +1883,20 @@ export default function ThreadPage({
     userId?: string | null;
     businessId?: string | null;
   } | null>(() => {
+    const userParticipants = participants.filter((p) => p.participantType === "USER");
+    const businessParticipants = participants.filter((p) => p.participantType === "BUSINESS");
+
+    // Direct USER <-> BUSINESS thread:
+    // businessId should be the business, recipient should default to the user.
+    if (userParticipants.length === 1 && businessParticipants.length === 1) {
+      const user = userParticipants[0];
+      return {
+        identityType: "USER",
+        userId: user.participantId,
+        businessId: null,
+      };
+    }
+
     const other = participants.find((p) => {
       if (!effectiveIdentity) return true;
 
