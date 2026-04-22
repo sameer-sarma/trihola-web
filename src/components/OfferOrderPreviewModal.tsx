@@ -384,8 +384,10 @@ export default function OfferOrderPreviewModal({
         selectedGrants: selectedGrantsPayload,
       };
 
+      const API_BASE_URL = __API_BASE__;
+
       const response = await fetch(
-        `http://127.0.0.1:8080/offers/${offer.assignedOfferId}/order-preview`,
+        `${API_BASE_URL}/offers/${offer.assignedOfferId}/order-preview`,
         {
           method: "POST",
           headers: {
@@ -396,7 +398,7 @@ export default function OfferOrderPreviewModal({
           body: JSON.stringify(body),
         }
       );
-
+      
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
