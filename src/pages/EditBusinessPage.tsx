@@ -32,7 +32,7 @@ function safe(v: any) {
 export default function EditBusinessPage() {
   const { businessSlug } = useParams<{ businessSlug: string }>();
   const navigate = useNavigate();
-
+ 
   const [businessId, setBusinessId] = useState<string>("");
   const [status, setStatus] = useState<BusinessOwnerProfileResponse["status"]>("PENDING");
 
@@ -59,6 +59,8 @@ export default function EditBusinessPage() {
   const hideKyc = useMemo(() => status === "ACTIVE", [status]);
 
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET as string;
+  const MAX_DESC = 1000;
+  
   const [userId, setUserId] = useState<string | null>(null);
 
   // Need userId for storage path (same approach as RegisterBusinessPage)
@@ -341,9 +343,16 @@ export default function EditBusinessPage() {
               <textarea
                 className="th-input rb-textarea"
                 value={form.businessDescription ?? ""}
-                onChange={(e) => setField("businessDescription", e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Hard limit enforcement
+                  if (value.length <= MAX_DESC) {
+                    setField("businessDescription", value);
+                  }
+                }}
                 placeholder="What do you do? Who is it for?"
                 rows={4}
+                maxLength={MAX_DESC}
               />
             </div>
 

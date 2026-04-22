@@ -14,6 +14,7 @@ import type {
 
 //const API_BASE = (import.meta.env.VITE_API_BASE as string) || "";
 const API_BASE = __API_BASE__
+
 /**
  * Helper to get Supabase access token
  */

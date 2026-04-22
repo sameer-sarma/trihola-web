@@ -46,7 +46,8 @@ export default function RegisterBusinessPage() {
   >({ state: "idle" });
 
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET as string;
-
+  const MAX_DESC = 1000;
+  
   const [userId, setUserId] = useState<string | null>(null);
 
   // Need userId for storage path, same as ProfilePictureUploader :contentReference[oaicite:1]{index=1}
@@ -218,14 +219,34 @@ export default function RegisterBusinessPage() {
             </div>
 
             <div className="th-field rb-span2">
-              <div className="th-label">Description</div>
+              <div className="th-label">
+                Description
+                <span style={{ float: "right", fontSize: 12, color: "#888" }}>
+                  {(form.businessDescription?.length ?? 0)}/{MAX_DESC}
+                </span>
+              </div>
+
               <textarea
                 className="th-input rb-textarea"
                 value={form.businessDescription ?? ""}
-                onChange={(e) => setField("businessDescription", e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  // Hard limit (prevents paste overflow)
+                  if (value.length <= MAX_DESC) {
+                    setField("businessDescription", value);
+                  }
+                }}
                 placeholder="What do you do? Who is it for?"
                 rows={4}
+                maxLength={MAX_DESC} // browser-level restriction
               />
+
+              {(form.businessDescription?.length ?? 0) > MAX_DESC && (
+                <div style={{ color: "red", fontSize: 12 }}>
+                  Description cannot exceed {MAX_DESC} characters
+                </div>
+              )}
             </div>
 
             <div className="th-field">

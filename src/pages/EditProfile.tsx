@@ -38,7 +38,8 @@ const EditProfile: React.FC<Props> = ({
   onProfileRefresh,
 }) => {
   const navigate = useNavigate();
-
+  const MAX_BIO = 1000;
+  
   const [imgOpen, setImgOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [imgAlt, setImgAlt] = useState<string>("");
@@ -266,14 +267,23 @@ const EditProfile: React.FC<Props> = ({
           <div className="th-field">
             <label className="th-label" htmlFor="bio">
               Bio
+              <span style={{ float: "right", fontSize: 12, color: "#888" }}>
+                {(profile.bio?.length ?? 0)}/{MAX_BIO}
+              </span>
             </label>
+
             <textarea
               id="bio"
               className="th-textarea"
               name="bio"
               value={profile.bio || ""}
-              onChange={handleChangeWrapped}
+              onChange={(e) => {
+                if (e.target.value.length <= MAX_BIO) {
+                  handleChangeWrapped(e);
+                }
+              }}
               rows={4}
+              maxLength={MAX_BIO}
             />
           </div>
 
