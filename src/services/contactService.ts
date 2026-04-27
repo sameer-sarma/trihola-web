@@ -147,7 +147,7 @@ export async function importContactsCsv(token: string, file: File): Promise<Cont
   const form = new FormData();
   form.append("file", file); // backend expects "file"
 
-  const res = await fetch(`${API_BASE}/import/csv`, {
+  const res = await fetch(`${API_BASE}/contacts/import/csv`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
