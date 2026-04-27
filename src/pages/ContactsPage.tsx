@@ -3,10 +3,13 @@ import { supabase } from "../supabaseClient";
 import { Link } from "react-router-dom";
 import "../css/ContactsPage.css";
 import Modal from "../components/Modal";
+import EditContactModal from "../components/contacts/EditContactModal";
 
 import {
   fetchMyContactsBundle,
   importContactsCsv,
+  deleteUserContact,
+  type ContactResponse,
   type ContactsBundleResponse,
   type ContactImportErrorDTO,
   type ContactImportResultDTO,
@@ -201,6 +204,8 @@ const ContactsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [editingContact, setEditingContact] = useState<ContactResponse | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchContacts = async () => {
     setLoading(true);
@@ -233,6 +238,38 @@ const ContactsPage: React.FC = () => {
 
   const userContacts = bundle.users ?? [];
   const businessContacts = bundle.businesses ?? [];
+
+  const handleDeleteContact = async (contact: ContactResponse) => {
+    const ok = window.confirm(
+      `Remove ${formatPersonName(contact)} from your contacts? This will not delete their TriHola profile.`
+    );
+
+    if (!ok) return;
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+    if (!token) {
+      setError("User not authenticated");
+      return;
+    }
+
+    try {
+      setDeletingId(contact.userId);
+      await deleteUserContact(contact.userId, token);
+
+      setBundle((prev) => ({
+        ...prev,
+        users: prev.users.filter((u) => u.userId !== contact.userId),
+      }));
+    } catch (err: any) {
+      setError(err?.message ?? "Failed to remove contact");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const totalLabel = useMemo(() => {
     const people = userContacts.length;
@@ -332,6 +369,26 @@ const ContactsPage: React.FC = () => {
                         <p className="contact-sub">{subtitle}</p>
                         {meta && <p className="contact-meta">📞 {meta}</p>}
                       </div>
+
+                      <div className="contact-actions">
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm"
+                          onClick={() => setEditingContact(contact)}
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--sm"
+                          onClick={() => handleDeleteContact(contact)}
+                          disabled={deletingId === contact.userId}
+                        >
+                          {deletingId === contact.userId ? "Removing…" : "Remove"}
+                        </button>
+                      </div>
+
                     </li>
                   );
                 })}
@@ -394,6 +451,17 @@ const ContactsPage: React.FC = () => {
         onClose={() => setShowImport(false)}
         onImported={fetchContacts}
       />
+
+      <EditContactModal
+        open={!!editingContact}
+        contact={editingContact}
+        onClose={() => setEditingContact(null)}
+        onUpdated={(updatedBundle) => {
+          setBundle(updatedBundle);
+          setEditingContact(null);
+        }}
+      />
+      
     </div>
   );
 };

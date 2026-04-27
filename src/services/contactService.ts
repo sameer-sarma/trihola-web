@@ -12,6 +12,14 @@ export type ContactRequestForm = {
   businessName?: string;
 };
 
+export type UpdateContactRequestForm = {
+  firstName: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  businessName?: string;
+};
+
 export type ContactResponse = {
   userId: string;
   profileSlug: string;
@@ -164,3 +172,30 @@ export async function importContactsCsv(token: string, file: File): Promise<Cont
   return res.json();
 }
 
+// ✅ New edit and delete support for contacts
+
+export async function updateUserContact(
+  contactUserId: string,
+  form: UpdateContactRequestForm,
+  token: string
+): Promise<ContactsBundleResponse> {
+  const res = await axios.put(
+    `${API_BASE}/contacts/users/${encodeURIComponent(contactUserId)}`,
+    form,
+    authHeader(token)
+  );
+
+  return res.data as ContactsBundleResponse;
+}
+
+export async function deleteUserContact(
+  contactUserId: string,
+  token: string
+): Promise<{ success: boolean }> {
+  const res = await axios.delete(
+    `${API_BASE}/contacts/users/${encodeURIComponent(contactUserId)}`,
+    authHeader(token)
+  );
+
+  return res.data as { success: boolean };
+}
