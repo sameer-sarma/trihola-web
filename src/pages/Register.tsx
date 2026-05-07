@@ -257,23 +257,23 @@ export default function Register() {
 
         <aside className="auth-aside">
           <div className="auth-eyebrow">Why TriHola</div>
-          <h3 className="auth-title">Built for users, referrers, and businesses</h3>
+          <h3 className="auth-title">Built for relationship-driven businesses and communities</h3>
           <p className="auth-sub">
-            Turn word-of-mouth into measurable growth with reward management and secure, trackable
-            threads.
+            Turn conversations into structured engagement — with threads that connect
+            people, businesses, referrals, offers, and orders.
           </p>
           <ul className="auth-bullets">
             <li>
               <span className="tick">✔</span>
-              <strong>Users</strong> — every referral counts; organize offers & claims.
+              <strong>For people</strong> — participate in trusted conversations and opportunities.
             </li>
             <li>
               <span className="tick">✔</span>
-              <strong>Referrers</strong> — earn transparent rewards with simple tracking.
+              <strong>For communities</strong> — keep referrals, recommendations, and updates connected.
             </li>
             <li>
               <span className="tick">✔</span>
-              <strong>Businesses</strong> — convert happy customers into a sales channel.
+              <strong>For businesses</strong> — manage engagement without losing the human context.
             </li>
           </ul>
         </aside>

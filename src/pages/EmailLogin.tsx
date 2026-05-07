@@ -231,24 +231,24 @@ const EmailLogin: React.FC = () => {
         </div>
 
         <aside className="auth-aside">
-          <div className="auth-eyebrow">Referrals • Offers • Rewards</div>
-          <h3 className="auth-title">Referrals made simple. Rewards made real.</h3>
+          <div className="auth-eyebrow">Threads • Relationships • Engagement</div>
+          <h3 className="auth-title">Where conversations become actionable.</h3>
           <p className="auth-sub">
-            Turn every recommendation into a win-win. Connect people with businesses, track in real
-            time, and unlock exclusive rewards.
+            Bring messages, referrals, offers, orders, and business actions together in
+            one structured relationship thread.
           </p>
           <ul className="auth-bullets">
             <li>
               <span className="tick">✔</span>
-              <strong>Refer</strong> — connect a friend with a trusted business.
+              <strong>Start threads</strong> — bring people and businesses together.
             </li>
             <li>
               <span className="tick">✔</span>
-              <strong>Track</strong> — follow the journey in a thread.
+              <strong>Coordinate actions</strong> — manage referrals, offers, approvals, and updates.
             </li>
             <li>
               <span className="tick">✔</span>
-              <strong>Reward</strong> — both sides earn when it closes.
+              <strong>Build continuity</strong> — keep every interaction connected over time.
             </li>
           </ul>
         </aside>
