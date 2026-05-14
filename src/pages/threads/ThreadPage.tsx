@@ -83,7 +83,6 @@ import CreateOrderModal, {
   type OrderRecipientOption,
 } from "../../components/CreateOrderModal";
 
-import { deleteDraftOrder } from "../../services/orderService";
 import OrderDetailsDrawer from "./components/OrderDetailsDrawer";
 
 import OfferDetailsDrawer from "./components/OfferDetailsDrawer";
