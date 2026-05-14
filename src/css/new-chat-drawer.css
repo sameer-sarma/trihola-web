@@ -1271,3 +1271,58 @@ button.danger {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.drawer-footer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+  flex-wrap: wrap;
+}
+
+.drawer-action {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  padding: 10px 13px;
+  font-weight: 800;
+  cursor: pointer;
+  background: #ffffff;
+  color: #1f2937;
+  min-height: 40px;
+}
+
+.drawer-action:hover {
+  background: #f8fafc;
+}
+
+.drawer-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.drawer-action--primary {
+  background: #1f2937;
+  color: #ffffff;
+  border-color: #1f2937;
+}
+
+.drawer-action--primary:hover {
+  background: #111827;
+}
+
+.drawer-action--secondary {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #dbe3ef;
+}
+
+.drawer-action--dangerSubtle {
+  background: #fff5f5;
+  color: #b42318;
+  border-color: #fecaca;
+}
+
+.drawer-action--dangerSubtle:hover {
+  background: #fee2e2;
+}

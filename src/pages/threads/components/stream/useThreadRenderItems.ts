@@ -232,22 +232,43 @@ export function useThreadRenderItems({
         ? cfg.referralDefaults.attachments
         : [];
 
+      const createdByBadge = (cta as any)?.createdByBadge ?? null;
+
       const createdByType =
-        String((cta as any)?.createdByType ?? (cta as any)?.created_by_type ?? "").toUpperCase();
-      const createdById = String((cta as any)?.createdById ?? (cta as any)?.created_by_id ?? "");
+        String(
+          (cta as any)?.createdBy?.participantType ??
+            (cta as any)?.createdByType ??
+            (cta as any)?.created_by_type ??
+            ""
+        ).toUpperCase();
+
+      const createdById = String(
+        (cta as any)?.createdBy?.participantId ??
+          (cta as any)?.createdById ??
+          (cta as any)?.created_by_id ??
+          ""
+      );
 
       const createdByKey =
         createdByType && createdById ? makeKey(createdByType, createdById) : "";
 
       const createdByP = createdByKey ? participantByKey.get(createdByKey) : undefined;
-      const creatorName = participantDisplayName(createdByP);
 
-      return {
-        message: `${creatorName} has asked for referral(s)`,
-        detail: detail || null,
-        requestedCount,
-        attachmentCount: attachments.length,
-      };
+      const creatorName =
+        String(createdByBadge?.displayName ?? "").trim() ||
+        String(createdByBadge?.name ?? "").trim() ||
+        participantDisplayName(createdByP);
+
+        return {
+          message:
+            detail ||
+            `${creatorName} has asked for ${requestedCount || ""} referral${
+              requestedCount === 1 ? "" : "s"
+            }`.replace(/\s+/g, " "),
+          detail: detail ? null : null,
+          requestedCount,
+          attachmentCount: attachments.length,
+        };
     };
 
     const parseRecommendBusiness = (cta: ThreadCtaDTO) => {
@@ -261,22 +282,43 @@ export function useThreadRenderItems({
         ? cfg.referralDefaults.attachments
         : [];
 
+      const createdByBadge = (cta as any)?.createdByBadge ?? null;
+
       const createdByType =
-        String((cta as any)?.createdByType ?? (cta as any)?.created_by_type ?? "").toUpperCase();
-      const createdById = String((cta as any)?.createdById ?? (cta as any)?.created_by_id ?? "");
+        String(
+          (cta as any)?.createdBy?.participantType ??
+            (cta as any)?.createdByType ??
+            (cta as any)?.created_by_type ??
+            ""
+        ).toUpperCase();
+
+      const createdById = String(
+        (cta as any)?.createdBy?.participantId ??
+          (cta as any)?.createdById ??
+          (cta as any)?.created_by_id ??
+          ""
+      );
 
       const createdByKey =
         createdByType && createdById ? makeKey(createdByType, createdById) : "";
 
       const createdByP = createdByKey ? participantByKey.get(createdByKey) : undefined;
-      const creatorName = participantDisplayName(createdByP);
 
-      return {
-        message: `${creatorName} has asked for recommendation(s)`,
-        detail: detail || null,
-        requestedCount,
-        attachmentCount: attachments.length,
-      };
+      const creatorName =
+        String(createdByBadge?.displayName ?? "").trim() ||
+        String(createdByBadge?.name ?? "").trim() ||
+        participantDisplayName(createdByP);
+
+        return {
+          message:
+            detail ||
+            `${creatorName} has asked for ${requestedCount || ""} recommendation${
+              requestedCount === 1 ? "" : "s"
+            }`.replace(/\s+/g, " "),
+          detail: detail ? null : null,
+          requestedCount,
+          attachmentCount: attachments.length,
+        };
     };
 
     for (let i = 0; i < timeline.length; i++) {

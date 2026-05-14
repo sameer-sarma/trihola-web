@@ -94,6 +94,7 @@ export type ThreadContextDTO = {
 
   activeCtas?: ThreadCtaDTO[] | null;
   visibleOrders?: ThreadOrderCardDTO[] | null;
+  myDraftOrders?: ThreadOrderCardDTO[] | null;
 };
 
 export type ThreadParticipantDTO = {

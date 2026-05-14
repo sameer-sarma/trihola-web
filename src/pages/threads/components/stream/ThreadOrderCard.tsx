@@ -69,16 +69,20 @@ export default function ThreadOrderCard({
   className,
 }: ThreadOrderCardProps) {
   const clickable = typeof onClick === "function";
-
+  const isDraft = String(order.status ?? "").toUpperCase() === "DRAFT";
+  
   return (
     <button
       type="button"
-      className={`th-orderBubble ${className ?? ""} ${clickable ? "clickable" : ""}`}
+      className={`th-orderBubble ${isDraft ? "th-orderBubble--draft" : ""} ${className ?? ""} ${clickable ? "clickable" : ""}`}
       onClick={() => onClick?.(order.id)}
       title={clickable ? "Open order" : undefined}
     >
       <div className="th-orderHeader">
-        <div className="th-orderKicker">Order</div>
+        <div className="th-orderKicker">
+          {isDraft ? "Draft order" : "Order"}
+        </div>
+        {isDraft ? <div className="th-orderPrivatePill">Private</div> : null}
         <div className="th-orderAmount">
           {formatCurrency(order.finalAmount, order.currencyCode)}
         </div>

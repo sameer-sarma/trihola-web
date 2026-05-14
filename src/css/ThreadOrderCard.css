@@ -134,3 +134,24 @@
     grid-template-columns: 1fr;
   }
 }
+
+.th-orderBubble--draft {
+  background: #fff7ed;
+  border-color: rgba(247, 136, 47, 0.55);
+}
+
+.th-orderBubble--draft .th-orderKicker {
+  color: #c2410c;
+}
+
+.th-orderPrivatePill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #fed7aa;
+  color: #9a3412;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}

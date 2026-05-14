@@ -83,14 +83,7 @@ import CreateOrderModal, {
   type OrderRecipientOption,
 } from "../../components/CreateOrderModal";
 
-import {
-  fetchDraftOrdersByThreadId,
-  submitOrderByBusiness,
-  submitOrderForBusinessReview,
-  deleteDraftOrder,
-} from "../../services/orderService";
-
-import DraftOrdersSidebar from "./components/DraftOrdersSidebar";
+import { deleteDraftOrder } from "../../services/orderService";
 import OrderDetailsDrawer from "./components/OrderDetailsDrawer";
 
 import OfferDetailsDrawer from "./components/OfferDetailsDrawer";
@@ -654,9 +647,6 @@ export default function ThreadPage({
   const [offerPreviewDraft, setOfferPreviewDraft] =
     useState<OfferOrderPreviewDraftPayloadDTO | null>(null);
 
-  const [orders, setOrders] = useState<OrderDTO[]>([]);
-
-  const [showDraftSidebar, setShowDraftSidebar] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [showOrderDetailsDrawer, setShowOrderDetailsDrawer] = useState(false);
 
@@ -962,51 +952,6 @@ export default function ThreadPage({
     await refreshThreadContextOnly(asIdentity);
   }, [asIdentity, refreshThreadContextOnly]);
   
-  const draftOrders = useMemo(() => {
-    if (!asIdentity) return [];
-
-    return orders.filter((order) => {
-      if (order.status !== "DRAFT") return false;
-
-      return (
-        String(order.createdByIdentityType).toUpperCase() ===
-          String(asIdentity.participantType).toUpperCase() &&
-        String(order.createdByIdentityId) === String(asIdentity.participantId)
-      );
-    });
-  }, [orders, asIdentity]);
-
-  useEffect(() => {
-    if (draftOrders.length === 0 && showDraftSidebar) {
-      setShowDraftSidebar(false);
-    }
-  }, [draftOrders.length, showDraftSidebar]);
-
-  const loadOrders = useCallback(async () => {
-    if (!threadId) return;
-    if (!effectiveIdentity) return;
-
-    try {
-      const auth = await getAuth();
-      if (!auth?.token) {
-        return;
-      }
-
-      const actingBusinessId =
-        effectiveIdentity.participantType === "BUSINESS"
-          ? String(effectiveIdentity.participantId)
-          : null;
-
-      const data = await fetchDraftOrdersByThreadId(threadId, {
-        token: auth.token,
-        businessId: actingBusinessId,
-      });
-
-      setOrders(data);
-    } catch (err) {
-      console.error("Failed to load orders", err);
-    }
-  }, [threadId, effectiveIdentity, getAuth]);
 
   const openEditOrder = useCallback((order: OrderDTO) => {
     setOfferPreviewDraft(null);
@@ -1014,37 +959,6 @@ export default function ThreadPage({
     setShowCreateOrderModal(true);
   }, []);
 
-  const handleSubmitOrder = useCallback(
-    async (order: OrderDTO) => {
-      const auth = await getAuth();
-      if (!auth) return;
-
-      try {
-        let updated: OrderDTO;
-
-        if (order.allowedActions?.canSubmitForBusinessReview) {
-          updated = await submitOrderForBusinessReview(order.id, {
-            token: auth.token,
-            businessId: actingBusinessId,
-          });
-        } else if (order.allowedActions?.canSubmit) {
-          updated = await submitOrderByBusiness(order.id, {
-            token: auth.token,
-            businessId: actingBusinessId,
-          });
-        } else {
-          return;
-        }
-
-        setOrders((current) =>
-          current.map((o) => (o.id === updated.id ? updated : o))
-        );
-      } catch (e: any) {
-        setError(e?.message ?? "Failed to submit order");
-      }
-    },
-    [getAuth, actingBusinessId]
-  );
 
   const handleUseOfferPreviewDraft = useCallback(
     (draft: OfferOrderPreviewDraftPayloadDTO) => {
@@ -1058,39 +972,39 @@ export default function ThreadPage({
   );
 
   const handleDeleteDraftOrder = useCallback(
-      async (order: OrderDTO) => {
-        if (!order.allowedActions?.canDeleteDraft) return;
+    async (order: OrderDTO) => {
+      if (!order.allowedActions?.canDeleteDraft) return;
 
-        const ok = window.confirm("Delete this draft order?");
-        if (!ok) return;
+      const ok = window.confirm("Delete this draft order?");
+      if (!ok) return;
 
-        const auth = await getAuth();
-        if (!auth) return;
+      const auth = await getAuth();
+      if (!auth) return;
 
-        try {
-          await deleteDraftOrder(order.id, {
-            token: auth.token,
-            businessId: actingBusinessId,
-          });
+      try {
+        await deleteDraftOrder(order.id, {
+          token: auth.token,
+          businessId: actingBusinessId,
+        });
 
-          setOrders((current) => current.filter((o) => o.id !== order.id));
-        } catch (e: any) {
-          setError(e?.message ?? "Failed to delete draft order");
+        if (asIdentity) {
+          await refreshThreadContextOnly(asIdentity);
         }
-      },
-      [getAuth, actingBusinessId]
-  );
 
-  useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
+        setShowOrderDetailsDrawer(false);
+        setSelectedOrderId(null);
+      } catch (e: any) {
+        setError(e?.message ?? "Failed to delete draft order");
+      }
+    },
+    [getAuth, actingBusinessId, asIdentity, refreshThreadContextOnly]
+  );
 
   const onOrderUpdated = useCallback(async () => {
     if (!asIdentity) return;
 
     await refreshThreadContextOnly(asIdentity);
-    await loadOrders();
-  }, [asIdentity, refreshThreadContextOnly, loadOrders]);
+  }, [asIdentity, refreshThreadContextOnly]);
 
   const closeOrderDetails = useCallback(() => {
     setShowOrderDetailsDrawer(false);
@@ -1932,7 +1846,10 @@ export default function ThreadPage({
     activities,
     liveCtas,
     threadActiveCtas: threadCtx?.activeCtas ?? [],
-    visibleOrders: threadCtx?.visibleOrders ?? [],
+    visibleOrders: [
+      ...(threadCtx?.visibleOrders ?? []),
+      ...(threadCtx?.myDraftOrders ?? []),
+    ],
     myIdentityKeys,
     participantByKey,
     identityTitleByKey,
@@ -1954,7 +1871,7 @@ export default function ThreadPage({
   return (
       <div
         className={`threadPage threadWorkspace ${
-          isReferralThread || showDraftSidebar
+          isReferralThread
             ? "threadWorkspace--withSidebar"
             : "threadWorkspace--noSidebar"
         } ${isDirectThread ? "direct" : "group"}`}
@@ -2030,15 +1947,6 @@ export default function ThreadPage({
             ReferralHeader={EmptyReferralHeader}
             referralHeaderProps={sidebarReferralHeaderProps}
           />
-
-          {draftOrders.length > 0 && (
-            <button
-              className="btn btn-quiet"
-              onClick={() => setShowDraftSidebar((s) => !s)}
-            >
-              Draft Orders ({draftOrders.length})
-            </button>
-          )}
 
         </div>
 
@@ -2146,47 +2054,13 @@ export default function ThreadPage({
         />
       </div>
 
-      {showDraftSidebar && (
-        <aside className="threadWorkspace__sidebar">
-          <DraftOrdersSidebar
-            orders={draftOrders}
-            onEdit={(order) => {
-              openEditOrder(order);
-            }}
-            onSubmit={(order) => {
-              handleSubmitOrder(order);
-            }}
-            onDelete={(order) => {
-              handleDeleteDraftOrder(order);
-            }}
-            onClose={() => setShowDraftSidebar(false)}
-          />
-        </aside>
-      )}
-
       {isReferralThread ? (
         <aside className="threadWorkspace__sidebar">
           <div className="threadSidebarCard threadSidebarCard--referral">
             <ReferralHeader {...sidebarReferralHeaderProps} />
           </div>
         </aside>
-        ) : showDraftSidebar ? (
-          <aside className="threadWorkspace__sidebar">
-            <DraftOrdersSidebar
-              orders={draftOrders}
-              onEdit={(order) => {
-                openEditOrder(order);
-              }}
-              onSubmit={(order) => {
-                handleSubmitOrder(order);
-              }}
-              onDelete={(order) => {
-                handleDeleteDraftOrder(order);
-              }}
-              onClose={() => setShowDraftSidebar(false)}
-            />
-          </aside>
-        ) : null}
+      ) : null}
 
       <ParticipantListModal
         open={showParticipantModal}
@@ -2270,11 +2144,19 @@ export default function ThreadPage({
         initialRecipientIdentityType={initialCreateOrderRecipient?.identityType}
         initialRecipientUserId={initialCreateOrderRecipient?.userId ?? null}
         initialRecipientBusinessId={initialCreateOrderRecipient?.businessId ?? null}
-        onCreated={(order) => {
+        onCreated={async (order) => {
           console.log("Order created", order);
-          loadOrders();
+
+          if (asIdentity) {
+            await refreshThreadContextOnly(asIdentity);
+          }
+
           setShowCreateOrderModal(false);
           setEditingOrder(null);
+          setOfferPreviewDraft(null);
+
+          setSelectedOrderId(order.id);
+          setShowOrderDetailsDrawer(true);
         }}
           paymentInstructionsUserId={myUserId ?? ""}
       />
@@ -2286,6 +2168,16 @@ export default function ThreadPage({
         getAuth={getAuth}
         businessId={actingBusinessId}
         onUpdated={onOrderUpdated}
+        onEditDraft={(order) => {
+          setShowOrderDetailsDrawer(false);
+          setSelectedOrderId(null);
+          openEditOrder(order);
+        }}
+        onDeleted={async () => {
+          await onOrderUpdated();
+          setShowOrderDetailsDrawer(false);
+          setSelectedOrderId(null);
+        }}
       />
 
       <OfferDetailsDrawer

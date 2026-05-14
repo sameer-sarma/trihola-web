@@ -42,6 +42,8 @@ type Props = {
   getAuth: () => Promise<{ token: string; userId: string } | null>;
   businessId?: string | null;
   onUpdated?: () => Promise<void> | void;
+  onEditDraft?: (order: OrderDTO) => void;
+  onDeleted?: () => Promise<void> | void;
 };
 
 export default function OrderDetailsDrawer({
@@ -51,6 +53,8 @@ export default function OrderDetailsDrawer({
   getAuth,
   businessId,
   onUpdated,
+  onEditDraft,
+  onDeleted,
 }: Props) {
   const [order, setOrder] = useState<OrderDTO | null>(null);
   const [loading, setLoading] = useState(false);
@@ -253,6 +257,23 @@ export default function OrderDetailsDrawer({
         }
       )
     );
+  }
+
+  async function handleDeleteDraft() {
+    if (!order || !order.allowedActions?.canDeleteDraft) return;
+
+    const ok = window.confirm("Delete this draft order?");
+    if (!ok) return;
+
+    await handleAction((token) =>
+      deleteDraftOrder(order.id, {
+        token,
+        businessId,
+      })
+    );
+
+    await onDeleted?.();
+    onClose();
   }
 
   const appliedOfferTitle = (() => {
@@ -705,7 +726,7 @@ export default function OrderDetailsDrawer({
                   {allowed?.canAddPaymentProof ? (
                     <button
                       type="button"
-                      className="primary order-secondary-action"
+                      className="drawer-action drawer-action--secondary"
                       disabled={busy}
                       onClick={() => setShowAddPaymentProofModal(true)}
                     >
@@ -719,10 +740,32 @@ export default function OrderDetailsDrawer({
 
           {order && allowed ? (
             <div className="drawer-footer">
+              {order.status === "DRAFT" && allowed.canEdit ? (
+                <button
+                  type="button"
+                  className="drawer-action drawer-action--secondary"
+                  disabled={busy}
+                  onClick={() => onEditDraft?.(order)}
+                >
+                  Edit draft
+                </button>
+              ) : null}
+
+              {order.status === "DRAFT" && allowed.canDeleteDraft ? (
+                <button
+                  type="button"
+                  className="drawer-action drawer-action--dangerSubtle"
+                  disabled={busy}
+                  onClick={handleDeleteDraft}
+                >
+                  Delete draft
+                </button>
+              ) : null}
+
               {allowed.canSubmit ? (
                 <button
                   type="button"
-                  className="primary"
+                  className="drawer-action drawer-action--primary"
                   disabled={busy}
                   onClick={() =>
                     handleAction((token) =>
@@ -740,7 +783,7 @@ export default function OrderDetailsDrawer({
               {allowed.canSubmitForBusinessReview ? (
                 <button
                   type="button"
-                  className="primary"
+                  className="drawer-action drawer-action--primary"
                   disabled={busy}
                   onClick={() =>
                     handleAction((token) =>
@@ -758,7 +801,7 @@ export default function OrderDetailsDrawer({
               {allowed.canApproveBusinessReview ? (
                 <button
                   type="button"
-                  className="primary"
+                  className="drawer-action drawer-action--primary"
                   disabled={busy}
                   onClick={handleApproveBusinessReview}
                 >
@@ -769,7 +812,7 @@ export default function OrderDetailsDrawer({
               {allowed.canComplete ? (
                 <button
                   type="button"
-                  className="primary"
+                  className="drawer-action drawer-action--primary"
                   disabled={busy}
                   onClick={() =>
                     handleAction((token) =>
@@ -787,6 +830,7 @@ export default function OrderDetailsDrawer({
               {allowed.canRevertToDraft ? (
                 <button
                   type="button"
+                  className="drawer-action drawer-action--secondary"
                   disabled={busy}
                   onClick={() =>
                     handleAction((token) =>
@@ -804,7 +848,7 @@ export default function OrderDetailsDrawer({
               {allowed.canReject ? (
                 <button
                   type="button"
-                  className="danger"
+                  className="drawer-action drawer-action--dangerSubtle"
                   disabled={busy}
                   onClick={() => {
                     const ok = window.confirm("Reject this order?");
@@ -825,6 +869,7 @@ export default function OrderDetailsDrawer({
               {allowed?.canRejectPaymentProof ? (
                 <button
                   type="button"
+                  className="drawer-action drawer-action--secondary"
                   disabled={busy}
                   onClick={handleRejectPaymentProof}
                 >
@@ -835,7 +880,7 @@ export default function OrderDetailsDrawer({
               {allowed.canCancel ? (
                 <button
                   type="button"
-                  className="danger"
+                  className="drawer-action drawer-action--dangerSubtle"
                   disabled={busy}
                   onClick={() => {
                     const ok = window.confirm("Cancel this order?");
@@ -853,44 +898,6 @@ export default function OrderDetailsDrawer({
                 </button>
               ) : null}
 
-              {allowed.canDeleteDraft ? (
-                <button
-                  type="button"
-                  className="danger"
-                  disabled={busy}
-                  onClick={async () => {
-                    if (!order) return;
-
-                    const ok = window.confirm("Delete this draft order?");
-                    if (!ok) return;
-
-                    try {
-                      setBusy(true);
-                      setErr(null);
-
-                      const auth = await getAuth();
-                      if (!auth?.token) {
-                        setErr("Not authenticated");
-                        return;
-                      }
-
-                      await deleteDraftOrder(order.id, {
-                        token: auth.token,
-                        businessId,
-                      });
-
-                      await onUpdated?.();
-                      onClose();
-                    } catch (e: any) {
-                      setErr(e?.message ?? "Failed to delete order");
-                    } finally {
-                      setBusy(false);
-                    }
-                  }}
-                >
-                  Delete
-                </button>
-              ) : null}
             </div>
           ) : null}
         </div>
