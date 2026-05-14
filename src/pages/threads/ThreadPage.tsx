@@ -971,35 +971,6 @@ export default function ThreadPage({
     []
   );
 
-  const handleDeleteDraftOrder = useCallback(
-    async (order: OrderDTO) => {
-      if (!order.allowedActions?.canDeleteDraft) return;
-
-      const ok = window.confirm("Delete this draft order?");
-      if (!ok) return;
-
-      const auth = await getAuth();
-      if (!auth) return;
-
-      try {
-        await deleteDraftOrder(order.id, {
-          token: auth.token,
-          businessId: actingBusinessId,
-        });
-
-        if (asIdentity) {
-          await refreshThreadContextOnly(asIdentity);
-        }
-
-        setShowOrderDetailsDrawer(false);
-        setSelectedOrderId(null);
-      } catch (e: any) {
-        setError(e?.message ?? "Failed to delete draft order");
-      }
-    },
-    [getAuth, actingBusinessId, asIdentity, refreshThreadContextOnly]
-  );
-
   const onOrderUpdated = useCallback(async () => {
     if (!asIdentity) return;
 
