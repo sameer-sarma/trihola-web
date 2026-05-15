@@ -566,19 +566,20 @@ export default function ThreadPage({
   const navigate = useNavigate();
   const { myBusinesses } = useAppData();
 
-  const {
-    participantsByThreadId,
-    activitiesByThreadId,
-    ctasByThreadId,
-    setParticipants: storeSetParticipants,
-    setActivities: storeSetActivities,
-    setCtas: storeSetCtas,
-    ensureThreadWS,
-    closeThreadWS,
-    selectedScope,
-    setSelectedScope,
-    contextVersionByThreadId,
-  } = useThreadStore();
+const {
+  participantsByThreadId,
+  activitiesByThreadId,
+  ctasByThreadId,
+  setParticipants: storeSetParticipants,
+  setActivities: storeSetActivities,
+  setCtas: storeSetCtas,
+  ensureThreadWS,
+  closeThreadWS,
+  markThreadReadInStore,
+  selectedScope,
+  setSelectedScope,
+  contextVersionByThreadId,
+} = useThreadStore();
 
   const [showParticipantModal, setShowParticipantModal] = useState(false);
   const [invitingRecId, setInvitingRecId] = useState<string | null>(null);
@@ -685,7 +686,8 @@ export default function ThreadPage({
   }, []);
 
   const currentIdentityRef = useRef<any | null>(null);
-
+  const markReadTimerRef = useRef<number | null>(null);
+  
   const handleResolvedMyUserId = useCallback((userId: string) => {
     setMyUserId((prev) => prev ?? userId);
   }, []);
@@ -755,6 +757,27 @@ export default function ThreadPage({
   useEffect(() => {
     currentIdentityRef.current = identityRef.current ?? effectiveIdentity ?? null;
   }, [identityRef, effectiveIdentity]);
+
+  useEffect(() => {
+    return () => {
+      if (markReadTimerRef.current) {
+        window.clearTimeout(markReadTimerRef.current);
+        markReadTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const scheduleMarkRead = useCallback(() => {
+    if (!threadId) return;
+
+    if (markReadTimerRef.current) {
+      window.clearTimeout(markReadTimerRef.current);
+    }
+
+    markReadTimerRef.current = window.setTimeout(() => {
+      markThreadReadInStore(String(threadId)).catch(() => {});
+    }, 800);
+  }, [threadId, markThreadReadInStore]);
 
   const {
     photoVideoInputRef,
@@ -1084,6 +1107,13 @@ export default function ThreadPage({
 
     loadThread(loadAsIdentity);
   }, [threadIdParam, loadIdentityType, loadIdentityId, loadThread]);
+
+  useEffect(() => {
+    if (!threadId) return;
+    if (loading) return;
+
+    scheduleMarkRead();
+  }, [threadId, loading, activities.length, scheduleMarkRead]);
 
   const allImages: LightboxItem[] = useMemo(() => {
     const items: LightboxItem[] = [];

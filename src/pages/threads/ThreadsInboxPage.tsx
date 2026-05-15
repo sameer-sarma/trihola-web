@@ -5,7 +5,7 @@ import axios from "axios";
 
 import { supabase } from "../../supabaseClient";
 import { useThreadStore, type ThreadScope } from "../../context/ThreadStoreContext";
-import { useNotificationsWS } from "../../context/NotificationsWSProvider";
+
 
 import NewChatDrawer from "./NewChatDrawer";
 import ReferralComposer from "../../components/referrals/ReferralComposer";
@@ -192,6 +192,9 @@ function ctaLabel(kind: string) {
 }
 
 function threadPreview(t: ThreadSummaryDTO) {
+  const eventText = safeText((t as any).lastEventText);
+  if (eventText) return eventText;
+
   const p = safeText(t.lastMessagePreview);
   if (p) return p;
 
@@ -364,8 +367,12 @@ type ThreadsInboxPageProps = {
 export default function ThreadsInboxPage(props: ThreadsInboxPageProps = {}) {
   const navigate = useNavigate();
   const store = useThreadStore();
-  const { selectedScope, setSelectedScope } = store;
-  const { seq: notifSeq, lastNotification } = useNotificationsWS();
+  const {
+    selectedScope,
+    setSelectedScope,
+    ensureInboxWS,
+    closeInboxWS,
+  } = store;
   
   const [error, setError] = useState<string | null>(null);
 
@@ -508,13 +515,15 @@ const {
   const loadingMore: boolean = scope ? store.getLoadingMoreFor(scope) : false;
   const hasMore: boolean = scope ? store.getHasMoreFor(scope) : true;
 
-  const sortedThreads = useMemo(() => { 
-    const copy = [...threads]; 
-    copy.sort((a, b) => { 
-      const aTs = a.lastMessageAt ?? a.updatedAt ?? ""; 
-      const bTs = b.lastMessageAt ?? b.updatedAt ?? ""; 
-      return (bTs || "").localeCompare(aTs || ""); 
+  const sortedThreads = useMemo(() => {
+    const copy = [...threads];
+
+    copy.sort((a: any, b: any) => {
+      const aTs = a.lastEventAt ?? a.lastMessageAt ?? a.updatedAt ?? "";
+      const bTs = b.lastEventAt ?? b.lastMessageAt ?? b.updatedAt ?? "";
+      return String(bTs || "").localeCompare(String(aTs || ""));
     });
+
     return copy;
   }, [threads]);
 
@@ -598,50 +607,15 @@ const {
     }
   }
 
-  // ✅ NEW: refresh inbox when notification arrives for this identity + thread context
-  const notifRefreshTimerRef = useRef<number | null>(null);
-  const lastNotifRefreshAtRef = useRef<number>(0);
-
   useEffect(() => {
-    if (!scope) return;
-    if (!lastNotification) return;
+    if (!myUserId) return;
 
-    if (String(lastNotification.contextType || "").toUpperCase() !== "THREAD") return;
-
-    const identities = (lastNotification as any)?.metadata?.identities as
-      | Array<{ type: string; id: string }>
-      | undefined;
-
-    if (Array.isArray(identities) && identities.length > 0) {
-      const match = identities.some((x) => {
-        const t = String(x?.type || "").toUpperCase();
-        const id = String(x?.id || "");
-        return t === String(scope.asType).toUpperCase() && id === String(scope.asId);
-      });
-      if (!match) return;
-    }
-
-    const now = Date.now();
-    if (now - lastNotifRefreshAtRef.current < 600) return;
-    lastNotifRefreshAtRef.current = now;
-
-    if (notifRefreshTimerRef.current) {
-      window.clearTimeout(notifRefreshTimerRef.current);
-      notifRefreshTimerRef.current = null;
-    }
-
-    notifRefreshTimerRef.current = window.setTimeout(() => {
-      store.refreshThreadsFor(scope, limit).catch(() => {});
-    }, 150);
+    ensureInboxWS();
 
     return () => {
-      if (notifRefreshTimerRef.current) {
-        window.clearTimeout(notifRefreshTimerRef.current);
-        notifRefreshTimerRef.current = null;
-      }
+      closeInboxWS();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifSeq, scope?.asType, scope?.asId]);
+  }, [myUserId, ensureInboxWS, closeInboxWS]);
 
   // Load composer permissions
   useEffect(() => {
@@ -944,7 +918,7 @@ const {
         ) : (
           <div className="threads-list">
             {visibleThreads.map((t, idx) => {
-              const ts = t.lastMessageAt ?? t.updatedAt ?? null;
+              const ts = (t as any).lastEventAt ?? t.lastMessageAt ?? t.updatedAt ?? null;
               const rightTime = fmtTime(ts);
 
               const title = threadTitle(t);
@@ -952,6 +926,9 @@ const {
               const isGroup = !isReferral && t.type === "GROUP";
 
               const subtitle = threadPreview(t);
+
+              const unreadCount = Number((t as any).unreadCount ?? 0);
+              const hasUnread = Boolean((t as any).hasUnread) || unreadCount > 0;
 
               const avatarUrl = t.type === "DIRECT" ? t.counterparty?.imageUrl ?? null : null;
               const avatarInitial = initials(t.counterparty?.displayName ?? title);
@@ -966,7 +943,7 @@ const {
               return (
                 <div
                   key={t.threadId}
-                  className="thread-row"
+                  className={`thread-row${hasUnread ? " thread-row--unread" : ""}`}
                   role="button"
                   tabIndex={0}
                   onClick={openThread}
@@ -1032,15 +1009,32 @@ const {
                     )}
 
                     <div className="thread-cellMain">
-                      <div className="thread-title" title={title}>
+                      <div
+                        className={`thread-title${hasUnread ? " thread-title--unread" : ""}`}
+                        title={title}
+                      >
                         {title}
                       </div>
-                      <div className="thread-subtitle" title={subtitle}>
+
+                      <div
+                        className={`thread-subtitle${hasUnread ? " thread-subtitle--unread" : ""}`}
+                        title={subtitle}
+                      >
                         {subtitle}
                       </div>
                     </div>
 
-                    <div className="thread-time">{rightTime}</div>
+                    <div className="thread-metaRight">
+                      <div className={`thread-time${hasUnread ? " thread-time--unread" : ""}`}>
+                        {rightTime}
+                      </div>
+
+                      {unreadCount > 0 && (
+                        <div className="thread-unreadBadge">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

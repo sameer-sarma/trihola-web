@@ -5,7 +5,6 @@ import "../css/Header.css";
 import type { Session } from "@supabase/supabase-js";
 import logo from "../assets/logo.png";
 import AppLauncher from "./AppLauncher";
-import { NotificationBell } from "./NotificationBell";
 import { getOwnProfile } from "../services/profileService";
 
 function isSafeInternalPath(p?: string | null) {
@@ -143,7 +142,6 @@ const Header = () => {
             avatarUrl={null}
             isTriholaAdmin={isTriholaAdmin}
           />
-          {session && <NotificationBell />}
         </div>
       </div>
     </header>

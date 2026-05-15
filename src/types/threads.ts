@@ -174,6 +174,10 @@ export type ThreadSummaryDTO = {
   updatedAt?: ISODateTime | null;
   lastMessageAt?: ISODateTime | null;
   lastMessagePreview?: string | null;
+  lastEventText?: string | null;
+  lastEventAt?: ISODateTime | null;
+
+  hasUnread?: boolean | null;  
   unreadCount?: number | null;
 
   counterparty?: ParticipantBadgeDTO | null;
@@ -475,4 +479,45 @@ export type ThreadInboxComposerPermissionsDTO = {
 
 export type ThreadInboxComposerPermissionsResponseDTO = {
   permissions: ThreadInboxComposerPermissionsDTO[];
+};
+
+export type ThreadInboxWsEventType =
+  | "THREAD_INBOX_UPDATED"
+  | "THREAD_READ_STATE_UPDATED";
+
+export type ThreadInboxWsEvent = {
+  eventType: ThreadInboxWsEventType | string;
+  threadId: UUID;
+  userId?: UUID | null;
+
+  unreadCount?: number | null;
+  hasUnread?: boolean | null;
+
+  lastEventText?: string | null;
+  lastEventAt?: ISODateTime | null;
+  updatedAt?: ISODateTime | null;
+
+  sourceType?: string | null;
+  sourceId?: UUID | string | null;
+};
+
+export type ThreadReadStateDTO = {
+  userId: UUID;
+  threadId: UUID;
+  lastReadInteractionId?: UUID | null;
+  lastReadAt?: ISODateTime | null;
+
+  unreadCount: number;
+  hasUnread: boolean;
+
+  lastEventText?: string | null;
+  lastEventAt?: string | null;
+  lastEventSourceType?: string | null;
+  lastEventSourceId?: string | null;
+
+  updatedAt: ISODateTime;
+};
+
+export type UnreadThreadCountResponse = {
+  unreadThreads: number;
 };

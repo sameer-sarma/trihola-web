@@ -21,6 +21,8 @@ import type {
   CreateThreadCtaRequest, 
   ThreadCtaDTO,
   ThreadInboxComposerPermissionsResponseDTO,
+  ThreadReadStateDTO,
+  UnreadThreadCountResponse,
 } from "../types/threads";
 
 const API_BASE = __API_BASE__;
@@ -119,6 +121,47 @@ export async function getThreadInboxComposerPermissions(
     "GET",
     "/threads/inbox-composer-permissions"
   );
+}
+
+export async function markThreadRead(
+  token: string,
+  threadId: UUID
+): Promise<ThreadReadStateDTO> {
+  return apiJson<ThreadReadStateDTO>(
+    token,
+    "POST",
+    `/threads/${encodeURIComponent(threadId)}/read`
+  );
+}
+
+export async function getUnreadThreadCount(
+  token: string
+): Promise<UnreadThreadCountResponse> {
+  return apiJson<UnreadThreadCountResponse>(
+    token,
+    "GET",
+    "/threads/unread-count"
+  );
+}
+
+export function buildThreadInboxWebSocketUrl(params: {
+  wsBaseUrl?: string | null;
+  apiBaseUrl?: string | null;
+  token: string;
+}) {
+  const rawBase =
+    params.wsBaseUrl ||
+    params.apiBaseUrl ||
+    __API_BASE__;
+
+  const base = String(rawBase)
+    .replace(/^http/i, "ws")
+    .replace(/\/$/, "");
+
+  const query = new URLSearchParams();
+  query.set("token", params.token);
+
+  return `${base}/threads/inbox/ws?${query.toString()}`;
 }
 
 export async function getOrCreateDirectThread(

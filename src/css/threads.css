@@ -614,3 +614,49 @@
     font-size: 12px;
   }
 }
+
+.thread-row--unread {
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.thread-title--unread {
+  font-weight: 800;
+}
+
+.thread-subtitle--unread {
+  color: #14532d;
+  font-weight: 650;
+}
+
+.thread-time--unread {
+  color: #16a34a;
+  font-weight: 800;
+}
+
+.thread-metaRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 54px;
+}
+
+.thread-unreadBadge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+
+  background: #22c55e;
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+
+  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.24);
+}

@@ -14,6 +14,8 @@ import {
   listMyThreads,
   getThreadParticipants,
   listThreadActivities,
+  buildThreadInboxWebSocketUrl,
+  markThreadRead,
 } from "../services/threadService";
 
 import type {
@@ -22,6 +24,7 @@ import type {
   ThreadActivityDTO,
   ThreadCtaBroadcastDTO,
   ThreadBroadcastDTO,
+  ThreadInboxWsEvent,
   UUID,
 } from "../types/threads";
 
@@ -69,6 +72,10 @@ type ThreadStore = {
   closeThreadWS: (threadId: ThreadId) => void;
   closeAllThreadWS: () => void;
 
+  ensureInboxWS: () => Promise<void>;
+  closeInboxWS: () => void;
+  markThreadReadInStore: (threadId: ThreadId) => Promise<void>;
+
   upsertThreadSummary: (t: ThreadSummaryDTO) => void;
 
   contextVersionByThreadId: Map<ThreadId, number>;
@@ -103,6 +110,10 @@ const Ctx = createContext<ThreadStore>({
   closeThreadWS: () => {},
   closeAllThreadWS: () => {},
 
+  ensureInboxWS: async () => {},
+  closeInboxWS: () => {},
+  markThreadReadInStore: async () => {},
+
   upsertThreadSummary: () => {},
   contextVersionByThreadId: new Map(),
   bumpContextVersion: () => {},
@@ -122,8 +133,8 @@ function scopeKey(scope: ThreadScope): ScopeKey {
 
 function sortThreads(list: ThreadSummaryDTO[]) {
   return [...list].sort((a: any, b: any) => {
-    const aa = (a.lastMessageAt ?? a.updatedAt ?? "") as string;
-    const bb = (b.lastMessageAt ?? b.updatedAt ?? "") as string;
+    const aa = (a.lastEventAt ?? a.updatedAt ?? a.lastMessageAt ?? "") as string;
+    const bb = (b.lastEventAt ?? b.updatedAt ?? b.lastMessageAt ?? "") as string;
     return String(bb).localeCompare(String(aa));
   });
 }
@@ -311,7 +322,11 @@ function sameThreadSummary(a: any, b: any): boolean {
     String(a.updatedAt ?? "") === String(b.updatedAt ?? "") &&
     String(a.lastMessageAt ?? "") === String(b.lastMessageAt ?? "") &&
     String(a.lastMessagePreview ?? "") === String(b.lastMessagePreview ?? "") &&
+    String(a.lastEventAt ?? "") === String(b.lastEventAt ?? "") &&
+    String(a.lastEventText ?? "") === String(b.lastEventText ?? "") &&
     Number(a.activeCtaCount ?? 0) === Number(b.activeCtaCount ?? 0) &&
+    Number(a.unreadCount ?? 0) === Number(b.unreadCount ?? 0) &&
+    Boolean(a.hasUnread ?? false) === Boolean(b.hasUnread ?? false) &&
     String(a.status ?? "") === String(b.status ?? "") &&
     String(a.title ?? "") === String(b.title ?? "")
   );
@@ -353,6 +368,12 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const wsRetryTimerRef = useRef<Map<ThreadId, number>>(new Map());
   const wsRetryCountRef = useRef<Map<ThreadId, number>>(new Map());
   const wsConnectPromiseRef = useRef<Map<ThreadId, Promise<void>>>(new Map());
+
+  const inboxWsRef = useRef<WebSocket | null>(null);
+  const inboxWsClosingRef = useRef(false);
+  const inboxWsRetryTimerRef = useRef<number | null>(null);
+  const inboxWsRetryCountRef = useRef(0);
+  const inboxWsConnectPromiseRef = useRef<Promise<void> | null>(null);
 
   const setSelectedScope = useCallback((scope: ThreadScope | null) => {
     _setSelectedScope((prev) => {
@@ -571,6 +592,42 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return changed ? next : prev;
     });
   }, []);
+
+  const patchThreadSummaryById = useCallback(
+    (threadId: ThreadId, patch: Partial<ThreadSummaryDTO>) => {
+      const id = String(threadId);
+
+      setScopes((prev) => {
+        let changed = false;
+        const next: Record<ScopeKey, ScopeState> = { ...prev };
+
+        for (const k of Object.keys(next)) {
+          const s = next[k];
+
+          const updatedThreads = s.threads.map((thread) => {
+            if (String(thread.threadId) !== id) return thread;
+
+            const updated = { ...thread, ...patch };
+
+            if (sameThreadSummary(thread, updated)) return thread;
+
+            changed = true;
+            return updated;
+          });
+
+          if (changed) {
+            next[k] = {
+              ...s,
+              threads: sortThreads(updatedThreads),
+            };
+          }
+        }
+
+        return changed ? next : prev;
+      });
+    },
+    []
+  );
 
   const setParticipants = useCallback((threadId: ThreadId, participants: ThreadParticipantDTO[]) => {
     const id = String(threadId);
@@ -817,6 +874,190 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const ids = Array.from(wsByThreadIdRef.current.keys());
     for (const id of ids) closeThreadWS(id);
   }, [closeThreadWS]);
+
+    const clearInboxRetryTimer = useCallback(() => {
+    if (inboxWsRetryTimerRef.current) {
+      window.clearTimeout(inboxWsRetryTimerRef.current);
+    }
+
+    inboxWsRetryTimerRef.current = null;
+  }, []);
+
+  const closeInboxWS = useCallback(() => {
+    inboxWsClosingRef.current = true;
+    clearInboxRetryTimer();
+    inboxWsRetryCountRef.current = 0;
+    inboxWsConnectPromiseRef.current = null;
+
+    const ws = inboxWsRef.current;
+    inboxWsRef.current = null;
+
+    if (ws) {
+      try {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        ws.onclose = null;
+
+        if (
+          ws.readyState === WebSocket.OPEN ||
+          ws.readyState === WebSocket.CONNECTING
+        ) {
+          ws.close();
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    window.setTimeout(() => {
+      inboxWsClosingRef.current = false;
+    }, 0);
+  }, [clearInboxRetryTimer]);
+  
+  const ensureInboxWS = useCallback(async () => {
+    const existing = inboxWsRef.current;
+
+    if (
+      existing &&
+      (existing.readyState === WebSocket.OPEN ||
+        existing.readyState === WebSocket.CONNECTING)
+    ) {
+      return;
+    }
+
+    if (inboxWsConnectPromiseRef.current) {
+      return inboxWsConnectPromiseRef.current;
+    }
+
+    const connectPromise = (async () => {
+      clearInboxRetryTimer();
+
+      const current = inboxWsRef.current;
+      if (
+        current &&
+        (current.readyState === WebSocket.OPEN ||
+          current.readyState === WebSocket.CONNECTING)
+      ) {
+        return;
+      }
+
+      const token = await getToken();
+      if (!token) return;
+
+      const url = buildThreadInboxWebSocketUrl({
+        wsBaseUrl: WS_BASE,
+        token,
+      });
+
+      inboxWsClosingRef.current = false;
+
+      console.log("[ensureInboxWS] opening", { url });
+
+      const ws = new WebSocket(url);
+      inboxWsRef.current = ws;
+
+      ws.onopen = () => {
+        if (inboxWsRef.current !== ws) return;
+
+        console.log("[Inbox WS open]");
+        inboxWsRetryCountRef.current = 0;
+        clearInboxRetryTimer();
+      };
+
+      ws.onmessage = (ev) => {
+        if (inboxWsRef.current !== ws) return;
+
+        const parsed = safeJsonParse(String(ev.data));
+        const payload = unwrapWsPayload(parsed) as ThreadInboxWsEvent | null;
+
+        if (!payload || typeof payload !== "object") return;
+
+        const eventType = String(payload.eventType ?? "");
+        const threadId = String(payload.threadId ?? "");
+
+        if (!threadId) return;
+
+        if (
+          eventType === "THREAD_INBOX_UPDATED" ||
+          eventType === "THREAD_READ_STATE_UPDATED"
+        ) {
+          patchThreadSummaryById(threadId, {
+            unreadCount: payload.unreadCount ?? undefined,
+            hasUnread: payload.hasUnread ?? undefined,
+            lastEventText: payload.lastEventText ?? undefined,
+            lastEventAt:
+              payload.lastEventAt ??
+              payload.updatedAt ??
+              undefined,
+            updatedAt: payload.updatedAt ?? payload.lastEventAt ?? undefined,
+          } as Partial<ThreadSummaryDTO>);
+        }
+      };
+
+      ws.onerror = (e) => {
+        if (inboxWsRef.current !== ws) return;
+        console.log("[Inbox WS error]", e);
+      };
+
+      ws.onclose = (e) => {
+        console.log("[Inbox WS close]", {
+          code: e.code,
+          reason: e.reason,
+          wasClean: e.wasClean,
+          closing: inboxWsClosingRef.current,
+        });
+
+        if (inboxWsRef.current === ws) {
+          inboxWsRef.current = null;
+        }
+
+        if (!inboxWsClosingRef.current) {
+          const attempt = inboxWsRetryCountRef.current + 1;
+          inboxWsRetryCountRef.current = attempt;
+
+          const delay = Math.min(8000, 500 * Math.pow(2, attempt - 1));
+
+          clearInboxRetryTimer();
+
+          inboxWsRetryTimerRef.current = window.setTimeout(() => {
+            if (!inboxWsRef.current) {
+              ensureInboxWS().catch(() => {});
+            }
+          }, delay);
+        }
+      };
+    })();
+
+    inboxWsConnectPromiseRef.current = connectPromise;
+
+    try {
+      await connectPromise;
+    } finally {
+      if (inboxWsConnectPromiseRef.current === connectPromise) {
+        inboxWsConnectPromiseRef.current = null;
+      }
+    }
+  }, [clearInboxRetryTimer, patchThreadSummaryById]);
+
+  const markThreadReadInStore = useCallback(
+    async (threadId: ThreadId) => {
+      const id = String(threadId);
+      const token = await getToken();
+      if (!token) return;
+
+      const state = await markThreadRead(token, id);
+
+      patchThreadSummaryById(id, {
+        unreadCount: state.unreadCount,
+        hasUnread: state.hasUnread,
+        updatedAt: state.updatedAt,
+        lastEventAt: state.lastEventAt ?? undefined,
+        lastEventText: state.lastEventText ?? undefined,
+      } as Partial<ThreadSummaryDTO>);
+    },
+    [patchThreadSummaryById]
+  );
 
   const ensureThreadWS = useCallback(
     async (threadId: ThreadId) => {
@@ -1149,17 +1390,19 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (event === "SIGNED_OUT") {
         console.log("[auth state change] SIGNED_OUT");
         closeAllThreadWS();
+        closeInboxWS();
       }
     });
 
     return () => data.subscription.unsubscribe();
-  }, [closeAllThreadWS]);
+  }, [closeAllThreadWS, closeInboxWS]);
 
   useEffect(() => {
     return () => {
       closeAllThreadWS();
+      closeInboxWS();
     };
-  }, [closeAllThreadWS]);
+  }, [closeAllThreadWS, closeInboxWS]);
 
   const value: ThreadStore = useMemo(
     () => ({
@@ -1184,6 +1427,10 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
       ensureThreadWS,
       closeThreadWS,
       closeAllThreadWS,
+
+      ensureInboxWS,
+      closeInboxWS,
+      markThreadReadInStore,
 
       ctasByThreadId,
       setCtas,
@@ -1212,6 +1459,9 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
       ensureThreadWS,
       closeThreadWS,
       closeAllThreadWS,
+      ensureInboxWS,
+      closeInboxWS,
+      markThreadReadInStore,
       ctasByThreadId,
       setCtas,
       upsertCta,
