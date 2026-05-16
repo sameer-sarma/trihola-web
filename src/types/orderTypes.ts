@@ -149,6 +149,7 @@ export type ThreadOrderCardDTO = {
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   sourceBroadcastId?: string | null;
+  sourceBroadcastTitle?: string | null;
   sourceBroadcastItemId?: string | null;
   sourceBroadcastPosition?: number | null
   

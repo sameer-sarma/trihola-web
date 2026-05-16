@@ -160,10 +160,16 @@ export function useThreadRenderItems({
           return safeIsoMs(a.createdAt) - safeIsoMs(b.createdAt);
         });
 
+      const broadcastTitle =
+        children.find((child: any) => child?.meta?.broadcastTitle)?.meta?.broadcastTitle ??
+        first?.meta?.broadcastTitle ??
+        null;
+  
       const envelope: BroadcastEnvelopeItem = {
         kind: "broadcast_envelope",
         key: `broadcast:${currentBroadcastId}`,
         broadcastId: currentBroadcastId!,
+        broadcastTitle,
         occurredAt: first.createdAt,
         children,
       };

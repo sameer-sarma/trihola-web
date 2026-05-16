@@ -84,6 +84,7 @@ export type RenderItem =
 export type BroadcastMeta = {
   source: "BROADCAST";
   broadcastId: string;
+  broadcastTitle?: string | null;
   broadcastItemId?: string | null;
   broadcastPosition?: number | null;
 };
@@ -122,6 +123,7 @@ export type BroadcastEnvelopeItem = {
   kind: "broadcast_envelope";
   key: string;
   broadcastId: string;
+  broadcastTitle?: string | null;
   occurredAt?: string | null;
   children: BroadcastChildItem[];
 };

@@ -1596,6 +1596,16 @@
   background: rgba(0, 0, 0, 0.025);
 }
 
+.broadcast-envelope__titleBlock {
+  min-width: 0;
+}
+
+.broadcast-envelope__title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #111827;
+}
+
 .broadcast-envelope__titleRow {
   display: flex;
   align-items: center;

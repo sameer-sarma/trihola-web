@@ -42,6 +42,7 @@ export function extractBroadcastMetaFromActivity(
   return {
     source: "BROADCAST",
     broadcastId,
+    broadcastTitle: readString(p.broadcastTitle),
     broadcastItemId: readString(p.broadcastItemId),
     broadcastPosition: readNumber(p.broadcastPosition),
   };
@@ -61,6 +62,7 @@ export function extractBroadcastMetaFromCta(
     return {
       source: "BROADCAST",
       broadcastId,
+      broadcastTitle: readString(cfg.broadcastTitle),
       broadcastItemId: readString(cfg.broadcastItemId),
       broadcastPosition: readNumber(cfg.broadcastPosition),
     };
@@ -92,9 +94,16 @@ export function extractBroadcastMetaFromOrder(
       ? order.sourceBroadcastPosition
       : null;
 
+  const broadcastTitle =
+  typeof order?.sourceBroadcastTitle === "string" &&
+  order.sourceBroadcastTitle.trim()
+    ? order.sourceBroadcastTitle.trim()
+    : null;
+  
   return {
     source: "BROADCAST" as const,
     broadcastId,
+    broadcastTitle,
     broadcastItemId,
     broadcastPosition,
   };
@@ -147,12 +156,7 @@ export function toBroadcastChildFromCta(
 
 export function toBroadcastChildFromOrder(
   order: ThreadOrderCardDTO,
-  meta: {
-    source: "BROADCAST";
-    broadcastId: string;
-    broadcastItemId?: string | null;
-    broadcastPosition?: number | null;
-  }
+  meta: BroadcastMeta
 ) {
   return {
     kind: "order" as const,
