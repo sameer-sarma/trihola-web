@@ -1,7 +1,6 @@
 // src/components/VerifyPhoneInline.tsx
 import React, { useState } from "react";
-import { supabase } from "../supabaseClient";
-import axios from "axios";
+import { sendOtp, verifyOtp } from "../utils/otp";
 
 type Phase = "idle" | "sending" | "otpSent" | "verifying" | "done" | "error";
 
@@ -14,55 +13,48 @@ const VerifyPhoneInline: React.FC<Props> = ({ onVerified }) => {
   const [otp, setOtp] = useState("");
   const [msg, setMsg] = useState("");
 
-  const getToken = async (): Promise<string | null> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token ?? null;
-  };
-
-  const sendOtp = async () => {
-    const token = await getToken();
-    if (!token) {
-      setPhase("error");
-      setMsg("You’re not logged in.");
-      return;
-    }
+  const handleSendOtp = async () => {
     try {
       setPhase("sending");
       setMsg("");
-      await axios.post(`${__API_BASE__}/auth/send-otp`, null, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+
+      const result = await sendOtp();
+
+      if (!result.success) {
+        setPhase("error");
+        setMsg(result.message);
+        return;
+      }
+
       setPhase("otpSent");
       setMsg("OTP sent to your registered phone number.");
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       setPhase("error");
-      setMsg("Failed to send OTP. Please try again.");
+      setMsg(e?.message || "Failed to send OTP. Please try again.");
     }
   };
 
-const verifyOtp = async () => {
-  const token = await getToken();
-  if (!token) {
-    setPhase("error");
-    setMsg("Session expired. Please log in again.");
-    return;
-  }
+const handleVerifyOtp = async () => {
   try {
     setPhase("verifying");
-    await axios.post(
-      `${__API_BASE__}/auth/verify-otp`,
-      { otp },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+
+    const result = await verifyOtp(otp);
+
+    if (!result.success) {
+      setPhase("error");
+      setMsg(result.message);
+      return;
+    }
+
     setPhase("done");
     setMsg("Phone verified successfully!");
     setOtp("");
-    await onVerified?.(); 
-  } catch (e) {
+    await onVerified?.();
+  } catch (e: any) {
     console.error(e);
     setPhase("error");
-    setMsg("OTP verification failed. Please try again.");
+    setMsg(e?.message || "OTP verification failed. Please try again.");
   }
 };
 
@@ -72,7 +64,7 @@ const verifyOtp = async () => {
       {(phase === "idle" || phase === "error" || phase === "done" || phase === "sending") && (
         <button
           className="secondary-btn"
-          onClick={sendOtp}
+          onClick={handleSendOtp}
           disabled={phase === "sending"}
         >
           {phase === "done"
@@ -96,7 +88,7 @@ const verifyOtp = async () => {
           <div style={{ display: "flex", gap: 8 }}>
             <button
               className="primary-btn"
-              onClick={verifyOtp}
+              onClick={handleVerifyOtp}
               disabled={!otp || phase === "verifying"}
             >
               {phase === "verifying" ? "Verifying..." : "Verify OTP"}

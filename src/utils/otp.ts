@@ -1,37 +1,45 @@
-import axios from "axios"
+import { authFetch } from "../utils/auth";
 
-export const sendOtp = async (phone: string) => {
+export const sendOtp = async () => {
   try {
-    const response = await axios.post(`${__API_BASE__}/send-otp`, { phone })
+    const response = await authFetch(`${__API_BASE__}/auth/send-otp`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+
+    const text = await response.text();
+
     return {
-      success: response.status === 200,
-      message: "OTP sent successfully.",
-    }
+      success: response.ok,
+      message: text || (response.ok ? "OTP sent successfully." : "Failed to send OTP."),
+    };
   } catch (err: any) {
-    console.error("❌ Error sending OTP:", err)
+    console.error("❌ Error sending OTP:", err);
     return {
       success: false,
-      message: err.response?.data || "Failed to send OTP.",
-    }
+      message: err?.message || "Failed to send OTP.",
+    };
   }
-}
+};
 
-export const verifyOtp = async (phone: string, otp: string) => {
+export const verifyOtp = async (otp: string) => {
   try {
-    const response = await axios.post(`${__API_BASE__}/verify-otp`, {
-      phone,
-      otp,
-    })
+    const response = await authFetch(`${__API_BASE__}/auth/verify-otp`, {
+      method: "POST",
+      body: JSON.stringify({ otp }),
+    });
+
+    const text = await response.text();
 
     return {
-      success: response.status === 200 && response.data === "OTP verified successfully",
-      message: response.data || "OTP verified.",
-    }
+      success: response.ok,
+      message: text || (response.ok ? "OTP verified successfully." : "Failed to verify OTP."),
+    };
   } catch (err: any) {
-    console.error("❌ Error verifying OTP:", err)
+    console.error("❌ Error verifying OTP:", err);
     return {
       success: false,
-      message: err.response?.data || "Failed to verify OTP.",
-    }
+      message: err?.message || "Failed to verify OTP.",
+    };
   }
-}
+};

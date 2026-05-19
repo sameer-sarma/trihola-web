@@ -214,9 +214,6 @@ const EditProfile: React.FC<Props> = ({
               }}
             />
 
-            <div className="th-help" style={{ marginTop: 10 }}>
-              SMS delivery enforcement is not enabled yet — you may enter any OTP for now.
-            </div>
           </div>
         )}
 
