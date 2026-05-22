@@ -60,6 +60,13 @@ import type { BusinessContactResponse } from "./services/contactService";
 import ThreadsInboxPage from "./pages/threads/ThreadsInboxPage";
 import ThreadPage from "./pages/threads/ThreadPage";
 
+// ✅ otp login
+import PhoneOtpLogin from "./pages/PhoneOtpLogin";
+import {
+  getTriholaAuthSession,
+  type TriholaAuthMode,
+} from "./utils/auth";
+
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
 interface UserProfile {
@@ -86,6 +93,11 @@ function isActiveBusinessContext(b: BusinessContextDTO) {
 
 const AppInner: React.FC = () => {
   const [session, setSession] = useState<any>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authUserId, setAuthUserId] = useState<string>("");
+  const [authMode, setAuthMode] = useState<TriholaAuthMode | null>(null);
+
+  const isLoggedIn = Boolean(authToken);
 
   const [profile, setProfile] = useState<UserProfile>({
     phone: "",
@@ -120,32 +132,33 @@ const AppInner: React.FC = () => {
   useEffect(() => {
     let mounted = true;
 
-    (async () => {
+    async function syncAuth() {
       const {
         data: { session },
-        error,
       } = await supabase.auth.getSession();
 
-      if (
-        error ||
-        !session ||
-        (session.expires_at && session.expires_at * 1000 < Date.now())
-      ) {
-        if (mounted) setSession(null);
-      } else {
-        if (mounted) setSession(session);
-      }
-    })();
+      const triSession = await getTriholaAuthSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, nextSession) => {
-        if (mounted) setSession(nextSession);
-      }
-    );
+      if (!mounted) return;
+
+      setSession(session);
+      setAuthToken(triSession.accessToken);
+      setAuthUserId(triSession.userId ?? "");
+      setAuthMode(triSession.authMode);
+    }
+
+    syncAuth();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      syncAuth();
+    });
+
+    window.addEventListener("trihola-auth-changed", syncAuth);
 
     return () => {
       mounted = false;
       listener.subscription.unsubscribe();
+      window.removeEventListener("trihola-auth-changed", syncAuth);
     };
   }, []);
 
@@ -154,10 +167,10 @@ const AppInner: React.FC = () => {
     let cancelled = false;
 
     const run = async () => {
-      if (!session?.access_token) return;
+      if (!authToken) return;
       try {
         const { data } = await axios.get(`${API_BASE}/profile`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
+          headers: { Authorization: `Bearer ${authToken}` },
         });
         if (!cancelled) setProfile(data);
       } catch (e) {
@@ -169,7 +182,7 @@ const AppInner: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [session?.access_token]);
+  }, [session?.access_token, authToken]);
 
   /**
    * ✅ Pseudo-indicator:
@@ -180,7 +193,7 @@ const AppInner: React.FC = () => {
     let cancelled = false;
 
     const run = async () => {
-      if (!session?.access_token) {
+      if (!authToken) {
         if (!cancelled) {
           setHasBusinessAccess(false);
           setPrimaryBusiness(null);
@@ -236,14 +249,14 @@ const AppInner: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [session?.access_token]);
+  }, [authToken]);
 
   // ✅ Load contacts when logged in
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
-      if (!session?.access_token) {
+      if (!authToken || authMode === "PHONE_OTP") {
         if (!cancelled) {
           setUserContacts([]);
           setBusinessContacts([]);
@@ -254,7 +267,7 @@ const AppInner: React.FC = () => {
 
       setContactsLoading(true);
       try {
-        const bundle = await fetchMyContactsBundle(session.access_token);
+        const bundle = await fetchMyContactsBundle(authToken);
         if (cancelled) return;
         setUserContacts((bundle?.users ?? []) as ContactLite[]);
         setBusinessContacts(bundle?.businesses ?? []);
@@ -273,9 +286,9 @@ const AppInner: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [session?.access_token]);
+  }, [authToken]);
 
-  const userId = session?.user?.id ?? "";
+  const userId = authUserId;
 
   const handleProfileChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -285,16 +298,16 @@ const AppInner: React.FC = () => {
   };
 
   const refreshProfile = useCallback(async () => {
-    if (!session?.access_token) return;
+    if (!authToken) return;
     try {
       const { data } = await axios.get(`${API_BASE}/profile`, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       setProfile(data);
     } catch (e) {
       console.warn("Profile refresh failed:", e);
     }
-  }, [session?.access_token]);
+  }, [authToken]);
 
   const replaceContactsBundle = useCallback((bundle: ContactsBundleResponse) => {
     setUserContacts((bundle?.users ?? []) as ContactLite[]);
@@ -346,14 +359,15 @@ const AppInner: React.FC = () => {
   }, []);
 
   const refreshContacts = useCallback(async () => {
-    if (!session?.access_token) return;
+    if (!authToken || authMode === "PHONE_OTP") return;
+
     try {
-      const bundle = await fetchMyContactsBundle(session.access_token);
+      const bundle = await fetchMyContactsBundle(authToken);
       replaceContactsBundle(bundle);
     } catch (e) {
       console.warn("Contacts refresh failed:", e);
     }
-  }, [session?.access_token, replaceContactsBundle]);
+  }, [authToken, authMode, replaceContactsBundle]);
 
   const refreshAll = useCallback(async () => {
     await refreshProfile();
@@ -361,7 +375,7 @@ const AppInner: React.FC = () => {
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session?.access_token) return;
+    if (!authToken) return;
 
     const payload = {
       phone: profile.phone,
@@ -377,7 +391,7 @@ const AppInner: React.FC = () => {
     };
 
     await axios.post(`${API_BASE}/profile`, payload, {
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${authToken}` },
     });
   };
 
@@ -392,7 +406,7 @@ const AppInner: React.FC = () => {
     <>
       <Header />
       <div className="p-4">
-        {!session || isRecoveryFlow ? (
+        {!isLoggedIn || isRecoveryFlow ? (
           <Routes>
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
@@ -400,6 +414,7 @@ const AppInner: React.FC = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/register" element={<Register />} />
             <Route path="/email-login" element={<EmailLogin />} />
+            <Route path="/phone-login" element={<PhoneOtpLogin />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -424,7 +439,9 @@ const AppInner: React.FC = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
 
-              <Route path="/email-login" element={<EmailLogin />} />
+              <Route path="/email-login" element={<Navigate to="/threads" replace />} />
+              <Route path="/phone-login" element={<Navigate to="/threads" replace />} />
+              <Route path="/register" element={<Navigate to="/threads" replace />} />
 
               <Route path="/app" element={<AppHome />} />
 

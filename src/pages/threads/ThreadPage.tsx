@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { supabase } from "../../supabaseClient";
+import { getTriholaAuthSession } from "../../utils/auth";
 import {
   sendThreadMessage,
   sendIntroEmail,
@@ -652,13 +652,38 @@ const {
 
   const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
   const [showOfferDetailsDrawer, setShowOfferDetailsDrawer] = useState(false);
-
+  
+  const [isOtpReadOnly, setIsOtpReadOnly] = useState(false);
+  
   const getAuth = useCallback(async () => {
-    const session = (await supabase.auth.getSession()).data.session;
-    if (!session?.access_token) return null;
+    const session = await getTriholaAuthSession();
 
-    const payload = JSON.parse(atob(session.access_token.split(".")[1]));
-    return { token: session.access_token, userId: payload.sub as string };
+    if (!session.accessToken || !session.userId) return null;
+
+    return {
+      token: session.accessToken,
+      userId: session.userId,
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkAuthMode() {
+      const session = await getTriholaAuthSession();
+      if (!cancelled) {
+        setIsOtpReadOnly(session.authMode === "PHONE_OTP");
+      }
+    }
+
+    checkAuthMode();
+
+    window.addEventListener("trihola-auth-changed", checkAuthMode);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("trihola-auth-changed", checkAuthMode);
+    };
   }, []);
 
   const myDisplayName = useMemo(() => {
@@ -1963,10 +1988,22 @@ const {
             participants={participants}
             currentThreadParticipantIdentities={currentThreadParticipantIdentities}
             myProfile={myProfile}
-            onOpenOffer={openOfferDetailsDrawer}
+            onOpenOffer={(assignedOfferId) => {
+              openOfferDetailsDrawer(assignedOfferId); // view-only drawer
+            }}
+
             onOpenOrder={(orderId) => {
               setSelectedOrderId(orderId);
-              setShowOrderDetailsDrawer(true);
+              setShowOrderDetailsDrawer(true); // view-only drawer
+            }}
+
+            onOpenThreadCta={(cta) => {
+              if (isOtpReadOnly) {
+                setError("Please login with email to respond to this request.");
+                return;
+              }
+
+              onOpenThreadCta(cta);
             }}
             myDisplayName={myDisplayName}
             threadCtx={threadCtx}
@@ -1992,7 +2029,6 @@ const {
             normalizeAttachment={normalizeAttachment}
             formatBytes={formatBytes}
             openImagesLightbox={openImagesLightbox}
-            onOpenThreadCta={onOpenThreadCta}
             navigateToParticipant={handleOpenParticipant}
             navigateToThread={handleNavigateToThread}
             getAuth={getAuth}
@@ -2178,6 +2214,7 @@ const {
           setShowOrderDetailsDrawer(false);
           setSelectedOrderId(null);
         }}
+        readOnly={isOtpReadOnly}
       />
 
       <OfferDetailsDrawer
@@ -2188,6 +2225,7 @@ const {
         getAuth={getAuth}
         businessId={selectedScope?.asType === "BUSINESS" ? selectedScope.asId : null}
         onUseDraft={handleUseOfferPreviewDraft}
+        readOnly={isOtpReadOnly}
       />
 
       {openCta && String((openCta as any)?.kind ?? "").toUpperCase() === "REFERRAL_ADD" && (

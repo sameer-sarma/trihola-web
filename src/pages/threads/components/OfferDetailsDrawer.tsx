@@ -17,6 +17,7 @@ type Props = {
   getAuth: () => Promise<{ token: string; userId: string } | null>;
   businessId?: string | null;
   onUseDraft: (draft: OfferOrderPreviewDraftPayloadDTO) => void;
+  readOnly?: boolean;
 };
 
 function formatDateOnly(value?: string | null): string {
@@ -174,6 +175,7 @@ export default function OfferDetailsDrawer({
   getAuth,
   businessId,
   onUseDraft,
+  readOnly = false,
 }: Props) {
   const [offer, setOffer] = useState<AssignedOfferDetailsDTO | null>(null);
   const [loading, setLoading] = useState(false);
@@ -355,13 +357,19 @@ export default function OfferDetailsDrawer({
                   ) : null}
 
                   <div className="offer-hero-actions offer-hero-actions--embedded">
-                    <button
-                      type="button"
-                      className="btn btn--primary"
-                      onClick={() => setPreviewOpen(true)}
-                    >
-                      Preview Order
-                    </button>
+                    {!readOnly ? (
+                      <button
+                        type="button"
+                        className="drawer-action drawer-action--primary"
+                        onClick={() => setPreviewOpen(true)}
+                      >
+                        Use offer
+                      </button>
+                    ) : (
+                      <div className="offer-empty-state">
+                        Login with email to use this offer.
+                      </div>
+                    )}
 
                     {offer.redemptionsLeft != null ? (
                       <span className="offer-usage-pill offer-usage-pill--hero">
@@ -439,7 +447,7 @@ export default function OfferDetailsDrawer({
         onClose={() => setLightboxOpen(false)}
       />
 
-      {offer ? (
+      {offer && !readOnly ? (
         <OfferOrderPreviewModal
           open={previewOpen}
           onClose={() => setPreviewOpen(false)}

@@ -8,7 +8,7 @@ import type {
   ScopeItemSpec,
   OfferScopeSpec,
 } from "../types/offerTemplateTypes";
-import { supabase } from "../supabaseClient";
+import { getTriholaAccessToken } from "../utils/auth";
 
 //const API_BASE = import.meta.env.VITE_API_BASE as string;
 const API_BASE = __API_BASE__;
@@ -29,12 +29,9 @@ async function resolveAccessToken(token?: string | null): Promise<string | null>
     return token ?? null;
   }
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  return session?.access_token ?? null;
+  return await getTriholaAccessToken();
 }
+
 
 async function api<T>(
   path: string,

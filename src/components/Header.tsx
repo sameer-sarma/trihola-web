@@ -1,25 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
 import "../css/Header.css";
-import type { Session } from "@supabase/supabase-js";
 import logo from "../assets/logo.png";
 import AppLauncher from "./AppLauncher";
 import { getOwnProfile } from "../services/profileService";
+import {
+  getTriholaAuthSession,
+  logoutTrihola,
+  type TriholaAuthMode,
+} from "../utils/auth";
+import { supabase } from "../supabaseClient";
 
 function isSafeInternalPath(p?: string | null) {
   return !!p && p.startsWith("/") && !p.startsWith("//");
 }
 
 function makeAuthHref(base: string, next?: string | null) {
-  // Avoid noisy URLs like ?next=%2F and meaningless roots
   if (!next || next === "/" || next === "/app") return base;
   return `${base}?next=${encodeURIComponent(next)}`;
 }
 
 const Header = () => {
-  const [session, setSession] = useState<Session | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authMode, setAuthMode] = useState<TriholaAuthMode | null>(null);
+
+  const [userLabel, setUserLabel] = useState<string | null>(null);
   const [isTriholaAdmin, setIsTriholaAdmin] = useState(false);
+
+  const [profileSlug, setProfileSlug] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,105 +39,223 @@ const Header = () => {
 
     const isAuthRoute =
       location.pathname.startsWith("/email-login") ||
+      location.pathname.startsWith("/phone-login") ||
       location.pathname.startsWith("/register");
 
-    // ✅ On auth routes: ONLY use forwardedNext (if present & safe). Otherwise: no next.
     if (isAuthRoute) {
-      if (isSafeInternalPath(forwardedNext)) return decodeURIComponent(forwardedNext!);
+      if (forwardedNext && isSafeInternalPath(forwardedNext)) {
+        return decodeURIComponent(forwardedNext);
+      }
       return null;
     }
 
-    // ✅ On all other routes: use current location
-    const current = location.pathname + location.search + location.hash;
+    const current =
+      location.pathname + location.search + location.hash;
 
-    // Root isn't a meaningful target—treat as "no next"
     if (current === "/") return null;
 
     return current;
   }, [location.pathname, location.search, location.hash]);
 
-  const emailLoginHref = useMemo(() => makeAuthHref("/email-login", next), [next]);
-  const registerHref = useMemo(() => makeAuthHref("/register", next), [next]);
+  const emailLoginHref = useMemo(
+    () => makeAuthHref("/email-login", next),
+    [next]
+  );
+
+  const phoneLoginHref = useMemo(
+    () => makeAuthHref("/phone-login", next),
+    [next]
+  );
+
+  const registerHref = useMemo(
+    () => makeAuthHref("/register", next),
+    [next]
+  );
 
   useEffect(() => {
     let mounted = true;
 
-    (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (mounted) setSession(session);
-      if (!session) sessionStorage.removeItem("profileSlug");
-    })();
+    async function syncAuth() {
+      const triSession = await getTriholaAuthSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!mounted) return;
-      setSession(nextSession || null);
-      if (!nextSession) sessionStorage.removeItem("profileSlug");
-    });
+
+      setAuthToken(triSession.accessToken);
+      setAuthMode(triSession.authMode);
+
+      if (!triSession.accessToken) {
+        setUserLabel(null);
+        setIsTriholaAdmin(false);
+
+        setProfileSlug(null);
+        setAvatarUrl(null);
+
+        sessionStorage.removeItem("profileSlug");
+        return;
+      }
+
+      setUserLabel(
+        triSession.authMode === "PHONE_OTP"
+          ? "Phone OTP login"
+          : "Signed in"
+      );
+    }
+
+    syncAuth();
+
+    const { data: authListener } =
+      supabase.auth.onAuthStateChange(() => {
+        syncAuth();
+      });
+
+    window.addEventListener(
+      "trihola-auth-changed",
+      syncAuth
+    );
 
     return () => {
       mounted = false;
       authListener.subscription.unsubscribe();
+
+      window.removeEventListener(
+        "trihola-auth-changed",
+        syncAuth
+      );
     };
   }, []);
 
   useEffect(() => {
-    if (!session?.access_token) {
+    if (!authToken) {
       setIsTriholaAdmin(false);
       return;
     }
 
     const onRedirectingRoute =
-      location.pathname === "/profile" || location.pathname.startsWith("/verify");
-    if (onRedirectingRoute) return;
+      location.pathname === "/profile" ||
+      location.pathname.startsWith("/verify");
 
-    const ctrl = new AbortController();
+    if (onRedirectingRoute) return;
 
     (async () => {
       try {
-        const profile = await getOwnProfile(session.access_token);
-        setIsTriholaAdmin(Boolean(profile?.isTriholaAdmin));
-      } catch (e: any) {
-        if (e?.code !== "ERR_CANCELED") {
-          console.error("Failed to fetch profile in header", e);
+        const profile = await getOwnProfile(authToken);
+
+        setIsTriholaAdmin(
+          authMode === "PHONE_OTP"
+            ? false
+            : Boolean(profile?.isTriholaAdmin)
+        );
+
+        const fullName = [
+          profile?.firstName,
+          profile?.lastName,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+        setUserLabel(
+          fullName ||
+            profile?.slug ||
+            (authMode === "PHONE_OTP"
+              ? "Phone OTP login"
+              : "Signed in")
+        );
+
+        setProfileSlug(profile?.slug ?? null);
+        setAvatarUrl(profile?.profileImageUrl ?? null);
+
+        if (profile?.slug) {
+          sessionStorage.setItem(
+            "profileSlug",
+            profile.slug
+          );
         }
+      } catch (e) {
+        console.error(
+          "Failed to fetch profile in header",
+          e
+        );
+
+        setIsTriholaAdmin(false);
       }
     })();
-
-    return () => ctrl.abort();
-  }, [session?.access_token, location.pathname]);
+  }, [authToken, authMode, location.pathname]);
 
   const handleLogout = async () => {
     sessionStorage.removeItem("profileSlug");
-    await supabase.auth.signOut();
-    // After logout, go to login; keep next only if we have something meaningful
-    navigate(makeAuthHref("/email-login", next), { replace: true });
+
+    await logoutTrihola();
+
+    navigate("/", { replace: true });
   };
+
+  const isLoggedIn = Boolean(authToken);
+
+  const profileHref = profileSlug
+    ? `/profile/${profileSlug}`
+    : "/profile";
+
+  const logoHref = isLoggedIn
+    ? profileHref
+    : "/";
 
   return (
     <header className="header">
       <div className="header-container">
-        <Link to="/" className="logo">
-          <img src={logo} alt="TriHola logo" className="logo-img" />
-          <span className="logo-text">TriHola</span>
+        <Link to={logoHref} className="logo">
+          <img
+            src={logo}
+            alt="TriHola logo"
+            className="logo-img"
+          />
+          <span className="logo-text">
+            TriHola
+          </span>
         </Link>
 
-        <nav className="nav-links" aria-label="Primary">
-            {session ? (
-              <>
-                <NavLink to="/threads" className={({ isActive }) => (isActive ? "active" : "")}>
-                  Threads
-                </NavLink>
-              </>
-            ) : (
+        <nav
+          className="nav-links"
+          aria-label="Primary"
+        >
+          {isLoggedIn ? (
             <>
-              <NavLink to={registerHref} className={({ isActive }) => (isActive ? "active" : "")}>
+              <NavLink
+                to="/threads"
+                className={({ isActive }) =>
+                  isActive ? "active" : ""
+                }
+              >
+                Threads
+              </NavLink>
+            </>
+          ) : (
+            <>
+              <NavLink
+                to={registerHref}
+                className={({ isActive }) =>
+                  isActive ? "active" : ""
+                }
+              >
                 Register
               </NavLink>
 
-              <NavLink to={emailLoginHref} className={({ isActive }) => (isActive ? "active" : "")}>
+              <NavLink
+                to={emailLoginHref}
+                className={({ isActive }) =>
+                  isActive ? "active" : ""
+                }
+              >
                 Login with Email
+              </NavLink>
+
+              <NavLink
+                to={phoneLoginHref}
+                className={({ isActive }) =>
+                  isActive ? "active" : ""
+                }
+              >
+                Login with Phone
               </NavLink>
             </>
           )}
@@ -136,11 +263,15 @@ const Header = () => {
 
         <div className="header-tools">
           <AppLauncher
-            isLoggedIn={!!session}
+            isLoggedIn={isLoggedIn}
             onLogout={handleLogout}
-            userLabel={session?.user?.email ?? null}
-            avatarUrl={null}
+            userLabel={userLabel}
+            avatarUrl={avatarUrl}
             isTriholaAdmin={isTriholaAdmin}
+            profileHref={profileHref}
+            isOtpReadOnly={
+              authMode === "PHONE_OTP"
+            }
           />
         </div>
       </div>

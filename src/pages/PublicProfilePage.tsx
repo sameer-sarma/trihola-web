@@ -12,6 +12,7 @@ import type { BusinessContextDTO } from "../types/business";
 import Modal from "../components/Modal";
 import ImageLightbox from "../components/ImageLightbox";
 import { useAppData } from "../context/AppDataContext";
+import { getTriholaAuthSession } from "../utils/auth";
 import "../css/profile.css";
 
 const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET as string;
@@ -102,12 +103,10 @@ const PublicProfilePage: React.FC = () => {
       setLoading(true);
       setRelationshipLoading(true);
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const auth = await getTriholaAuthSession();
 
-        const token = session?.access_token;
-        const userId = session?.user?.id ?? null;
+        const token = auth.accessToken;
+        const userId = auth.userId;
 
         setUserIdFromToken(userId);
 
@@ -163,7 +162,16 @@ const PublicProfilePage: React.FC = () => {
     !!userIdFromToken &&
     displayProfile.userId === userIdFromToken;
 
-  const canShowAddToContacts = !isOwnProfile;
+  const isOtpReadOnly = useMemo(() => {
+    try {
+      return localStorage.getItem("triholaAuthMode") === "PHONE_OTP";
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const canShowAddToContacts =
+    !isOwnProfile && !isOtpReadOnly;
 
   const hasUserContact = useMemo(() => {
     if (!canShowAddToContacts || !slug) return false;
@@ -172,6 +180,7 @@ const PublicProfilePage: React.FC = () => {
         String(u?.profileSlug || "").toLowerCase() === String(slug).toLowerCase()
     );
   }, [canShowAddToContacts, slug, userContacts]);
+
 
   useEffect(() => {
     if (!contactMenuOpen) return;
@@ -310,6 +319,7 @@ const PublicProfilePage: React.FC = () => {
 
   const registerBusinessCta = useMemo(() => {
     if (!isOwnProfile) return null;
+    if (isOtpReadOnly) return null;
 
     return (
       <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -481,9 +491,10 @@ const PublicProfilePage: React.FC = () => {
                 {registerBusinessCta}
               </div>
 
-              {(isOwnProfile || (canShowAddToContacts && !hasUserContact)) && (
+              {!isOtpReadOnly &&
+                (isOwnProfile || (canShowAddToContacts && !hasUserContact)) && (
                 <div className="th-profile__actions">
-                  {isOwnProfile ? (
+                  {isOwnProfile && !isOtpReadOnly ? (
                     <button className="btn btn--primary" onClick={onEdit}>
                       Edit Profile
                     </button>
@@ -569,7 +580,7 @@ const PublicProfilePage: React.FC = () => {
               flexWrap: "wrap",
             }}
           >
-            {!isOwnProfile && !hasUserContact ? (
+            {!isOtpReadOnly && !isOwnProfile && !hasUserContact ? (
               <button
                 type="button"
                 className="btn"

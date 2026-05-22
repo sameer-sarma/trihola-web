@@ -1,8 +1,8 @@
 // src/pages/RedirectToOwnProfile.tsx
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
 import { getOwnProfile } from "../services/profileService";
+import { getTriholaAuthSession } from "../utils/auth";
 
 const RedirectToOwnProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -12,8 +12,8 @@ const RedirectToOwnProfile: React.FC = () => {
 
     const run = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
+        const auth = await getTriholaAuthSession();
+        const token = auth.accessToken;
 
         if (!token) {
           navigate("/email-login", { replace: true });
@@ -24,7 +24,11 @@ const RedirectToOwnProfile: React.FC = () => {
         const slug = me?.slug?.trim();
 
         if (!slug) {
-          // If user profile not ready yet, send them to edit to complete it
+          if (auth.authMode === "PHONE_OTP") {
+            navigate("/threads", { replace: true });
+            return;
+          }
+
           navigate("/profile/edit", { replace: true });
           return;
         }
@@ -34,12 +38,18 @@ const RedirectToOwnProfile: React.FC = () => {
         }
       } catch (e) {
         console.error("RedirectToOwnProfile error:", e);
-        if (!cancelled) navigate("/email-login", { replace: true });
+
+        if (!cancelled) {
+          navigate("/threads", { replace: true });
+        }
       }
     };
 
     void run();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [navigate]);
 
   return (

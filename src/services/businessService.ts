@@ -1,8 +1,10 @@
 // src/services/businessService.ts
 
 import axios from "axios";
-import { supabase } from "../supabaseClient";
-import { authFetch } from "../utils/auth";
+import {
+  authFetch,
+  getTriholaAccessToken,
+} from "../utils/auth";
 import type {
   BusinessContextDTO,
   BusinessProfileDTOOwner,
@@ -19,8 +21,7 @@ const API_BASE = __API_BASE__
  * Helper to get Supabase access token
  */
 async function getAccessToken(): Promise<string> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
+  const token = await getTriholaAccessToken();
   if (!token) throw new Error("Not authenticated");
   return token;
 }

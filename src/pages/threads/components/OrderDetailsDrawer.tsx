@@ -44,6 +44,7 @@ type Props = {
   onUpdated?: () => Promise<void> | void;
   onEditDraft?: (order: OrderDTO) => void;
   onDeleted?: () => Promise<void> | void;
+  readOnly?: boolean;
 };
 
 export default function OrderDetailsDrawer({
@@ -55,6 +56,7 @@ export default function OrderDetailsDrawer({
   onUpdated,
   onEditDraft,
   onDeleted,
+  readOnly = false,
 }: Props) {
   const [order, setOrder] = useState<OrderDTO | null>(null);
   const [loading, setLoading] = useState(false);
@@ -123,6 +125,10 @@ export default function OrderDetailsDrawer({
 
   async function handleAction(fn: (authToken: string) => Promise<unknown>) {
     if (!order) return;
+    if (readOnly) {
+      setErr("Please login with email to update this order.");
+      return;
+    }
 
     try {
       setBusy(true);
@@ -183,6 +189,11 @@ export default function OrderDetailsDrawer({
 
   async function handleSavePaymentProof(draft: PaymentProofDraft) {
     if (!order) return;
+
+    if (readOnly) {
+      setErr("Please login with email to add payment proof.");
+      return;
+    }
 
     const auth = await getAuth();
     if (!auth?.token) {
@@ -738,7 +749,7 @@ export default function OrderDetailsDrawer({
             )}
           </div>
 
-          {order && allowed ? (
+          {order && allowed && !readOnly ? (
             <div className="drawer-footer">
               {order.status === "DRAFT" && allowed.canEdit ? (
                 <button

@@ -1,4 +1,5 @@
 // src/components/AppLauncher.tsx
+
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "../css/appLauncher.css";
@@ -10,6 +11,9 @@ type Props = {
   userLabel?: string | null;
   businessId?: string;
   isTriholaAdmin?: boolean;
+
+  profileHref?: string;
+  isOtpReadOnly?: boolean;
 };
 
 export default function AppLauncher({
@@ -18,20 +22,31 @@ export default function AppLauncher({
   avatarUrl,
   userLabel,
   isTriholaAdmin = false,
+
+  profileHref = "/profile",
+  isOtpReadOnly = false,
 }: Props) {
   const [open, setOpen] = useState(false);
+
   const ref = useRef<HTMLDivElement>(null);
 
   // close on outside click / escape
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+      if (!ref.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
+
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+      }
     };
+
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onEsc);
+
     return () => {
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onEsc);
@@ -49,15 +64,21 @@ export default function AppLauncher({
         title="Apps"
         onClick={() => setOpen((v) => !v)}
       >
-        {/* High-contrast grid icon (inline SVG) */}
-        <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 20 20"
+          aria-hidden="true"
+        >
           <g fill="currentColor">
             <circle cx="4" cy="4" r="2" />
             <circle cx="10" cy="4" r="2" />
             <circle cx="16" cy="4" r="2" />
+
             <circle cx="4" cy="10" r="2" />
             <circle cx="10" cy="10" r="2" />
             <circle cx="16" cy="10" r="2" />
+
             <circle cx="4" cy="16" r="2" />
             <circle cx="10" cy="16" r="2" />
             <circle cx="16" cy="16" r="2" />
@@ -69,48 +90,105 @@ export default function AppLauncher({
         <div role="menu" className="al-panel">
           {isLoggedIn ? (
             <>
-              {/* optional user header */}
+              {/* User header */}
               <div className="al-user">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="" className="al-avatar" />
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    className="al-avatar"
+                  />
                 ) : (
-                  <div className="al-avatar al-avatar-fallback">👤</div>
+                  <div className="al-avatar al-avatar-fallback">
+                    👤
+                  </div>
                 )}
+
                 <div className="al-user-info">
-                  <div className="al-user-label">{userLabel ?? "Signed in"}</div>
-                  <div className="al-user-sub">Manage your workspace</div>
+                  <div className="al-user-label">
+                    {userLabel ?? "Signed in"}
+                  </div>
+
+                  <div className="al-user-sub">
+                    {isOtpReadOnly
+                      ? "Read-only access"
+                      : "Manage your workspace"}
+                  </div>
                 </div>
               </div>
+
               <div className="al-sep" />
 
-              {/* Apps */}
-              <Link to="/profile" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
+              {/* Profile */}
+              <Link
+                to={profileHref}
+                className="al-item"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
                 <span className="al-icon">👤</span>
+
                 <div>
-                  <div className="al-title">Profile</div>
-                  <div className="al-sub">Your account</div>
+                  <div className="al-title">
+                    Profile
+                  </div>
+
+                  <div className="al-sub">
+                    Your account
+                  </div>
                 </div>
               </Link>
 
-              <Link to="/contacts" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
-                <span className="al-icon">👥</span>
-                <div>
-                  <div className="al-title">Contacts</div>
-                  <div className="al-sub">Clients & leads</div>
-                </div>
-              </Link>
+              {/* Contacts */}
+              {!isOtpReadOnly && (
+                <Link
+                  to="/contacts"
+                  className="al-item"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                >
+                  <span className="al-icon">👥</span>
 
-              {isTriholaAdmin && (
-                <Link to="/admin" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
-                  <span className="al-icon">🛡️</span>
                   <div>
-                    <div className="al-title">Admin</div>
-                    <div className="al-sub">Approve businesses</div>
+                    <div className="al-title">
+                      Contacts
+                    </div>
+
+                    <div className="al-sub">
+                      Clients & leads
+                    </div>
                   </div>
                 </Link>
               )}
 
+              {/* Admin */}
+              {!isOtpReadOnly &&
+                isTriholaAdmin && (
+                  <Link
+                    to="/admin"
+                    className="al-item"
+                    role="menuitem"
+                    onClick={() => setOpen(false)}
+                  >
+                    <span className="al-icon">
+                      🛡️
+                    </span>
+
+                    <div>
+                      <div className="al-title">
+                        Admin
+                      </div>
+
+                      <div className="al-sub">
+                        Approve businesses
+                      </div>
+                    </div>
+                  </Link>
+                )}
+
               <div className="al-sep" />
+
+              {/* Logout */}
               <button
                 type="button"
                 className="al-item al-logout"
@@ -121,35 +199,88 @@ export default function AppLauncher({
                 }}
               >
                 <span className="al-icon">🚪</span>
+
                 <div>
-                  <div className="al-title">Logout</div>
+                  <div className="al-title">
+                    Logout
+                  </div>
                 </div>
               </button>
             </>
           ) : (
             <>
               <div className="al-user">
-                <div className="al-avatar al-avatar-fallback">🙂</div>
+                <div className="al-avatar al-avatar-fallback">
+                  🙂
+                </div>
+
                 <div className="al-user-info">
-                  <div className="al-user-label">Welcome to TriHola</div>
-                  <div className="al-user-sub">Sign in to access all apps</div>
+                  <div className="al-user-label">
+                    Welcome to TriHola
+                  </div>
+
+                  <div className="al-user-sub">
+                    Sign in to access all apps
+                  </div>
                 </div>
               </div>
+
               <div className="al-sep" />
 
-              <Link to="/register" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
+              <Link
+                to="/register"
+                className="al-item"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
                 <span className="al-icon">🆕</span>
+
                 <div>
-                  <div className="al-title">Register</div>
-                  <div className="al-sub">Create your account</div>
+                  <div className="al-title">
+                    Register
+                  </div>
+
+                  <div className="al-sub">
+                    Create your account
+                  </div>
                 </div>
               </Link>
 
-              <Link to="/email-login" className="al-item" role="menuitem" onClick={() => setOpen(false)}>
+              <Link
+                to="/email-login"
+                className="al-item"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
                 <span className="al-icon">🔐</span>
+
                 <div>
-                  <div className="al-title">Login</div>
-                  <div className="al-sub">Access TriHola</div>
+                  <div className="al-title">
+                    Login
+                  </div>
+
+                  <div className="al-sub">
+                    Access TriHola
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                to="/phone-login"
+                className="al-item"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
+                <span className="al-icon">📱</span>
+
+                <div>
+                  <div className="al-title">
+                    Login with Phone
+                  </div>
+
+                  <div className="al-sub">
+                    Use OTP to check your data
+                  </div>
                 </div>
               </Link>
             </>

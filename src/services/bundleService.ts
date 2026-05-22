@@ -1,6 +1,6 @@
 // src/services/bundleService.ts
 import axios from "axios";
-import { supabase } from "../supabaseClient";
+import { getTriholaAccessToken } from "../utils/auth";
 import type {
   UUID,
   BundleRecord,
@@ -13,8 +13,7 @@ import type {
 const API_BASE = __API_BASE__
 
 async function authHeaders(extra?: Record<string, string>) {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  const token = await getTriholaAccessToken();
   if (!token) throw new Error("Not authenticated");
 
   return {

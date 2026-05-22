@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { supabase } from "../supabaseClient";
+import { getTriholaAuthSession } from "../utils/auth";
 
 import { addContactByBusinessSlug } from "../services/contactService";
 
@@ -91,6 +92,8 @@ const BusinessPage: React.FC = () => {
   const [members, setMembers] = useState<BusinessMemberDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isOtpReadOnly, setIsOtpReadOnly] = useState(false);
+  
   const [error, setError] = useState<string | null>(null);
 
   const [membersOpen, setMembersOpen] = useState(false);
@@ -120,7 +123,9 @@ const BusinessPage: React.FC = () => {
     [ctx?.viewerRelation]
   );
 
-  const canManageMembers = viewerRole === "OWNER" || viewerRole === "ADMIN";
+  const canManageMembers =
+    !isOtpReadOnly && (viewerRole === "OWNER" || viewerRole === "ADMIN");
+
   const canEditBusiness = canManageMembers;
   const canManageCatalog = canManageMembers;
   const canManageOffers = canManageMembers;
@@ -128,7 +133,7 @@ const BusinessPage: React.FC = () => {
   const isMember =
     viewerRole === "OWNER" || viewerRole === "ADMIN" || viewerRole === "STAFF";
 
-  const canShowAddToContacts = !isMember;
+  const canShowAddToContacts = !isOtpReadOnly && !isMember;
 
   const hasBusinessContact = useMemo(() => {
     if (!canShowAddToContacts || !businessSlug) return false;
@@ -143,6 +148,25 @@ const BusinessPage: React.FC = () => {
     if (viewerRole === "ADMIN") return ["STAFF"] as const;
     return [] as const;
   }, [viewerRole]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function syncAuthMode() {
+      const auth = await getTriholaAuthSession();
+      if (!cancelled) {
+        setIsOtpReadOnly(auth.authMode === "PHONE_OTP");
+      }
+    }
+
+    syncAuthMode();
+    window.addEventListener("trihola-auth-changed", syncAuthMode);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("trihola-auth-changed", syncAuthMode);
+    };
+  }, []);
 
   useEffect(() => {
     if (!businessSlug) return;
@@ -635,7 +659,7 @@ const BusinessPage: React.FC = () => {
         title="Members"
         onClose={() => setMembersOpen(false)}
         footer={
-          isMember ? (
+          !isOtpReadOnly && isMember ? (
             <button className="btn" onClick={onLeave} disabled={saving}>
               Leave business
             </button>

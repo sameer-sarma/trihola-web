@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-import { supabase } from "../../supabaseClient";
+import { getTriholaAuthSession } from "../../utils/auth";
 import { useThreadStore, type ThreadScope } from "../../context/ThreadStoreContext";
 
 
@@ -475,11 +475,17 @@ const {
   );
 
   async function getTokenAndUserId(): Promise<{ token: string; userId: UUID } | null> {
-    const session = (await supabase.auth.getSession()).data.session;
-    const token = session?.access_token;
-    const userId = session?.user?.id;
+    const session = await getTriholaAuthSession();
+
+    const token = session.accessToken;
+    const userId = session.userId;
+
     if (!token || !userId) return null;
-    return { token, userId: String(userId) as UUID };
+
+    return {
+      token,
+      userId: String(userId) as UUID,
+    };
   }
 
 
@@ -635,17 +641,21 @@ const {
   useEffect(() => {
     let cancelled = false;
 
-    (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    async function syncAuth() {
+      const session = await getTriholaAuthSession();
 
-      const uid = session?.user?.id ? String(session.user.id) : "";
-      if (!cancelled) setMyUserId(uid);
-    })();
+      if (!cancelled) {
+        setMyUserId(session.userId ?? "");
+      }
+    }
+
+    syncAuth();
+
+    window.addEventListener("trihola-auth-changed", syncAuth);
 
     return () => {
       cancelled = true;
+      window.removeEventListener("trihola-auth-changed", syncAuth);
     };
   }, []);
 

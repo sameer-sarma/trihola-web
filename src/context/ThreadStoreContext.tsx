@@ -8,7 +8,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { supabase } from "../supabaseClient";
+import { getTriholaAccessToken } from "../utils/auth";
 
 import {
   listMyThreads,
@@ -123,8 +123,7 @@ const WS_BASE = import.meta.env.VITE_WS_BASE as string;
 const SELECTED_SCOPE_KEY = "threads.selectedScope.v1";
 
 async function getToken(): Promise<string | null> {
-  const session = (await supabase.auth.getSession()).data.session;
-  return session?.access_token ?? null;
+  return getTriholaAccessToken();
 }
 
 function scopeKey(scope: ThreadScope): ScopeKey {
@@ -883,6 +882,24 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
     inboxWsRetryTimerRef.current = null;
   }, []);
 
+  const clearThreadCache = useCallback(() => {
+    console.log("[ThreadStore] clearing thread cache");
+
+    setScopes({});
+    setParticipantsByThreadId(new Map());
+    setActivitiesByThreadId(new Map());
+    setCtasByThreadId(new Map());
+    setContextVersionByThreadId(new Map());
+
+    _setSelectedScope(null);
+
+    try {
+      localStorage.removeItem(SELECTED_SCOPE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const closeInboxWS = useCallback(() => {
     inboxWsClosingRef.current = true;
     clearInboxRetryTimer();
@@ -1386,16 +1403,32 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
   );
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") {
-        console.log("[auth state change] SIGNED_OUT");
+    let previousToken: string | null = null;
+
+    const onAuthChanged = async () => {
+      const token = await getTriholaAccessToken();
+
+      const changed = previousToken !== token;
+
+      if (changed) {
+        console.log("[trihola auth change] auth switched");
+
         closeAllThreadWS();
         closeInboxWS();
+        clearThreadCache();
       }
-    });
 
-    return () => data.subscription.unsubscribe();
-  }, [closeAllThreadWS, closeInboxWS]);
+      previousToken = token;
+    };
+
+    onAuthChanged();
+
+    window.addEventListener("trihola-auth-changed", onAuthChanged);
+
+    return () => {
+      window.removeEventListener("trihola-auth-changed", onAuthChanged);
+    };
+  }, [closeAllThreadWS, closeInboxWS, clearThreadCache]);
 
   useEffect(() => {
     return () => {
