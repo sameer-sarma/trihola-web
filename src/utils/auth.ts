@@ -113,5 +113,30 @@ export async function authFetch(
 
 export async function logoutTrihola() {
   clearOtpSession();
-  await supabase.auth.signOut();
+
+  // Hard-clear ALL Supabase persisted auth keys
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith("sb-")) {
+      localStorage.removeItem(key);
+    }
+  });
+
+  Object.keys(sessionStorage).forEach((key) => {
+    if (key.startsWith("sb-")) {
+      sessionStorage.removeItem(key);
+    }
+  });
+
+  // Optional best-effort logout call
+  try {
+    await supabase.auth.signOut({
+      scope: "local",
+    });
+  } catch (e) {
+    console.warn("Ignoring Supabase logout error", e);
+  }
+
+  window.dispatchEvent(
+    new Event("trihola-auth-changed")
+  );
 }
