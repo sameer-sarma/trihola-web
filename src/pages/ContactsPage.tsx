@@ -370,7 +370,7 @@ const ContactsPage: React.FC = () => {
                 className="btn btn--ghost contactsPage__cta"
                 onClick={() => setShowImport(true)}
               >
-                Import CSV
+                Bulk Import
               </button>
 
               <Link to="/contacts/add" className="btn btn--primary contactsPage__cta">
