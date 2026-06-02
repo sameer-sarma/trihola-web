@@ -20,6 +20,7 @@ import {
 import {
   addBroadcastGroupMembers,
   createBroadcastGroup,
+  importBroadcastGroupsCsv,
   listBroadcastGroupMembers,
   listBroadcastGroupsForOwner,
   removeBroadcastGroupMember,
@@ -90,6 +91,29 @@ function contactToMemberInput(contact: ContactLite): BroadcastGroupMemberInput |
   return null;
 }
 
+function downloadSampleCsv() {
+  const csv = [
+    "contact_type,contact_id,firstName,lastName,phone,email,source,add_to_group",
+    "USER,123,John,Doe,+919999999999,john@example.com,TRIHOLA,Runners",
+    "PHONEBOOK,,Jane,Smith,+918888888888,,PHONEBOOK,Runners",
+    "BUSINESS,456,TriHola,,,hello@trihola.com,TRIHOLA,Runners VIP",
+  ].join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "trihola-broadcast-groups-sample.csv";
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+
 export default function BroadcastGroupsModal({ open, onClose }: Props) {
   const {
     myUserId,
@@ -102,6 +126,7 @@ export default function BroadcastGroupsModal({ open, onClose }: Props) {
   const [showIdentityMenu, setShowIdentityMenu] = useState(false);
   const identityMenuRef = useRef<HTMLDivElement | null>(null);
   const identityRef = useRef<IdentityOption | null>(null);
+  const csvInputRef = useRef<HTMLInputElement | null>(null);
 
   const identityOptions = useMemo<IdentityOption[]>(() => {
     const out: IdentityOption[] = [];
@@ -186,6 +211,15 @@ export default function BroadcastGroupsModal({ open, onClose }: Props) {
 
   const maxGroupMembers = ownerTier?.maxBroadcastGroupMembers ?? null;
 
+  const ownerDisplayName = useMemo(() => {
+    return (
+      selectedIdentity?.title ||
+      (selectedOwnerIdentity?.participantType === "BUSINESS"
+        ? "this business"
+        : "this profile")
+    );
+  }, [selectedIdentity?.title, selectedOwnerIdentity?.participantType]);
+
   const [groups, setGroups] = useState<BroadcastGroup[]>([]);
   const [members, setMembers] = useState<BroadcastGroupMember[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<BroadcastGroup | null>(null);
@@ -203,6 +237,9 @@ export default function BroadcastGroupsModal({ open, onClose }: Props) {
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [importingCsv, setImportingCsv] = useState(false);
+  const [showImportTools, setShowImportTools] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function getToken() {
@@ -284,6 +321,8 @@ export default function BroadcastGroupsModal({ open, onClose }: Props) {
     setSelectedContactIds([]);
     setGroupSearchText("");
     setMemberSearchText("");
+    setShowImportTools(false);
+    setImportMessage(null);
     setError(null);
     setShowIdentityMenu(false);
   }, [open]);
@@ -514,6 +553,78 @@ export default function BroadcastGroupsModal({ open, onClose }: Props) {
     }
   }
 
+
+  async function importCsvFile(file: File | null | undefined) {
+    if (!selectedOwnerIdentity) {
+      setError("Please choose an identity first.");
+      return;
+    }
+
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      setError("Please select a .csv file.");
+      if (csvInputRef.current) csvInputRef.current.value = "";
+      return;
+    }
+
+    const token = await getToken();
+    if (!token) {
+      setError("User not authenticated");
+      return;
+    }
+
+    setImportingCsv(true);
+    setImportMessage(null);
+    setError(null);
+
+    try {
+      const result = await importBroadcastGroupsCsv(
+        token,
+        selectedOwnerIdentity,
+        file
+      );
+
+      if (!result.queued) {
+        const firstErrors = result.errors?.slice(0, 5) ?? [];
+
+        setError(
+          firstErrors.length
+            ? firstErrors
+                .map((err) =>
+                  err.row > 0 ? `Row ${err.row}: ${err.message}` : err.message
+                )
+                .join("\n")
+            : "Import could not be queued. Please review the CSV and try again."
+        );
+
+        return;
+      }
+
+      setImportMessage(
+        [
+          result.message || "Import queued successfully.",
+          `Rows read: ${result.totalRows}`,
+          `Groups queued: ${result.groupsQueued}`,
+          `Rows skipped: ${result.skippedRows}`,
+          "You will receive an email/SMS when the import completes.",
+        ].join("\n")
+      );
+
+      await loadGroups();
+    } catch (e: any) {
+      setError(
+        e?.response?.data?.message ||
+          e?.response?.data ||
+          e?.message ||
+          "Could not import broadcast groups."
+      );
+    } finally {
+      setImportingCsv(false);
+      if (csvInputRef.current) csvInputRef.current.value = "";
+    }
+  }
+
   const footer = (
     <div className="broadcastGroupsModal__footer">
       <button type="button" className="btn btn--ghost" onClick={onClose}>
@@ -553,6 +664,8 @@ export default function BroadcastGroupsModal({ open, onClose }: Props) {
                   setSelectedGroup(null);
                   setMembers([]);
                   setShowGroupForm(false);
+                  setShowImportTools(false);
+                  setImportMessage(null);
                 }}
                 identityRef={identityRef}
               />
@@ -575,17 +688,101 @@ export default function BroadcastGroupsModal({ open, onClose }: Props) {
             <span>
               <strong>{maxGroupMembers}</strong> members per group are allowed for{" "}
               <strong>
-                {selectedIdentity?.title ??
-                  (selectedOwnerIdentity?.participantType === "BUSINESS"
-                    ? "this business"
-                    : "this profile")}
+                {ownerDisplayName}
               </strong>
             </span>
           </div>
         )}
 
-        {(loadingGroups || loadingMembers || saving) && (
-          <div className="broadcastGroupsModal__loading">Fetching…</div>
+
+        {!selectedGroup && (
+          <div className="broadcastGroupsModal__importCard">
+            <button
+              type="button"
+              className="broadcastGroupsModal__importHeader"
+              onClick={() => setShowImportTools((prev) => !prev)}
+            >
+              <div>
+                <h3>Bulk group import</h3>
+                <p>
+                  Upload the contacts CSV after filling the add_to_group column.
+                </p>
+              </div>
+
+              <span>{showImportTools ? "Hide" : "Show"}</span>
+            </button>
+
+            {showImportTools ? (
+              <div className="broadcastGroupsModal__importBody">
+                <div className="broadcastGroupsModal__importHelp">
+                  <div className="broadcastGroupsModal__importColumns">
+                    <strong>Required columns</strong>
+
+                    <code>
+                      contact_type, contact_id, firstName, lastName, phone, email,
+                      source, add_to_group
+                    </code>
+                  </div>
+
+                  <div className="broadcastGroupsModal__importNotes">
+                    <div>
+                      <strong>add_to_group</strong> determines which broadcast group a
+                      contact belongs to.
+                    </div>
+
+                    <div>
+                      Existing matching groups will be replaced during import.
+                    </div>
+
+                    <div>
+                      Maximum 5000 contacts per CSV.
+                    </div>
+                  </div>
+                </div>
+
+                <input
+                  ref={csvInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="broadcastGroupsModal__fileInput"
+                  onChange={(e) => importCsvFile(e.target.files?.[0])}
+                  disabled={importingCsv || saving || !selectedOwnerIdentity}
+                />
+
+                <div className="broadcastGroupsModal__importActions">
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    onClick={downloadSampleCsv}
+                    disabled={importingCsv || saving}
+                  >
+                    Download Sample CSV
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    onClick={() => csvInputRef.current?.click()}
+                    disabled={importingCsv || saving || !selectedOwnerIdentity}
+                  >
+                    {importingCsv ? "Importing…" : "Choose CSV"}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {importMessage && (
+          <div className="broadcastGroupsModal__success">
+            {importMessage.split("\n").map((line) => (
+              <div key={line}>{line}</div>
+            ))}
+          </div>
+        )}
+
+        {(loadingGroups || loadingMembers || saving || importingCsv) && (
+          <div className="broadcastGroupsModal__loading">{importingCsv ? "Importing CSV…" : "Fetching…"}</div>
         )}
 
         {!selectedGroup ? (
