@@ -67,6 +67,10 @@ import {
   type TriholaAuthMode,
 } from "./utils/auth";
 
+// ✅ tier support
+import type { MyTierContextDTO } from "./types/tiers";
+import { getMyTierContext } from "./services/tierService";
+
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
 interface UserProfile {
@@ -120,6 +124,10 @@ const AppInner: React.FC = () => {
   const [userContacts, setUserContacts] = useState<ContactLite[]>([]);
   const [businessContacts, setBusinessContacts] = useState<BusinessContactResponse[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
+
+  // ✅ tier cached at app level
+  const [tierContext, setTierContext] = useState<MyTierContextDTO | null>(null);
+  const [tierLoading, setTierLoading] = useState(false);
 
   const location = useLocation();
 
@@ -288,6 +296,39 @@ const AppInner: React.FC = () => {
     };
   }, [authToken]);
 
+  // ✅ Load tiers when logged in
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      if (!authToken || authMode === "PHONE_OTP") {
+        if (!cancelled) {
+          setTierContext(null);
+          setTierLoading(false);
+        }
+        return;
+      }
+
+      setTierLoading(true);
+
+      try {
+        const tiers = await getMyTierContext(authToken);
+        if (!cancelled) setTierContext(tiers ?? null);
+      } catch (e) {
+        console.warn("Tier context fetch failed in App:", e);
+        if (!cancelled) setTierContext(null);
+      } finally {
+        if (!cancelled) setTierLoading(false);
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authToken, authMode]);
+
   const userId = authUserId;
 
   const handleProfileChange = (
@@ -369,6 +410,26 @@ const AppInner: React.FC = () => {
     }
   }, [authToken, authMode, replaceContactsBundle]);
 
+  const refreshTierContext = useCallback(async () => {
+    if (!authToken || authMode === "PHONE_OTP") {
+      setTierContext(null);
+      setTierLoading(false);
+      return;
+    }
+
+    setTierLoading(true);
+
+    try {
+      const tiers = await getMyTierContext(authToken);
+      setTierContext(tiers ?? null);
+    } catch (e) {
+      console.warn("Tier context refresh failed:", e);
+      setTierContext(null);
+    } finally {
+      setTierLoading(false);
+    }
+  }, [authToken, authMode]);
+
   const refreshAll = useCallback(async () => {
     await refreshProfile();
   }, [refreshProfile]);
@@ -433,6 +494,10 @@ const AppInner: React.FC = () => {
               businessLoading,
               myUserProfile: profile,
               myUserId: userId,
+
+              tierContext,
+              tierLoading,
+              refreshTierContext,
             }}
           >
             <Routes>

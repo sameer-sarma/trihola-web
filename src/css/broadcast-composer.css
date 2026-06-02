@@ -996,3 +996,118 @@
     grid-template-columns: 1fr;
   }
 }
+
+.bc-recipient-section {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 14px;
+}
+
+.bc-recipient-section__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.bc-recipient-section__title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.bc-recipient-section__sub {
+  margin-top: 3px;
+  font-size: 12px;
+  color: rgba(31, 41, 55, 0.62);
+}
+
+.bc-group-list {
+  display: grid;
+  gap: 8px;
+}
+
+.bc-group-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.bc-group-row:hover {
+  border-color: rgba(247, 136, 47, 0.35);
+  background: rgba(247, 136, 47, 0.04);
+}
+
+.bc-group-row.is-selected {
+  border-color: rgba(247, 136, 47, 0.55);
+  background: rgba(247, 136, 47, 0.1);
+}
+
+.bc-group-row input {
+  margin-top: 3px;
+}
+
+.bc-group-row__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.bc-group-row__name {
+  font-size: 14px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.bc-group-row__meta {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(31, 41, 55, 0.62);
+}
+
+.bc-group-row__desc {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(31, 41, 55, 0.62);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bc-group-empty {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px dashed rgba(15, 23, 42, 0.18);
+  background: rgba(15, 23, 42, 0.02);
+  color: rgba(31, 41, 55, 0.62);
+  font-size: 13px;
+}
+
+.bc-group-row {
+  width: 100%;
+  text-align: left;
+}
+
+.bc-group-row__check {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #f7882f;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.bc-group-row.is-selected .bc-group-row__check {
+  border-color: rgba(247, 136, 47, 0.55);
+  background: rgba(247, 136, 47, 0.14);
+}

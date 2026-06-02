@@ -26,6 +26,7 @@ export type ContactResponse = {
   profileImageUrl: string | null;
   firstName: string;
   lastName?: string | null;
+  aliasName?: string | null;
   profession?: string | null;
   phone?: string | null;
   email?: string | null;

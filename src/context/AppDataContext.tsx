@@ -5,6 +5,7 @@ import type {
   BusinessContactResponse,
   ContactsBundleResponse,
 } from "../services/contactService";
+import type { MyTierContextDTO } from "../types/tiers";
 
 export type MyUserProfile = {
   phone?: string;
@@ -40,6 +41,10 @@ export type AppData = {
 
   myUserProfile: MyUserProfile | null;
   myUserId: string;
+  
+  tierContext: MyTierContextDTO | null;
+  tierLoading: boolean;
+  refreshTierContext: () => Promise<void>;
 };
 
 const Ctx = createContext<AppData | null>(null);

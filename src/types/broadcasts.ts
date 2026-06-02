@@ -92,7 +92,8 @@ export type BroadcastItemCreateDTO =
   | BroadcastOrderItemCreateDTO;
 
 export type BroadcastRecipientCreateDTO = {
-  recipientIdentity: ParticipantIdentity;
+  recipientIdentity?: ParticipantIdentity | null;
+  broadcastGroupId?: UUID | null;
 };
 
 export type CreateBroadcastEnvelopeDTO = {
@@ -111,7 +112,7 @@ export type BroadcastDTO = {
   senderIdentity: ParticipantIdentity;
   title?: string | null;
   status: BroadcastStatus;
-  audienceType: "CONTACTS";
+  audienceType: "CONTACTS" | "GROUPS" | "MIXED";
   totalRecipients: number;
   sentCount: number;
   failedCount: number;

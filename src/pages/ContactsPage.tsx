@@ -15,6 +15,8 @@ import {
   type ContactImportResultDTO,
 } from "../services/contactService";
 
+import BroadcastGroupsModal from "../components/contacts/BroadcastGroupsModal";
+
 const ContactsImportCsvModal = ({
   open,
   onClose,
@@ -196,16 +198,39 @@ function formatPersonName(contact: {
   firstName?: string | null;
   lastName?: string | null;
 }) {
-  return [contact.firstName, contact.lastName].filter(Boolean).join(" ").trim() || "Unnamed contact";
+  return (
+    [contact.firstName, contact.lastName].filter(Boolean).join(" ").trim() ||
+    "Unnamed contact"
+  );
+}
+
+function contactAliasLine(contact: {
+  aliasName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+}) {
+  const alias = contact.aliasName?.trim();
+  if (!alias) return null;
+
+  const name = formatPersonName(contact).trim();
+  if (alias === name) return null;
+
+  return alias;
 }
 
 const ContactsPage: React.FC = () => {
   const [bundle, setBundle] = useState<ContactsBundleResponse>({ users: [], businesses: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const [showImport, setShowImport] = useState(false);
+  const [showBroadcastGroups, setShowBroadcastGroups] = useState(false);
+
   const [editingContact, setEditingContact] = useState<ContactResponse | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [searchText, setSearchText] = useState("");
+  const [activeTab, setActiveTab] = useState<"PEOPLE" | "BUSINESSES">("PEOPLE");
 
   const fetchContacts = async () => {
     setLoading(true);
@@ -238,6 +263,40 @@ const ContactsPage: React.FC = () => {
 
   const userContacts = bundle.users ?? [];
   const businessContacts = bundle.businesses ?? [];
+
+  const filteredPeople = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    if (!q) return userContacts;
+
+    return userContacts.filter((c: any) =>
+      [
+        c.aliasName,
+        c.firstName,
+        c.lastName,
+        c.profileSlug,
+        c.profession,
+        c.email,
+        c.phone,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [userContacts, searchText]);
+
+  const filteredBusinesses = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    if (!q) return businessContacts;
+
+    return businessContacts.filter((b: any) =>
+      [b.name, b.slug, b.email, b.phone]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [businessContacts, searchText]);
 
   const handleDeleteContact = async (contact: ContactResponse) => {
     const ok = window.confirm(
@@ -301,6 +360,14 @@ const ContactsPage: React.FC = () => {
               <button
                 type="button"
                 className="btn btn--ghost contactsPage__cta"
+                onClick={() => setShowBroadcastGroups(true)}
+              >
+                Groups
+              </button>
+
+              <button
+                type="button"
+                className="btn btn--ghost contactsPage__cta"
                 onClick={() => setShowImport(true)}
               >
                 Import CSV
@@ -311,17 +378,54 @@ const ContactsPage: React.FC = () => {
               </Link>
             </div>
 
-            <div className="contactsPage__privacyNote">
-              Phone numbers and email addresses of contacts you enter are never shared with other
-              users.
-            </div>
           </div>
         </header>
 
         <main className="app-stack">
           {loading && <div className="contactsPage__stateCard">Loading contacts…</div>}
 
-          {error && <div className="contactsPage__stateCard contactsPage__stateCard--error">{error}</div>}
+          {error && (
+            <div className="contactsPage__stateCard contactsPage__stateCard--error">
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && (
+            <>
+              <div className="contactsPage__searchCard">
+                <input
+                  className="contactsPage__searchInput"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  placeholder="Search contacts"
+                />
+
+                <div className="contactsPage__tabs">
+                  <button
+                    type="button"
+                    className={`contactsPage__tab ${activeTab === "PEOPLE" ? "is-active" : ""}`}
+                    onClick={() => setActiveTab("PEOPLE")}
+                  >
+                    People ({filteredPeople.length})
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`contactsPage__tab ${
+                      activeTab === "BUSINESSES" ? "is-active" : ""
+                    }`}
+                    onClick={() => setActiveTab("BUSINESSES")}
+                  >
+                    Businesses ({filteredBusinesses.length})
+                  </button>
+                </div>
+                <div className="contactsPage__privacyInline">
+                  Phone numbers and email addresses of contacts you enter are never shared with other users.
+                </div>
+              </div>
+
+            </>
+          )}
 
           {!loading && !error && userContacts.length === 0 && businessContacts.length === 0 && (
             <div className="contactsPage__stateCard">
@@ -332,20 +436,48 @@ const ContactsPage: React.FC = () => {
             </div>
           )}
 
-          {!loading && !error && userContacts.length > 0 && (
+          {!loading &&
+            !error &&
+            activeTab === "PEOPLE" &&
+            filteredPeople.length === 0 &&
+            userContacts.length > 0 && (
+              <div className="contactsPage__stateCard">
+                <div className="contactsPage__emptyTitle">No matching people</div>
+                <div className="contactsPage__emptyText">
+                  Try a different name, phone, email, profession, or slug.
+                </div>
+              </div>
+            )}
+
+          {!loading &&
+            !error &&
+            activeTab === "BUSINESSES" &&
+            filteredBusinesses.length === 0 &&
+            businessContacts.length > 0 && (
+              <div className="contactsPage__stateCard">
+                <div className="contactsPage__emptyTitle">No matching businesses</div>
+                <div className="contactsPage__emptyText">
+                  Try a different business name, phone, email, or slug.
+                </div>
+              </div>
+            )}
+
+          {!loading && !error && activeTab === "PEOPLE" && filteredPeople.length > 0 && (
             <section className="app-section contactsSection">
               <div className="app-section__header">
                 <div className="app-section__main">
                   <h2 className="app-section__title">People</h2>
                 </div>
-                <span className="contactsSection__count">{userContacts.length}</span>
+                <span className="contactsSection__count">{filteredPeople.length}</span>
               </div>
 
               <ul className="contact-list">
-                {userContacts.map((contact) => {
+                {filteredPeople.map((contact) => {
                   const name = formatPersonName(contact);
-                  const subtitle = contact.profession || contact.email || contact.phone || "Person";
+                  const alias = contactAliasLine(contact);
+                  const subtitle = contact.profession || contact.email || null;
                   const meta = contact.phone || contact.email || null;
+                  const metaLine = [alias, subtitle, meta ? `📞 ${meta}` : null].filter(Boolean).join(" · ");
 
                   return (
                     <li key={contact.userId} className="contact-item">
@@ -366,29 +498,40 @@ const ContactsPage: React.FC = () => {
 
                       <div className="contact-details">
                         <p className="contact-name">{name}</p>
-                        <p className="contact-sub">{subtitle}</p>
-                        {meta && <p className="contact-meta">📞 {meta}</p>}
+                        {metaLine && <p className="contact-metaLine">{metaLine}</p>}
                       </div>
 
-                      <div className="contact-actions">
+                      <div className="contact-actions contact-actions--icon">
+                        <Link
+                          to={`/profile/${contact.profileSlug}`}
+                          className="contact-actionIcon"
+                          aria-label={`Open profile for ${name}`}
+                          title="Open profile"
+                        >
+                          👤
+                        </Link>
+
                         <button
                           type="button"
-                          className="btn btn--ghost btn--sm"
+                          className="contact-actionIcon"
                           onClick={() => setEditingContact(contact)}
+                          aria-label={`Edit ${name}`}
+                          title="Edit"
                         >
-                          Edit
+                          ✎
                         </button>
 
                         <button
                           type="button"
-                          className="btn btn--ghost btn--sm"
+                          className="contact-actionIcon contact-actionIcon--danger"
                           onClick={() => handleDeleteContact(contact)}
                           disabled={deletingId === contact.userId}
+                          aria-label={`Remove ${name}`}
+                          title={deletingId === contact.userId ? "Removing…" : "Remove"}
                         >
-                          {deletingId === contact.userId ? "Removing…" : "Remove"}
+                          {deletingId === contact.userId ? "…" : "×"}
                         </button>
                       </div>
-
                     </li>
                   );
                 })}
@@ -396,53 +539,56 @@ const ContactsPage: React.FC = () => {
             </section>
           )}
 
-          {!loading && !error && businessContacts.length > 0 && (
-            <section className="app-section contactsSection">
-              <div className="app-section__header">
-                <div className="app-section__main">
-                  <h2 className="app-section__title">Businesses</h2>
+          {!loading &&
+            !error &&
+            activeTab === "BUSINESSES" &&
+            filteredBusinesses.length > 0 && (
+              <section className="app-section contactsSection">
+                <div className="app-section__header">
+                  <div className="app-section__main">
+                    <h2 className="app-section__title">Businesses</h2>
+                  </div>
+                  <span className="contactsSection__count">{filteredBusinesses.length}</span>
                 </div>
-                <span className="contactsSection__count">{businessContacts.length}</span>
-              </div>
 
-              <ul className="contact-list">
-                {businessContacts.map((b) => {
-                  const subtitle = b.email || b.phone || "Business";
-                  const metaParts = [b.phone, b.email].filter(Boolean);
+                <ul className="contact-list">
+                  {filteredBusinesses.map((b) => {
+                    const subtitle = b.email || b.phone || "Business";
+                    const metaParts = [b.phone, b.email].filter(Boolean);
 
-                  return (
-                    <li key={b.businessId} className="contact-item">
-                      <Link
-                        to={`/businesses/${encodeURIComponent(b.slug)}`}
-                        className="contact-image contact-image--clickable"
-                        aria-label={`Open business profile for ${b.name}`}
-                        title={`Open business profile for ${b.name}`}
-                      >
-                        {b.businessLogoUrl ? (
-                          <img src={b.businessLogoUrl} alt={b.name} />
-                        ) : (
-                          <div className="contact-avatar-fallback">
-                            {getInitials(b.name, "", b.name)}
-                          </div>
-                        )}
-                      </Link>
+                    return (
+                      <li key={b.businessId} className="contact-item">
+                        <Link
+                          to={`/businesses/${encodeURIComponent(b.slug)}`}
+                          className="contact-image contact-image--clickable"
+                          aria-label={`Open business profile for ${b.name}`}
+                          title={`Open business profile for ${b.name}`}
+                        >
+                          {b.businessLogoUrl ? (
+                            <img src={b.businessLogoUrl} alt={b.name} />
+                          ) : (
+                            <div className="contact-avatar-fallback">
+                              {getInitials(b.name, "", b.name)}
+                            </div>
+                          )}
+                        </Link>
 
-                      <div className="contact-details">
-                        <p className="contact-name">
-                          {b.name}
-                          <span className="contact-typePill">Business</span>
-                        </p>
-                        <p className="contact-sub">{subtitle}</p>
-                        {metaParts.length > 0 && (
-                          <p className="contact-meta">{metaParts.join(" · ")}</p>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
+                        <div className="contact-details">
+                          <p className="contact-name">
+                            {b.name}
+                            <span className="contact-typePill">Business</span>
+                          </p>
+                          <p className="contact-metaLine">{subtitle}</p>
+                          {metaParts.length > 0 && (
+                            <p className="contact-metaLine">{metaParts.join(" · ")}</p>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
         </main>
       </div>
 
@@ -451,6 +597,13 @@ const ContactsPage: React.FC = () => {
         onClose={() => setShowImport(false)}
         onImported={fetchContacts}
       />
+
+      {showBroadcastGroups && (
+        <BroadcastGroupsModal
+          open={showBroadcastGroups}
+          onClose={() => setShowBroadcastGroups(false)}
+        />
+      )}
 
       <EditContactModal
         open={!!editingContact}
@@ -461,7 +614,6 @@ const ContactsPage: React.FC = () => {
           setEditingContact(null);
         }}
       />
-      
     </div>
   );
 };

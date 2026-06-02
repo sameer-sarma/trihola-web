@@ -37,8 +37,13 @@ import {
   draftItemToCreateDto,
   mergeContacts,
   selectedContactsFromIds,
+  selectedGroupIdsToBroadcastRecipients,
   selectedIdsToBroadcastRecipients,
 } from "../../utils/broadcastHelpers";
+
+import { supabase } from "../../supabaseClient";
+import { listBroadcastGroupsForOwner } from "../../services/broadcastGroupService";
+import type { BroadcastGroup } from "../../types/broadcastGroups";
 
 import "../../css/new-chat-drawer.css";
 import "../../css/add-referral-cta.css";
@@ -294,6 +299,11 @@ export default function BroadcastComposerModal({
 
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  
+  const [broadcastGroups, setBroadcastGroups] = useState<BroadcastGroup[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [recipientModalOpen, setRecipientModalOpen] = useState(false);
@@ -335,6 +345,9 @@ export default function BroadcastComposerModal({
     setStagedNewItem(null);
     setItemEditorType(null);
     setDraftUploadContextId(makeUploadContextId());
+    setBroadcastGroups([]);
+    setGroupsLoading(false);
+    setSelectedGroupIds([]);
     setOfferTemplates([]);
     setOfferTemplatesLoading(false);
     setOrderProductOptions([]);
@@ -417,11 +430,14 @@ export default function BroadcastComposerModal({
   const canAskForRecommendations = !!announcementPerm?.canAskForRecommendations;
 
   useEffect(() => {
+    const directRecipients = selectedIdsToBroadcastRecipients(contacts, selectedIds);
+    const groupRecipients = selectedGroupIdsToBroadcastRecipients(selectedGroupIds);
+
     setDraft((prev) => ({
       ...prev,
-      recipients: selectedIdsToBroadcastRecipients(contacts, selectedIds),
+      recipients: [...directRecipients, ...groupRecipients],
     }));
-  }, [contacts, selectedIds]);
+  }, [contacts, selectedIds, selectedGroupIds]);
 
   useEffect(() => {
     if (!open) return;
@@ -502,6 +518,73 @@ export default function BroadcastComposerModal({
       cancelled = true;
     };
   }, [open, actingBusinessId, canAddOrderItem]);
+
+
+  useEffect(() => {
+    if (!open || !senderIdentity) {
+      setBroadcastGroups([]);
+      setSelectedGroupIds([]);
+      setGroupsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const identity = senderIdentity;
+
+    async function loadGroups() {
+      setGroupsLoading(true);
+
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const token = session?.access_token;
+
+        if (!token) {
+          if (!cancelled) {
+            setBroadcastGroups([]);
+            setSelectedGroupIds([]);
+          }
+          return;
+        }
+
+        const groups = await listBroadcastGroupsForOwner(
+          token,
+          identity
+        );
+
+        if (!cancelled) {
+          setBroadcastGroups(groups ?? []);
+
+          setSelectedGroupIds((current) => {
+            const validIds = new Set((groups ?? []).map((g) => g.id));
+            return current.filter((id) => validIds.has(id));
+          });
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setBroadcastGroups([]);
+          setSelectedGroupIds([]);
+          setErr(
+            (prev) =>
+              prev ?? (e?.message ?? "Failed to load broadcast groups")
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setGroupsLoading(false);
+        }
+      }
+    }
+
+    loadGroups();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, senderIdentity]);
 
   const editingItem = useMemo<BroadcastItemDraft | null>(() => {
     if (stagedNewItem) return stagedNewItem;
@@ -634,7 +717,7 @@ export default function BroadcastComposerModal({
   const canSubmit =
     !!senderIdentity &&
     draft.title.trim().length > 0 &&
-    draft.recipients.length > 0 &&
+    (selectedIds.length > 0 || selectedGroupIds.length > 0) &&
     draft.items.length > 0 &&
     hasUsableItems &&
     !submitting;
@@ -653,7 +736,7 @@ export default function BroadcastComposerModal({
     }
 
     if (draft.recipients.length === 0) {
-      setErr("Please select at least one recipient.");
+      setErr("Please select at least one recipient or broadcast group.");
       return;
     }
 
@@ -678,6 +761,7 @@ export default function BroadcastComposerModal({
       });
 
       onAccepted?.("Announcement is being sent");
+      setSelectedGroupIds([]);
       onClose();
     } catch (e: any) {
       setErr(e?.message ?? "Failed to queue announcement.");
@@ -967,6 +1051,31 @@ export default function BroadcastComposerModal({
                     })}
                   </div>
                 )}
+
+                {selectedGroupIds.length > 0 && (
+                  <div className="bc-recipient-pills">
+                    {selectedGroupIds.map((groupId) => {
+                      const group = broadcastGroups.find((g) => g.id === groupId);
+                      const label = group?.name ?? groupId;
+
+                      return (
+                        <div className="bc-recipient-pill" key={groupId}>
+                          <span>Group: {label}</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedGroupIds((prev) => prev.filter((id) => id !== groupId))
+                            }
+                            disabled={submitting}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
               </div>
 
               <div className="th-ctaField">
@@ -1131,7 +1240,11 @@ export default function BroadcastComposerModal({
             businessContacts={[]}
             selectedIds={selectedIds}
             setSelectedIds={setSelectedIds}
+            broadcastGroups={broadcastGroups}
+            selectedGroupIds={selectedGroupIds}
+            setSelectedGroupIds={setSelectedGroupIds}
             contactsLoading={contactsLoading}
+            groupsLoading={groupsLoading}
             refreshContacts={refreshContacts}
             disabled={submitting}
           />

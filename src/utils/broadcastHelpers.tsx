@@ -91,14 +91,18 @@ export function contactsToBroadcastRecipients(
   const seen = new Set<string>();
 
   for (const c of contacts) {
-    const recipient = contactToBroadcastRecipient(c);
-    if (!recipient) continue;
+    const identity = contactToParticipantIdentity(c);
+    if (!identity) continue;
 
-    const key = `${recipient.recipientIdentity.participantType}:${recipient.recipientIdentity.participantId}`;
+    const key = `${identity.participantType}:${identity.participantId}`;
+
     if (seen.has(key)) continue;
 
     seen.add(key);
-    out.push(recipient);
+
+    out.push({
+      recipientIdentity: identity,
+    });
   }
 
   return out;
@@ -192,4 +196,14 @@ export function draftItemToCreateDto(
   }
 
   throw new Error(`Unsupported item type: ${(item as any).itemType}`);
+}
+
+export function selectedGroupIdsToBroadcastRecipients(
+  selectedGroupIds: string[]
+): BroadcastRecipientCreateDTO[] {
+  return Array.from(new Set(selectedGroupIds.map(clean).filter(Boolean))).map(
+    (groupId) => ({
+      broadcastGroupId: groupId as UUID,
+    })
+  );
 }
