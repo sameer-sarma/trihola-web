@@ -264,7 +264,7 @@ export default function DeleteAccountPage() {
                             </div>
 
                             <Link
-                              to={`/businesses/${business.businessSlug}/edit`}
+                              to={`/businesses/${business.businessSlug}`}
                               className="btn btn--ghost btn--sm"
                             >
                               Manage members
