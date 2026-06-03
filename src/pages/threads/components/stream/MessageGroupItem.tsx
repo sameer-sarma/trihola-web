@@ -114,8 +114,12 @@ export default function MessageGroupItem({
 
             const imgs = attachments.filter((x) => x.kind === "IMAGE" && x.url);
             const vids = attachments.filter((x) => x.kind === "VIDEO" && x.url);
+            const audios = attachments.filter(
+              (x) => x.kind === "AUDIO" && x.url
+            );
+
             const files = attachments.filter(
-              (x) => (x.kind === "DOCUMENT" || x.kind === "AUDIO") && x.url
+              (x) => x.kind === "DOCUMENT" && x.url
             );
 
             const msgText = String(a?.content ?? "").trim();
@@ -144,26 +148,71 @@ export default function MessageGroupItem({
                   </div>
                 )}
 
-                {(vids.length > 0 || files.length > 0) && (
-                  <div className="attList">
+                {vids.length > 0 && (
+                  <div className="attMediaList">
                     {vids.map((att, k) => (
-                      <a
+                      <div
                         key={`v-${att.url}-${k}`}
-                        className="attFileRow"
-                        href={String(att.url)}
-                        target="_blank"
-                        rel="noreferrer"
+                        className="attVideoCard"
+                      >
+                        <video
+                          className="attVideo"
+                          controls
+                          playsInline
+                          preload="metadata"
+                        >
+                          <source
+                            src={String(att.url)}
+                            type={att.mime || "video/mp4"}
+                          />
+                        </video>
+
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {audios.length > 0 && (
+                  <div className="attAudioList">
+                    {audios.map((att, k) => (
+                      <div
+                        key={`a-${att.url}-${k}`}
+                        className="attAudioCard"
                         title={att.name}
                       >
-                        <span className="attFileIcon">🎬</span>
-                        <span className="attFileMeta">
-                          <span className="attFileName">{att.name}</span>
-                          <span className="attFileSub">{formatBytes(att.sizeBytes)}</span>
-                        </span>
-                        <span className="attOpenPill">Open</span>
-                      </a>
-                    ))}
+                        <span className="attAudioIcon">🎤</span>
 
+                        <div className="attAudioMain">
+                          <audio
+                            className="attAudio"
+                            controls
+                            preload="metadata"
+                          >
+                            <source
+                              src={String(att.url)}
+                              type={att.mime || "audio/mpeg"}
+                            />
+                          </audio>
+
+                          <div className="attAudioMeta">
+                            <span className="attAudioName">
+                              {att.name || "Audio message"}
+                            </span>
+
+                            {att.sizeBytes ? (
+                              <span className="attAudioSize">
+                                {formatBytes(att.sizeBytes)}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {files.length > 0 && (
+                  <div className="attList">
                     {files.map((att, k) => (
                       <a
                         key={`f-${att.url}-${k}`}
@@ -173,15 +222,24 @@ export default function MessageGroupItem({
                         rel="noreferrer"
                         title={att.name}
                       >
-                        <span className="attFileIcon">{att.kind === "AUDIO" ? "🎤" : "📄"}</span>
+                        <span className="attFileIcon">📄</span>
+
                         <span className="attFileMeta">
-                          <span className="attFileName">{att.name}</span>
+                          <span className="attFileName">
+                            {att.name}
+                          </span>
+
                           <span className="attFileSub">
                             {att.mime ? att.mime : "file"}
-                            {att.sizeBytes ? ` · ${formatBytes(att.sizeBytes)}` : ""}
+                            {att.sizeBytes
+                              ? ` · ${formatBytes(att.sizeBytes)}`
+                              : ""}
                           </span>
                         </span>
-                        <span className="attOpenPill">Open</span>
+
+                        <span className="attOpenPill">
+                          Open
+                        </span>
                       </a>
                     ))}
                   </div>
