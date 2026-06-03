@@ -188,6 +188,25 @@ export default function AppLauncher({
 
               <div className="al-sep" />
 
+              <Link
+                to="/account/delete"
+                className="al-item"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
+                <span className="al-icon">⚠️</span>
+
+                <div>
+                  <div className="al-title">
+                    Delete Account
+                  </div>
+
+                  <div className="al-sub">
+                    Permanently remove account
+                  </div>
+                </div>
+              </Link>
+
               {/* Logout */}
               <button
                 type="button"

@@ -88,3 +88,19 @@ export const getFullProfileByBusinessSlug = async (
   );
   return res.data as PublicProfile;
 };
+
+export type DeleteAccountResponse = {
+  success: boolean;
+  message: string;
+};
+
+export const deleteAccount = async (
+  token: string
+): Promise<DeleteAccountResponse> => {
+  const response = await axios.delete<DeleteAccountResponse>(
+    `${__API_BASE__}/account`,
+    authHeader(token)
+  );
+
+  return response.data;
+};

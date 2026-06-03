@@ -374,6 +374,13 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const inboxWsRetryCountRef = useRef(0);
   const inboxWsConnectPromiseRef = useRef<Promise<void> | null>(null);
 
+  const selectedScopeRef = useRef<ThreadScope | null>(selectedScope);
+  const inboxRefreshTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    selectedScopeRef.current = selectedScope;
+  }, [selectedScope]);
+
   const setSelectedScope = useCallback((scope: ThreadScope | null) => {
     _setSelectedScope((prev) => {
       const prevKey = prev ? `${prev.asType}:${String(prev.asId)}` : "";
@@ -903,6 +910,12 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const closeInboxWS = useCallback(() => {
     inboxWsClosingRef.current = true;
     clearInboxRetryTimer();
+
+    if (inboxRefreshTimerRef.current) {
+      window.clearTimeout(inboxRefreshTimerRef.current);
+      inboxRefreshTimerRef.current = null;
+    }
+
     inboxWsRetryCountRef.current = 0;
     inboxWsConnectPromiseRef.current = null;
 
@@ -999,6 +1012,38 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
           eventType === "THREAD_INBOX_UPDATED" ||
           eventType === "THREAD_READ_STATE_UPDATED"
         ) {
+          let foundThread = false;
+
+          setScopes((prev) => {
+            for (const s of Object.values(prev)) {
+              if (s.threads.some((t) => String(t.threadId) === threadId)) {
+                foundThread = true;
+                break;
+              }
+            }
+            return prev;
+          });
+
+          if (!foundThread) {
+            const sc = selectedScopeRef.current;
+
+            if (sc) {
+              if (inboxRefreshTimerRef.current) {
+                window.clearTimeout(inboxRefreshTimerRef.current);
+              }
+
+              inboxRefreshTimerRef.current = window.setTimeout(() => {
+                inboxRefreshTimerRef.current = null;
+
+                refreshThreadsFor(sc, 30).catch((e) => {
+                  console.warn("[Inbox WS] failed to refresh for new thread", e);
+                });
+              }, 500);
+            }
+
+            return;
+          }
+
           patchThreadSummaryById(threadId, {
             unreadCount: payload.unreadCount ?? undefined,
             hasUnread: payload.hasUnread ?? undefined,
@@ -1055,8 +1100,8 @@ export const ThreadStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
         inboxWsConnectPromiseRef.current = null;
       }
     }
-  }, [clearInboxRetryTimer, patchThreadSummaryById]);
-
+  }, [clearInboxRetryTimer, patchThreadSummaryById, refreshThreadsFor]);
+  
   const markThreadReadInStore = useCallback(
     async (threadId: ThreadId) => {
       const id = String(threadId);

@@ -70,6 +70,7 @@ import {
 // ✅ tier support
 import type { MyTierContextDTO } from "./types/tiers";
 import { getMyTierContext } from "./services/tierService";
+import DeleteAccountPage from "./pages/DeleteAccountPage";
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
@@ -552,7 +553,10 @@ const AppInner: React.FC = () => {
                   />
                 }
               />
-
+              <Route
+                path="/account/delete"
+                element={<DeleteAccountPage />}
+              />
               <Route path="/business/register" element={<RegisterBusinessPage />} />
               <Route
                 path="/business/pending"
