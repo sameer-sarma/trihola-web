@@ -140,3 +140,50 @@ export async function logoutTrihola() {
     new Event("trihola-auth-changed")
   );
 }
+
+export type RegisterStartResponse = {
+  status: string;
+  claimId: string;
+  emailOtpRequired: boolean;
+  phoneOtpRequired: boolean;
+  phoneOtpSupported: boolean;
+  message: string;
+};
+
+export type VerifyRegistrationOtpResponse = {
+  status: string;
+  verified: boolean;
+  message: string;
+};
+
+export async function startRegistration(payload: {
+  email: string;
+  phone: string;
+  password: string;
+}): Promise<RegisterStartResponse> {
+  const res = await axios.post(`${__API_BASE__}/register/start`, payload);
+  return res.data;
+}
+
+export async function verifyRegistrationEmailOtp(payload: {
+  claimId: string;
+  otp: string;
+}): Promise<VerifyRegistrationOtpResponse> {
+  const res = await axios.post(`${__API_BASE__}/register/verify-email`, payload);
+  return res.data;
+}
+
+export async function verifyRegistrationPhoneOtp(payload: {
+  claimId: string;
+  otp: string;
+}): Promise<VerifyRegistrationOtpResponse> {
+  const res = await axios.post(`${__API_BASE__}/register/verify-phone`, payload);
+  return res.data;
+}
+
+export async function completeRegistrationClaim(payload: {
+  claimId: string;
+}) {
+  const res = await axios.post(`${__API_BASE__}/register/complete`, payload);
+  return res.data;
+}
