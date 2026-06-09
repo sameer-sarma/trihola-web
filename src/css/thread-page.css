@@ -130,6 +130,30 @@
   overflow: hidden;
 }
 
+.threadSidebarCard .refHeader__top {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.threadSidebarCard .refHeader__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.threadSidebarCard .refHeader__actions .btn {
+  flex: 1 1 100%;
+  min-height: 38px;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.threadSidebarCard .statusPill {
+  align-self: flex-start;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Top bar */
 /* -------------------------------------------------------------------------- */
@@ -2069,4 +2093,40 @@
 
 .attAudioSize {
   flex: 0 0 auto;
+}
+
+.streamPillLink {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+  margin-left: 6px;
+}
+
+.streamPillLink:hover {
+  text-decoration: underline;
+}
+
+.refHeader__inlinePath {
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #64748b;
+  font-weight: 600;
+  white-space: normal;
+}
+
+.refHeader__inlinePathLabel {
+  color: #94a3b8;
+  font-weight: 800;
+}
+
+.refHeader__pathInline {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+  font-weight: 600;
 }

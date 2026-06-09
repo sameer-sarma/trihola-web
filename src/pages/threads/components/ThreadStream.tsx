@@ -604,11 +604,28 @@ export default function ThreadStream({
 
             previousActorSig = null;
 
+            const payload = (it as any).payload ?? {};
+
+            const forwardedThreadId =
+              payload.kind === "REFERRAL_FORWARDED_OUT"
+                ? String(payload.newThreadId ?? "").trim()
+                : "";
+
             return (
               <SystemEventItem
                 key={it.key ?? String(idx)}
                 text={it.text}
                 isDivider={false}
+                linkLabel={
+                  forwardedThreadId
+                    ? "Open referral thread"
+                    : undefined
+                }
+                onLinkClick={
+                  forwardedThreadId
+                    ? () => navigateToThread(forwardedThreadId)
+                    : undefined
+                }
               />
             );
           }
@@ -616,11 +633,28 @@ export default function ThreadStream({
           if (it.kind === "divider") {
             previousActorSig = null;
 
+            const payload = (it as any).payload ?? {};
+
+            const forwardedThreadId =
+              payload.kind === "REFERRAL_FORWARDED_OUT"
+                ? String(payload.newThreadId ?? "").trim()
+                : "";
+
             return (
               <SystemEventItem
                 key={it.key ?? String(idx)}
                 text={it.text}
-                isDivider
+                isDivider={false}
+                linkLabel={
+                  forwardedThreadId
+                    ? "Open referral thread"
+                    : undefined
+                }
+                onLinkClick={
+                  forwardedThreadId
+                    ? () => navigateToThread(forwardedThreadId)
+                    : undefined
+                }
               />
             );
           }

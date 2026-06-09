@@ -57,6 +57,9 @@ export type AllowedActionsDTO = {
   canAcceptReferral: boolean;
   canRejectReferral: boolean;
   canCancelReferral: boolean;
+  
+  canForwardTarget?: boolean;
+  canForwardProspect?: boolean;
 
   canSendIntroEmail: boolean;
   canAssignOffers: boolean;
@@ -160,8 +163,11 @@ export type ReferralThreadContextDTO = {
   note?: string | null;
 
   referrer: UserMiniDTO;
-  prospect: UserMiniDTO;
-  business: ParticipantBadgeDTO;
+  prospect: ParticipantBadgeDTO;
+  target: ParticipantBadgeDTO;
+
+  prospectPath?: ReferralPathParticipantDTO[];
+  targetPath?: ReferralPathParticipantDTO[];
 };
 
 export type ThreadSummaryDTO = {
@@ -520,4 +526,22 @@ export type ThreadReadStateDTO = {
 
 export type UnreadThreadCountResponse = {
   unreadThreads: number;
+};
+
+export type ReferralPathParticipantDTO = {
+  side: "PROSPECT" | "TARGET" | string;
+  participantType: ParticipantType;
+  participantId: UUID;
+  sequenceNo: number;
+  role: "ORIGINATOR" | "CONNECTOR" | string;
+  note?: string | null;
+  redirectedFromType?: string | null;
+  redirectedFromId?: UUID | null;
+  redirectedToType?: string | null;
+  redirectedToId?: UUID | null;
+  redirectedAt?: ISODateTime | string | null;
+  displayName?: string | null;
+  imageUrl?: string | null;
+  slug?: string | null;
+  createdAt?: ISODateTime | string | null;
 };

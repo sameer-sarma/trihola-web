@@ -1,4 +1,5 @@
 // src/types/referral.ts
+import type { ParticipantIdentity, ReferralV2DTO, AttachmentDTO } from "./threads";
 
 export type UUID = string;
 
@@ -197,4 +198,55 @@ export function buildCreateReferralRequest(args: {
     targetUserId: null,
     targetBusinessId: target.business.businessId,
   };
+}
+
+export interface ReferralForwardTargetItem {
+  targetType: ReferralTargetType;
+  targetUserId?: UUID | null;
+  targetBusinessId?: UUID | null;
+}
+
+export interface ReferralForwardTargetsRequest {
+  asIdentity: ParticipantIdentity;
+  targets: ReferralForwardTargetItem[];
+  note?: string | null;
+  attachments?: AttachmentDTO[];
+}
+
+export interface ReferralForwardProspectItem {
+  prospectUserId: UUID;
+}
+
+export interface ReferralForwardProspectsRequest {
+  asIdentity: ParticipantIdentity;
+  prospects: ReferralForwardProspectItem[];
+  note?: string | null;
+  attachments?: AttachmentDTO[];
+}
+
+export interface ReferralForwardResult {
+  ok: boolean;
+  outcome: "FORWARDED_TO_TARGET" | "FORWARDED_TO_PROSPECT" | string;
+
+  fromReferralId: UUID;
+  fromReferralSlug: string;
+  fromThreadId?: UUID | null;
+
+  toReferralId?: UUID | null;
+  toReferralSlug?: string | null;
+  toThreadId?: UUID | null;
+
+  note?: string | null;
+  createdReferral?: ReferralV2DTO | null;
+}
+
+export interface ReferralForwardBulkResult {
+  ok: boolean;
+  outcome: string;
+
+  total: number;
+  succeeded: number;
+  failed: number;
+
+  results: ReferralForwardResult[];
 }

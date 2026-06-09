@@ -13,7 +13,12 @@ import {
   createThreadCta,
 } from "../../services/threadService";
 
-import { bulkCreateReferrals } from "../../services/referralService";
+import {
+  bulkCreateReferrals,
+  forwardReferralToTargets,
+  forwardReferralToProspects,
+  getReferralBySlug,
+} from "../../services/referralService";
 
 import AddReferralCta, {
   type CreateReferralCtaPayload,
@@ -88,9 +93,15 @@ import OrderDetailsDrawer from "./components/OrderDetailsDrawer";
 import OfferDetailsDrawer from "./components/OfferDetailsDrawer";
 import type { OfferOrderPreviewDraftPayloadDTO } from "../../components/OfferOrderPreviewModal";
 
+import Modal from "../../components/Modal";
+import ContactMultiSelect, {
+  type ContactLite,
+} from "../../components/contacts/ContactMultiSelect";
+
 import "../../css/thread-page.css";
 import "../../css/thread-cta.css";
 import { OrderDTO } from "../../types/orderTypes";
+
 
 export type MyProfile = {
   slug?: string | null;
@@ -334,16 +345,22 @@ function ReferralHeader({
   allowedActions,
   actionBusy,
   onOpenParticipant,
+  referralDetails,
   onAcceptReferral,
   onCancelReferral,
+  onForwardTarget,
+  onForwardProspect,
 }: {
   ctx: any;
   participants: ThreadParticipantDTO[];
   allowedActions: AllowedActionsDTO | null;
   actionBusy: boolean;
   onOpenParticipant: (p: ThreadParticipantDTO) => void;
+  referralDetails?: any | null;
   onAcceptReferral: () => void;
   onCancelReferral: () => void;
+   onForwardTarget: () => void;
+  onForwardProspect: () => void;
   note?: string | null;
 }) {
   const byRole = useMemo(() => {
@@ -369,6 +386,28 @@ function ReferralHeader({
 
   const status = String(ctx?.referralStatus ?? ctx?.status ?? "PENDING");
   const statusClass = `statusPill--${status.toLowerCase()}`;
+
+  const prospectPath = Array.isArray(referralDetails?.prospectPath)
+    ? referralDetails.prospectPath
+    : [];
+
+  const targetPath = Array.isArray(referralDetails?.targetPath)
+    ? referralDetails.targetPath
+    : [];
+
+  const currentReferrerId = String(referrer?.participantId ?? "").trim();
+  const currentReferrerType = String(referrer?.participantType ?? "").toUpperCase();
+
+  const introducedThrough = [...targetPath, ...prospectPath].filter((p: any) => {
+    const sameType =
+      String(p?.participantType ?? "").toUpperCase() === currentReferrerType;
+    const sameId = String(p?.participantId ?? "").trim() === currentReferrerId;
+
+    return !(sameType && sameId);
+  });
+
+  const chainName = (x: any) =>
+    String(x?.displayName ?? x?.name ?? "").trim() || "Someone";
 
   return (
     <div className="refHeader">
@@ -400,8 +439,32 @@ function ReferralHeader({
               Accept
             </button>
           )}
+
+          {allowedActions?.canForwardTarget && (
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={onForwardTarget}
+              disabled={actionBusy}
+            >
+              I know who can help
+            </button>
+          )}
+
+          {allowedActions?.canForwardProspect && (
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={onForwardProspect}
+              disabled={actionBusy}
+            >
+              Friends who might be interested
+            </button>
+          )}
+
         </div>
       </div>
+
 
       <div className="refHeader__people">
         {[
@@ -434,6 +497,19 @@ function ReferralHeader({
             <span className="refHeader__personText">
               <span className="refHeader__personName">{participantName(p)}</span>
               <span className="refHeader__role">{label}</span>
+
+              {label === "Referrer" && introducedThrough.length > 0 && (
+                <div className="refHeader__inlinePath">
+                  <span className="refHeader__inlinePathLabel">via</span>{" "}
+                  {introducedThrough.map((x: any, idx: number) => (
+                    <span key={`${x.participantType}:${x.participantId}:${idx}`}>
+                      {idx > 0 ? " → " : ""}
+                      {chainName(x)}
+                    </span>
+                  ))}
+                </div>
+              )}
+
             </span>
           </button>
         ))}
@@ -564,22 +640,28 @@ export default function ThreadPage({
   const threadId = threadIdParam as UUID;
 
   const navigate = useNavigate();
-  const { myBusinesses } = useAppData();
+  const {
+    myBusinesses,
+    userContacts,
+    businessContacts,
+    contactsLoading,
+    refreshContacts,
+  } = useAppData() as any;
 
-const {
-  participantsByThreadId,
-  activitiesByThreadId,
-  ctasByThreadId,
-  setParticipants: storeSetParticipants,
-  setActivities: storeSetActivities,
-  setCtas: storeSetCtas,
-  ensureThreadWS,
-  closeThreadWS,
-  markThreadReadInStore,
-  selectedScope,
-  setSelectedScope,
-  contextVersionByThreadId,
-} = useThreadStore();
+  const {
+    participantsByThreadId,
+    activitiesByThreadId,
+    ctasByThreadId,
+    setParticipants: storeSetParticipants,
+    setActivities: storeSetActivities,
+    setCtas: storeSetCtas,
+    ensureThreadWS,
+    closeThreadWS,
+    markThreadReadInStore,
+    selectedScope,
+    setSelectedScope,
+    contextVersionByThreadId,
+  } = useThreadStore();
 
   const [showParticipantModal, setShowParticipantModal] = useState(false);
   const [invitingRecId, setInvitingRecId] = useState<string | null>(null);
@@ -599,6 +681,15 @@ const {
   const [openCta, setOpenCta] = useState<ThreadCtaDTO | null>(null);
   const [showReferralAddCtaModal, setShowReferralAddCtaModal] = useState(false);
   const [showRecommendationAddCtaModal, setShowRecommendationAddCtaModal] = useState(false);
+
+  const [referralDetails, setReferralDetails] = useState<any | null>(null);
+
+  type ForwardMode = "TARGET" | "PROSPECT" | null;
+  const [forwardMode, setForwardMode] = useState<ForwardMode>(null);
+
+  const [forwardSelectedIds, setForwardSelectedIds] = useState<string[]>([]);
+  const [forwardNote, setForwardNote] = useState("");
+  const [forwardBusy, setForwardBusy] = useState(false);
 
   const [showIdentityMenu, setShowIdentityMenu] = useState(false);
   const identityMenuRef = useRef<HTMLDivElement | null>(null);
@@ -830,6 +921,35 @@ const {
 
   const allowedActions: AllowedActionsDTO | null = threadCtx?.allowedActions ?? null;
   const canIntro = !!allowedActions?.canSendIntroEmail;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadReferralDetails() {
+      const slug = String(threadCtx?.referralSlug ?? "").trim();
+
+      if (!slug) {
+        setReferralDetails(null);
+        return;
+      }
+
+      const auth = await getAuth();
+      if (!auth?.token) return;
+
+      try {
+        const details = await getReferralBySlug(auth.token, slug);
+        if (!cancelled) setReferralDetails(details);
+      } catch {
+        if (!cancelled) setReferralDetails(null);
+      }
+    }
+
+    loadReferralDetails();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [threadCtx?.referralSlug, getAuth]);
 
   const introQuotaText = useMemo(() => {
     const remaining =
@@ -1423,6 +1543,97 @@ const {
     loadThread,
   ]);
 
+  const forwardContacts: ContactLite[] = useMemo(() => {
+    if (forwardMode === "TARGET") {
+      return [...(userContacts ?? []), ...(businessContacts ?? [])];
+    }
+
+    if (forwardMode === "PROSPECT") {
+      return [...(userContacts ?? [])];
+    }
+
+    return [];
+  }, [forwardMode, userContacts, businessContacts]);
+
+  function contactKey(c: any): string {
+    return String(c?.userId ?? c?.businessId ?? c?.id ?? "").trim();
+  }
+
+  function isBusinessContact(c: any): boolean {
+    return !!String(c?.businessId ?? "").trim();
+  }
+
+  function isUserContact(c: any): boolean {
+    return !!String(c?.userId ?? "").trim();
+  }
+
+  const forwardFilterContact = useCallback(
+    (c: ContactLite) => {
+      const anyC = c as any;
+
+      if (forwardMode === "PROSPECT") {
+        const uid = String(anyC?.userId ?? "").trim();
+        if (!uid) return false;
+
+        const currentProspect =
+          participants.find((p) => String((p as any).referralRole ?? "").toUpperCase() === "PROSPECT") ??
+          null;
+
+        const currentProspectId = String(currentProspect?.participantId ?? "").trim();
+
+        if (uid && uid === currentProspectId) return false;
+
+        return true;
+      }
+
+      if (forwardMode === "TARGET") {
+        const uid = String(anyC?.userId ?? "").trim();
+        const bid = String(anyC?.businessId ?? "").trim();
+
+        if (!uid && !bid) return false;
+
+        const currentTarget =
+          participants.find((p) => {
+            const role = String((p as any).referralRole ?? "").toUpperCase();
+            return role === "TARGET_USER" || role === "TARGET_BUSINESS" || role === "BUSINESS";
+          }) ?? null;
+
+        const currentTargetType = String(currentTarget?.participantType ?? "").toUpperCase();
+        const currentTargetId = String(currentTarget?.participantId ?? "").trim();
+
+        if (uid && currentTargetType === "USER" && uid === currentTargetId) return false;
+        if (bid && currentTargetType === "BUSINESS" && bid === currentTargetId) return false;
+
+        const currentProspectId = String(threadCtx?.referral?.prospect?.participantId ?? "").trim();
+        if (uid && uid === currentProspectId) return false;
+
+        return true;
+      }
+
+      return false;
+    },
+    [forwardMode, participants]
+  );
+
+  const selectedForwardContacts = useMemo(() => {
+    const byId = new Map<string, ContactLite>();
+    for (const c of forwardContacts) {
+      const id = contactKey(c);
+      if (id) byId.set(id, c);
+    }
+
+    return forwardSelectedIds
+      .map((id) => byId.get(String(id)))
+      .filter(Boolean) as ContactLite[];
+  }, [forwardContacts, forwardSelectedIds]);
+
+  const closeForwardModal = useCallback(() => {
+    setForwardMode(null);
+    setForwardSelectedIds([]);
+    setForwardNote("");
+    setForwardBusy(false);
+  }, []);
+
   const sidebarReferralHeaderProps = useMemo(
     () => ({
       ctx: threadCtx,
@@ -1430,14 +1641,18 @@ const {
       allowedActions,
       note: referralNote,
       actionBusy: referralActionBusy,
+      referralDetails,
       onOpenParticipant: handleOpenParticipant,
       onAcceptReferral,
       onCancelReferral,
+      onForwardTarget: () => setForwardMode("TARGET"),
+      onForwardProspect: () => setForwardMode("PROSPECT"),
     }),
     [
       threadCtx,
       participants,
       allowedActions,
+      referralDetails,
       referralNote,
       referralActionBusy,
       handleOpenParticipant,
@@ -1538,6 +1753,89 @@ const {
     },
     [getAuth, asIdentity, threadId, refreshThreadContextOnly]
   );
+
+  const onSubmitForward = useCallback(async () => {
+    if (!forwardMode) return;
+    if (!threadCtx?.referralSlug) return;
+    if (!effectiveIdentity?.participantType || !effectiveIdentity?.participantId) return;
+
+    const auth = await getAuth();
+    if (!auth?.token) return;
+
+    if (!selectedForwardContacts.length) {
+      setError("Please select at least one contact.");
+      return;
+    }
+
+    setForwardBusy(true);
+    setError(null);
+
+    try {
+      const asIdentity = {
+        participantType:
+          String(effectiveIdentity.participantType).toUpperCase() === "BUSINESS"
+            ? "BUSINESS"
+            : "USER",
+        participantId: String(effectiveIdentity.participantId),
+      } as ParticipantIdentity;
+
+      if (forwardMode === "TARGET") {
+        const targets = selectedForwardContacts.map((c: any) => {
+          if (isBusinessContact(c)) {
+            return {
+              targetType: "BUSINESS" as const,
+              targetBusinessId: String(c.businessId),
+              targetUserId: null,
+            };
+          }
+
+          return {
+            targetType: "USER" as const,
+            targetUserId: String(c.userId),
+            targetBusinessId: null,
+          };
+        });
+
+        await forwardReferralToTargets(auth.token, threadCtx.referralSlug, {
+          asIdentity,
+          targets,
+          note: forwardNote.trim() || null,
+          attachments: [],
+        });
+      } else {
+        const prospects = selectedForwardContacts
+          .filter((c: any) => isUserContact(c))
+          .map((c: any) => ({
+            prospectUserId: String(c.userId),
+          }));
+
+        await forwardReferralToProspects(auth.token, threadCtx.referralSlug, {
+          asIdentity,
+          prospects,
+          note: forwardNote.trim() || null,
+          attachments: [],
+        });
+      }
+
+      closeForwardModal();
+
+      await loadThread(asIdentity);
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to forward referral.");
+    } finally {
+      setForwardBusy(false);
+    }
+  }, [
+    forwardMode,
+    threadCtx?.referralSlug,
+    effectiveIdentity?.participantType,
+    effectiveIdentity?.participantId,
+    getAuth,
+    selectedForwardContacts,
+    forwardNote,
+    closeForwardModal,
+    loadThread,
+  ]);
 
   const onOpenThreadCta = useCallback((cta: ThreadCtaDTO) => {
     const kind = String(cta?.kind ?? "").toUpperCase();
@@ -1928,6 +2226,92 @@ const {
           onClose={closeImagesLightbox}
         />
       )}
+
+      <Modal
+        open={!!forwardMode}
+        onClose={closeForwardModal}
+        title={
+          forwardMode === "TARGET"
+            ? "I know who can help"
+            : "Friends who might be interested"
+        }
+        maxWidth={860}
+        footer={
+          <div className="th-ramFooter">
+            <button
+              className="th-ramBtn th-ramBtnSecondary"
+              onClick={closeForwardModal}
+              disabled={forwardBusy}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="th-ramBtn th-ramBtnPrimary"
+              onClick={onSubmitForward}
+              disabled={forwardBusy || selectedForwardContacts.length === 0}
+            >
+              {forwardBusy
+                ? "Forwarding..."
+                : `Forward to ${selectedForwardContacts.length || 0}`}
+            </button>
+          </div>
+        }
+      >
+        <div className="th-ramBody">
+          <div className="th-ramSection">
+            <div className="th-ramSectionTitle">
+              {forwardMode === "TARGET"
+                ? "Select people or businesses who can help"
+                : "Select people who might be interested"}
+            </div>
+
+            <div className="th-ramMuted" style={{ marginTop: 4 }}>
+              This will create new referral thread(s). The current thread will remain open and show a forwarding update.
+            </div>
+          </div>
+
+          <div className="th-ramSection">
+            <textarea
+              className="th-ramNote th-ramNote--chatgpt"
+              value={forwardNote}
+              onChange={(e) => setForwardNote(e.target.value)}
+              rows={3}
+              placeholder={
+                forwardMode === "TARGET"
+                  ? "Add a note for the people you are connecting..."
+                  : "Add a note for the people who might be interested..."
+              }
+              disabled={forwardBusy}
+            />
+          </div>
+
+          <div className="th-ramSection">
+            {contactsLoading && forwardContacts.length === 0 ? (
+              <div className="th-ramMuted">Loading contacts…</div>
+            ) : null}
+
+            <ContactMultiSelect
+              contacts={forwardContacts}
+              value={forwardSelectedIds}
+              onChange={(ids) => setForwardSelectedIds(Array.from(new Set(ids.map(String))))}
+              disabled={forwardBusy}
+              filterContact={forwardFilterContact}
+              showAddContact
+              addContactLabel="+ Add contact"
+              addContactTitle={
+                forwardMode === "TARGET"
+                  ? "Add contact who can help"
+                  : "Add interested contact"
+              }
+              refreshAfterAdd={refreshContacts}
+              optimisticAppendOnAdd
+              autoSelectOnAdd
+              showBulkActions
+            />
+          </div>
+        </div>
+      </Modal>
 
       <div className="threadWorkspace__main">
         <div className="threadWorkspace__topbar">

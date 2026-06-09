@@ -8,6 +8,9 @@ import type {
   ReferralDTO,
   BulkCreateReferralsV2Request,
   BulkCreateResult,
+  ReferralForwardTargetsRequest,
+  ReferralForwardProspectsRequest,
+  ReferralForwardBulkResult,
 } from "../types/referral";
 
 const API_BASE = __API_BASE__;
@@ -17,6 +20,10 @@ const PATHS = {
   bulkCreate: "/v2/referrals/bulk",
   inviteRecommender: (slug: string) =>
     `/v2/referrals/${encodeURIComponent(slug)}/invite-recommender`,
+  forwardTargets: (slug: string) =>
+    `/v2/referrals/${encodeURIComponent(slug)}/forward-targets`,
+  forwardProspects: (slug: string) =>
+    `/v2/referrals/${encodeURIComponent(slug)}/forward-prospects`,
 };
 
 function buildUrl(
@@ -207,4 +214,39 @@ export async function inviteRecommenderToReferralThread(
   req: InviteRecommenderRequest
 ): Promise<OkResponse> {
   return apiJson<OkResponse>(token, "POST", PATHS.inviteRecommender(referralSlug), req);
+}
+
+
+/**
+ * Forward Referral to Target or Prospect services
+ */
+
+export async function forwardReferralToTargets(
+  token: string,
+  slug: string,
+  body: ReferralForwardTargetsRequest
+): Promise<ReferralForwardBulkResult> {
+  if (!slug?.trim()) throw new Error("Missing referral slug");
+
+  return apiJson<ReferralForwardBulkResult>(
+    token,
+    "POST",
+    PATHS.forwardTargets(slug.trim()),
+    body
+  );
+}
+
+export async function forwardReferralToProspects(
+  token: string,
+  slug: string,
+  body: ReferralForwardProspectsRequest
+): Promise<ReferralForwardBulkResult> {
+  if (!slug?.trim()) throw new Error("Missing referral slug");
+
+  return apiJson<ReferralForwardBulkResult>(
+    token,
+    "POST",
+    PATHS.forwardProspects(slug.trim()),
+    body
+  );
 }

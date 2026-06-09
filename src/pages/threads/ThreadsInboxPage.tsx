@@ -140,26 +140,28 @@ function participantInitial(x: any): string {
 function referralFaces(referral: ThreadSummaryDTO["referral"]) {
   if (!referral) return [];
 
+  const target = (referral as any).target ?? (referral as any).business ?? null;
+
   return [
     {
       key: "referrer",
-      name: participantDisplayName(referral.referrer),
-      imageUrl: participantImageUrl(referral.referrer),
-      initial: participantInitial(referral.referrer),
+      name: participantDisplayName((referral as any).referrer),
+      imageUrl: participantImageUrl((referral as any).referrer),
+      initial: participantInitial((referral as any).referrer),
     },
     {
       key: "prospect",
-      name: participantDisplayName(referral.prospect),
-      imageUrl: participantImageUrl(referral.prospect),
-      initial: participantInitial(referral.prospect),
+      name: participantDisplayName((referral as any).prospect),
+      imageUrl: participantImageUrl((referral as any).prospect),
+      initial: participantInitial((referral as any).prospect),
     },
     {
-      key: "business",
-      name: participantDisplayName(referral.business),
-      imageUrl: participantImageUrl(referral.business),
-      initial: participantInitial(referral.business),
+      key: "target",
+      name: participantDisplayName(target),
+      imageUrl: participantImageUrl(target),
+      initial: participantInitial(target),
     },
-  ];
+  ].filter((x) => x.name && x.name !== "User");
 }
 
 
