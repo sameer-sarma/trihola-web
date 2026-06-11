@@ -5,7 +5,7 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="landing">
       <PublicPageHeader />
-      <main style={{ maxWidth: 920, margin: "0 auto", padding: "32px 20px" }}>
+      <main className="public-doc">
         <h1>Privacy Policy</h1>
         <p><strong>Last updated:</strong> June 2026</p>
 

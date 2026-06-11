@@ -6,7 +6,7 @@ export default function AboutPage() {
   return (
     <div className="landing">
       <PublicPageHeader />
-    <main style={{ maxWidth: 940, margin: "0 auto", padding: "32px 20px" }}>
+    <main className="public-doc">
       <h1>About TriHola</h1>
 
       <p>

@@ -6,7 +6,7 @@ export default function ContactPage() {
     <div className="landing">
       <PublicPageHeader />
 
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "32px 20px" }}>
+      <main className="public-doc">
         <h1>Contact TriHola</h1>
 
         <p>
@@ -14,37 +14,37 @@ export default function ContactPage() {
           enquiries, you can contact us by email.
         </p>
 
-        <section style={{ marginTop: 28 }}>
+        <div style={{ marginTop: 28 }}>
           <h2>Email</h2>
           <p>
             <strong>founders@trihola.com</strong>
           </p>
-        </section>
+        </div>
 
-        <section style={{ marginTop: 28 }}>
+        <div style={{ marginTop: 28 }}>
           <h2>Support</h2>
           <p>
             If you need help with your account, contacts, referrals, conversations,
             offers, orders, or account deletion, please include the phone number or
             email address associated with your TriHola account.
           </p>
-        </section>
+        </div>
 
-        <section style={{ marginTop: 28 }}>
+        <div style={{ marginTop: 28 }}>
           <h2>Company</h2>
           <p>
             Trihola Softwares Private Limited
             <br />
             Bengaluru, Karnataka, India
           </p>
-        </section>
+        </div>
 
-        <section style={{ marginTop: 28 }}>
+        <div style={{ marginTop: 28 }}>
           <h2>Response Time</h2>
           <p>
             We aim to respond to genuine enquiries as soon as possible.
           </p>
-        </section>
+        </div>
       </main>
       </div>
   );
