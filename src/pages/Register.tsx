@@ -105,7 +105,6 @@ export default function Register() {
     try {
       const result = await startRegistration({
         email,
-        password,
         phone,
       });
 
@@ -191,7 +190,7 @@ export default function Register() {
     setMessage("");
 
     try {
-      await completeRegistrationClaim({ claimId });
+      await completeRegistrationClaim({ claimId, password });
 
       setTone("success");
       setMessage("Registration complete. Please log in.");

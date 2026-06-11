@@ -160,7 +160,6 @@ export type VerifyRegistrationOtpResponse = {
 export async function startRegistration(payload: {
   email: string;
   phone: string;
-  password: string;
 }): Promise<RegisterStartResponse> {
   const res = await axios.post(`${__API_BASE__}/register/start`, payload);
   return res.data;
@@ -184,6 +183,7 @@ export async function verifyRegistrationPhoneOtp(payload: {
 
 export async function completeRegistrationClaim(payload: {
   claimId: string;
+  password: string;
 }) {
   const res = await axios.post(`${__API_BASE__}/register/complete`, payload);
   return res.data;
