@@ -468,7 +468,15 @@ const AppInner: React.FC = () => {
   // Simple /app landing target
   const AppHome = () => <Navigate to="/profile" replace />;
   
-  const hideGlobalHeader = location.pathname === "/";
+  const publicMarketingPages = [
+    "/",
+    "/about",
+    "/contact",
+    "/privacy",
+  ];
+
+  const hideGlobalHeader =
+    publicMarketingPages.includes(location.pathname);
   
   return (
     <>

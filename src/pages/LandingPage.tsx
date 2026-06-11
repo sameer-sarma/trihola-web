@@ -1,4 +1,5 @@
 import React from "react";
+import logo from "../assets/logo.png";
 
 const LandingPage: React.FC = () => {
   const year = new Date().getFullYear();
@@ -8,8 +9,14 @@ const LandingPage: React.FC = () => {
       <header>
         <div className="container nav">
           <a className="brand" href="#top">
-            <span className="brand-badge" />
-            <span>TriHola</span>
+            <a className="brand" href="/">
+              <img
+                src={logo}
+                alt="Trihola"
+                className="brand-logo"
+              />
+              <span>Trihola</span>
+            </a>
           </a>
 
           <nav>

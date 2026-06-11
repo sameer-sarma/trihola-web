@@ -1,7 +1,11 @@
 //import React from "react";
+import PublicPageHeader from "../components/PublicPageHeader";
+
 
 export default function AboutPage() {
   return (
+    <div className="landing">
+      <PublicPageHeader />
     <main style={{ maxWidth: 940, margin: "0 auto", padding: "32px 20px" }}>
       <h1>About TriHola</h1>
 
@@ -94,5 +98,6 @@ export default function AboutPage() {
         <strong>founders@trihola.com</strong>
       </p>
     </main>
+   </div>
   );
 }
