@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -7,15 +7,6 @@ function parseHashTokens(hash: string) {
   const access_token = params.get("access_token") ?? undefined;
   const refresh_token = params.get("refresh_token") ?? undefined;
   return { access_token, refresh_token };
-}
-
-function isSafeInternalPath(p?: string | null) {
-  return !!p && p.startsWith("/") && !p.startsWith("//");
-}
-
-function normalizeNext(p?: string | null) {
-  if (!p || p === "/" || p === "/app") return null;
-  return p;
 }
 
 const ResetPassword: React.FC = () => {
@@ -28,21 +19,7 @@ const ResetPassword: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const rawNext = searchParams.get("next");
-  const nextPath = rawNext ? decodeURIComponent(rawNext) : null;
-
-  const safeNext = useMemo(() => {
-    const n = normalizeNext(nextPath);
-    if (!isSafeInternalPath(n)) return null;
-    if (n!.startsWith("/email-login")) return null;
-    return n;
-  }, [nextPath]);
-
-  const loginHref = useMemo(() => {
-    if (!safeNext) return "/email-login";
-    return `/email-login?next=${encodeURIComponent(safeNext)}`;
-  }, [safeNext]);
+  const loginHref = "/login";
 
   useEffect(() => {
     let cancelled = false;
@@ -54,9 +31,17 @@ const ResetPassword: React.FC = () => {
       const { access_token, refresh_token } = parseHashTokens(location.hash);
 
       if (access_token && refresh_token) {
-        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+        const { error } = await supabase.auth.setSession({
+          access_token,
+          refresh_token,
+        });
+
         if (cancelled) return;
-        if (error) setError(error.message || "Failed to initialize recovery session.");
+
+        if (error) {
+          setError(error.message || "Failed to initialize recovery session.");
+        }
+
         setBusy(false);
         return;
       }
@@ -64,13 +49,18 @@ const ResetPassword: React.FC = () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+
       if (cancelled) return;
 
-      if (!session) setError("Recovery session not found. Please request a new reset link.");
+      if (!session) {
+        setError("Recovery session not found. Please request a new reset link.");
+      }
+
       setBusy(false);
     };
 
     hydrateSession();
+
     return () => {
       cancelled = true;
     };
@@ -85,13 +75,18 @@ const ResetPassword: React.FC = () => {
       setError("Password must be at least 8 characters.");
       return;
     }
+
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;
     }
 
     setBusy(true);
-    const { error } = await supabase.auth.updateUser({ password });
+
+    const { error } = await supabase.auth.updateUser({
+      password,
+    });
+
     setBusy(false);
 
     if (error) {
@@ -100,7 +95,13 @@ const ResetPassword: React.FC = () => {
     }
 
     setMessage("Password updated successfully. You can now sign in.");
-    window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname + window.location.search
+    );
+
     setTimeout(() => navigate(loginHref, { replace: true }), 1200);
   };
 
@@ -111,7 +112,7 @@ const ResetPassword: React.FC = () => {
 
         {busy && <p className="th-muted">Preparing your recovery session…</p>}
 
-        {!busy && error && <div className="alert alert--error">{error}</div>}
+        {!busy && error && <div className="alert alert--danger">{error}</div>}
 
         {!busy && !error && (
           <form onSubmit={handleUpdate} className="th-form" noValidate>
@@ -147,7 +148,11 @@ const ResetPassword: React.FC = () => {
               />
             </div>
 
-            <button type="submit" className="btn btn--primary btn--block" disabled={busy}>
+            <button
+              type="submit"
+              className="btn btn--primary btn--block"
+              disabled={busy}
+            >
               Update Password
             </button>
 

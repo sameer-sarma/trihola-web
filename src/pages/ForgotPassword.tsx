@@ -1,43 +1,14 @@
-import React, { useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-
-function isSafeInternalPath(p?: string | null) {
-  return !!p && p.startsWith("/") && !p.startsWith("//");
-}
-
-function normalizeNext(p?: string | null) {
-  if (!p || p === "/" || p === "/app") return null;
-  return p;
-}
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const location = useLocation();
-  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-
-  const rawNext = searchParams.get("next");
-  const nextPath = rawNext ? decodeURIComponent(rawNext) : null;
-
-  const safeNext = useMemo(() => {
-    const n = normalizeNext(nextPath);
-    if (!isSafeInternalPath(n)) return null;
-    return n;
-  }, [nextPath]);
-
-  const resetRedirectTo = useMemo(() => {
-    // If no meaningful next, keep URL clean
-    if (!safeNext) return `${window.location.origin}/reset-password`;
-    return `${window.location.origin}/reset-password?next=${encodeURIComponent(safeNext)}`;
-  }, [safeNext]);
-
-  const backToLoginHref = useMemo(() => {
-    if (!safeNext) return "/email-login";
-    return `/email-login?next=${encodeURIComponent(safeNext)}`;
-  }, [safeNext]);
+  const resetRedirectTo = `${window.location.origin}/reset-password`;
+  const backToLoginHref = "/login";
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +53,7 @@ const ForgotPassword: React.FC = () => {
         </form>
 
         {message && <div className="alert alert--success">{message}</div>}
-        {error && <div className="alert alert--error">{error}</div>}
+        {error && <div className="alert alert--danger">{error}</div>}
 
         <div className="form-help">
           Remembered it?{" "}

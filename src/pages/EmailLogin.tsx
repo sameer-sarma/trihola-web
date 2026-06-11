@@ -34,7 +34,7 @@ const EmailLogin: React.FC = () => {
   const safeNext = useMemo(() => {
     const n = normalizeNext(nextPath);
     if (!isSafeInternalPath(n)) return null;
-    if (n!.startsWith("/email-login")) return null;
+    if (n!.startsWith("/login")) return null;
     return n;
   }, [nextPath]);
 

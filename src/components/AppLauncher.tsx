@@ -266,7 +266,7 @@ export default function AppLauncher({
               </Link>
 
               <Link
-                to="/email-login"
+                to="/login"
                 className="al-item"
                 role="menuitem"
                 onClick={() => setOpen(false)}
@@ -285,7 +285,7 @@ export default function AppLauncher({
               </Link>
 
               <Link
-                to="/phone-login"
+                to="/guest-access"
                 className="al-item"
                 role="menuitem"
                 onClick={() => setOpen(false)}
@@ -294,11 +294,11 @@ export default function AppLauncher({
 
                 <div>
                   <div className="al-title">
-                    Login with Phone
+                    Guest Access
                   </div>
 
                   <div className="al-sub">
-                    Use OTP to check your data
+                    Use OTP to access linked conversations
                   </div>
                 </div>
               </Link>

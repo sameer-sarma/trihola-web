@@ -79,8 +79,8 @@ export default function Register() {
 
   const loginHref = useMemo(() => {
     const n = normalizeNext(safeNext);
-    if (!n) return "/email-login";
-    return `/email-login?next=${encodeURIComponent(n)}`;
+    if (!n) return "/login";
+    return `/login?next=${encodeURIComponent(n)}`;
   }, [safeNext]);
 
   const resetVerification = () => {

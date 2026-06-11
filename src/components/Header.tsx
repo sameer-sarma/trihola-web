@@ -38,8 +38,8 @@ const Header = () => {
     const forwardedNext = params.get("next");
 
     const isAuthRoute =
-      location.pathname.startsWith("/email-login") ||
-      location.pathname.startsWith("/phone-login") ||
+      location.pathname.startsWith("/login") ||
+      location.pathname.startsWith("/guest-access") ||
       location.pathname.startsWith("/register");
 
     if (isAuthRoute) {
@@ -58,12 +58,12 @@ const Header = () => {
   }, [location.pathname, location.search, location.hash]);
 
   const emailLoginHref = useMemo(
-    () => makeAuthHref("/email-login", next),
+    () => makeAuthHref("/login", next),
     [next]
   );
 
   const phoneLoginHref = useMemo(
-    () => makeAuthHref("/phone-login", next),
+    () => makeAuthHref("/guest-access", next),
     [next]
   );
 
@@ -246,7 +246,7 @@ const Header = () => {
                   isActive ? "active" : ""
                 }
               >
-                Login with Email
+                Login
               </NavLink>
 
               <NavLink
@@ -255,7 +255,7 @@ const Header = () => {
                   isActive ? "active" : ""
                 }
               >
-                Login with Phone
+                Guest Access
               </NavLink>
             </>
           )}

@@ -5,7 +5,7 @@ const OTP_TOKEN_KEY = "triholaOtpToken";
 const OTP_USER_ID_KEY = "triholaOtpUserId";
 const OTP_AUTH_MODE_KEY = "triholaAuthMode";
 
-export type TriholaAuthMode = "SUPABASE" | "PHONE_OTP";
+export type TriholaAuthMode = "SUPABASE" | "PHONE_OTP" | "EMAIL_OTP";
 
 export type TriholaAuthSession = {
   accessToken: string | null;
@@ -24,10 +24,9 @@ export function saveOtpSession(params: {
     localStorage.setItem(OTP_USER_ID_KEY, params.userId);
   }
 
-  localStorage.setItem(
-    OTP_AUTH_MODE_KEY,
-    params.authMode || "PHONE_OTP"
-  );
+  if (params.authMode) {
+    localStorage.setItem(OTP_AUTH_MODE_KEY, params.authMode);
+  }
 
   window.dispatchEvent(new Event("trihola-auth-changed"));
 }
@@ -51,7 +50,9 @@ export async function getTriholaAuthSession(): Promise<TriholaAuthSession> {
     return {
       accessToken: otpToken,
       userId: localStorage.getItem(OTP_USER_ID_KEY),
-      authMode: "PHONE_OTP",
+      authMode:
+        (localStorage.getItem(OTP_AUTH_MODE_KEY) as TriholaAuthMode | null) ||
+        "PHONE_OTP",
     };
   }
 

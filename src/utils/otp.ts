@@ -123,3 +123,95 @@ export const verifyLoginOtp = async (phone: string, otp: string) => {
     };
   }
 };
+
+export const sendEmailLoginOtp = async (email: string) => {
+  try {
+    const response = await fetch(`${__API_BASE__}/login/email/send-otp`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const text = await response.text();
+
+    return {
+      success: response.ok,
+      message:
+        text ||
+        (response.ok
+          ? "OTP sent successfully."
+          : "Failed to send OTP."),
+    };
+  } catch (err: any) {
+    console.error("❌ Error sending email login OTP:", err);
+
+    return {
+      success: false,
+      message: err?.message || "Failed to send OTP.",
+    };
+  }
+};
+
+export const verifyEmailLoginOtp = async (
+  email: string,
+  otp: string
+) => {
+  try {
+    const response = await fetch(`${__API_BASE__}/login/email/verify-otp`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    const text = await response.text();
+
+    let data: any = null;
+
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = null;
+    }
+
+    if (response.ok && data?.token) {
+      saveOtpSession({
+        token: data.token,
+        userId: data.userId ?? null,
+        authMode: data.authMode ?? "EMAIL_OTP",
+      });
+    }
+
+    return {
+      success: response.ok,
+      message:
+        data?.message ||
+        text ||
+        (response.ok
+          ? "OTP verified successfully."
+          : "Failed to verify OTP."),
+      token: data?.token ?? null,
+      userId: data?.userId ?? null,
+      authMode: data?.authMode ?? null,
+      requiresRegistration: Boolean(data?.requiresRegistration),
+      profile: data?.profile ?? null,
+    };
+  } catch (err: any) {
+    console.error("❌ Error verifying email login OTP:", err);
+
+    return {
+      success: false,
+      message: err?.message || "Failed to verify OTP.",
+      token: null,
+      userId: null,
+      authMode: null,
+      requiresRegistration: false,
+      profile: null,
+    };
+  }
+};

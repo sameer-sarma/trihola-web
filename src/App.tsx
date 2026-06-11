@@ -72,6 +72,10 @@ import type { MyTierContextDTO } from "./types/tiers";
 import { getMyTierContext } from "./services/tierService";
 import DeleteAccountPage from "./pages/DeleteAccountPage";
 
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import ContactPage from "./pages/SupportPage";
+import AboutPage from "./pages/AboutPage";
+
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 
 interface UserProfile {
@@ -463,10 +467,12 @@ const AppInner: React.FC = () => {
 
   // Simple /app landing target
   const AppHome = () => <Navigate to="/profile" replace />;
-
+  
+  const hideGlobalHeader = location.pathname === "/";
+  
   return (
     <>
-      <Header />
+      {!hideGlobalHeader ? <Header /> : null}
       <div className="p-4">
         {!isLoggedIn || isRecoveryFlow ? (
           <Routes>
@@ -475,9 +481,12 @@ const AppInner: React.FC = () => {
 
             <Route path="/" element={<LandingPage />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/email-login" element={<EmailLogin />} />
-            <Route path="/phone-login" element={<PhoneOtpLogin />} />
+            <Route path="/login" element={<EmailLogin />} />
+            <Route path="/guest-access" element={<PhoneOtpLogin />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         ) : (
@@ -505,12 +514,14 @@ const AppInner: React.FC = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
 
-              <Route path="/email-login" element={<Navigate to="/threads" replace />} />
-              <Route path="/phone-login" element={<Navigate to="/threads" replace />} />
+              <Route path="/login" element={<Navigate to="/threads" replace />} />
+              <Route path="/guest-access" element={<Navigate to="/threads" replace />} />
               <Route path="/register" element={<Navigate to="/threads" replace />} />
 
               <Route path="/app" element={<AppHome />} />
-
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/about" element={<AboutPage />} />
               <Route
                 path="/threads"
                 element={
@@ -594,7 +605,7 @@ const AppInner: React.FC = () => {
           </AppDataProvider>
         )}
       </div>
-      <Footer />
+      {!hideGlobalHeader ? <Footer /> : null}
     </>
   );
 };
